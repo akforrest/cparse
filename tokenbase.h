@@ -1,7 +1,7 @@
 #ifndef CPARSE_TOKENBASE_H
 #define CPARSE_TOKENBASE_H
 
-#include "tokentypes.h"
+#include "tokentype.h"
 
 #include <QtGlobal>
 

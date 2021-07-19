@@ -4,13 +4,13 @@
 namespace cparse
 {
     /*
-     * About tokType enum:
+     * About TokenType enum:
      *
      * The 3 left most bits (0x80, 0x40 and 0x20) of the Token Type
      * are reserved for denoting Numerals, Iterators and References.
      * If you want to define your own type please mind this bits.
      */
-    enum tokType
+    enum TokenType
     {
         // Internal types:
         NONE, OP, UNARY, VAR,

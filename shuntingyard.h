@@ -17,7 +17,7 @@
 #include <QString>
 
 #include "tokenbase.h"
-#include "tokentypes.h"
+#include "tokentype.h"
 #include "config.h"
 
 namespace cparse

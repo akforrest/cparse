@@ -19,12 +19,12 @@ namespace cparse::builtin_operations
         PackToken & origin = data->left->origin;
 
         // If the left operand has a name:
-        if (key->type == tokType::STR)
+        if (key->type == TokenType::STR)
         {
             auto var_name = key.asString();
 
             // If it is an attribute of a TokenMap:
-            if (origin->type == tokType::MAP)
+            if (origin->type == TokenType::MAP)
             {
                 TokenMap & map = origin.asMap();
                 map[var_name] = right;
@@ -52,9 +52,9 @@ namespace cparse::builtin_operations
 
             // If the left operand has an index number:
         }
-        else if (key->type & tokType::NUM)
+        else if (key->type & TokenType::NUM)
         {
-            if (origin->type == tokType::LIST)
+            if (origin->type == TokenType::LIST)
             {
                 TokenList & list = origin.asList();
                 size_t index = key.asInt();
@@ -75,7 +75,7 @@ namespace cparse::builtin_operations
 
     PackToken Comma(const PackToken & left, const PackToken & right, evaluationData *)
     {
-        if (left->type == tokType::TUPLE)
+        if (left->type == TokenType::TUPLE)
         {
             left.asTuple().list().push_back(right);
             return left;
@@ -88,7 +88,7 @@ namespace cparse::builtin_operations
 
     PackToken Colon(const PackToken & left, const PackToken & right, evaluationData *)
     {
-        if (left->type == tokType::STUPLE)
+        if (left->type == TokenType::STUPLE)
         {
             left.asSTuple().list().push_back(right);
             return left;
@@ -101,7 +101,7 @@ namespace cparse::builtin_operations
 
     PackToken Equal(const PackToken & left, const PackToken & right, evaluationData * data)
     {
-        if (left->type == tokType::VAR || right->type == tokType::VAR)
+        if (left->type == TokenType::VAR || right->type == TokenType::VAR)
         {
             throw undefined_operation(data->op, left, right);
         }
@@ -111,7 +111,7 @@ namespace cparse::builtin_operations
 
     PackToken Different(const PackToken & left, const PackToken & right, evaluationData * data)
     {
-        if (left->type == tokType::VAR || right->type == tokType::VAR)
+        if (left->type == TokenType::VAR || right->type == TokenType::VAR)
         {
             throw undefined_operation(data->op, left, right);
         }
@@ -147,7 +147,7 @@ namespace cparse::builtin_operations
     // Resolve build-in operations for non-map types, e.g.: 'str'.len()
     PackToken TypeSpecificFunction(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
     {
-        if (p_left->type == tokType::MAP)
+        if (p_left->type == TokenType::MAP)
         {
             throw Operation::Reject();
         }
@@ -272,7 +272,7 @@ namespace cparse::builtin_operations
 
         Tuple right;
 
-        if (p_right->type == tokType::TUPLE)
+        if (p_right->type == TokenType::TUPLE)
         {
             right = p_right.asTuple();
         }
@@ -307,7 +307,7 @@ namespace cparse::builtin_operations
             }
 
             // Replace it by the token string representation:
-            if (token->type == tokType::STR)
+            if (token->type == TokenType::STR)
             {
                 // Avoid using PackToken::str for strings
                 // or it will enclose it quotes `"str"`

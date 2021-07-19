@@ -37,7 +37,7 @@ namespace cparse
             PackToken & operator=(const PackToken & t);
 
             template<class C>
-            PackToken(C c, tokType type) : base(new Token<C>(c, type)) {}
+            PackToken(C c, TokenType type) : base(new Token<C>(c, type)) {}
             PackToken(int i) : base(new Token<int64_t>(i, INT)) {}
             PackToken(int64_t l) : base(new Token<int64_t>(l, INT)) {}
             PackToken(bool b) : base(new Token<uint8_t>(b, BOOL)) {}

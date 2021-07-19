@@ -27,4 +27,4 @@ HEADERS += \
     $$PWD/builtin-features\reservedwords.h \
     $$CPARSE_DIR/builtin-features\typespecificfunctions.h \
     $$PWD/tokenhelpers.h \
-    $$PWD/tokentypes.h
+    $$PWD/tokentype.h

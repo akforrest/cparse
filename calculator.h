@@ -19,12 +19,12 @@ namespace cparse
             static typeMap_t & type_attribute_map();
 
             static PackToken calculate(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                                       const char * delim = 0, const char ** rest = nullptr);
+                                       const char * delim = nullptr, const char ** rest = nullptr);
 
             static TokenBase * calculate(const TokenQueue_t & RPN, const TokenMap & scope,
                                          const Config_t & config = Default());
             static TokenQueue_t toRPN(const char * expr, TokenMap vars,
-                                      const char * delim = 0, const char ** rest = nullptr,
+                                      const char * delim = nullptr, const char ** rest = nullptr,
                                       Config_t config = Default());
 
             virtual ~Calculator();
