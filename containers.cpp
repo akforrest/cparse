@@ -36,6 +36,11 @@ PackToken TokenMap::default_constructor(TokenMap scope)
     return scope["kwargs"];
 }
 
+bool TokenMap::operator==(const TokenMap & other) const
+{
+    return m_ref == other.m_ref && m_type == other.m_type;
+}
+
 TokenMap TokenMap::empty = TokenMap(&default_global());
 
 

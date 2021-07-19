@@ -595,7 +595,7 @@ namespace cparse::builtin_operations
             opMap.add({LIST, ANY_OP, NUM}, &ListOnNumberOperation);
             opMap.add({LIST, ANY_OP, LIST}, &ListOnListOperation);
         }
-    } __CPARSE_STARTUP;
+    };
 
 }  // namespace builtin_operations
 

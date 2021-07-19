@@ -1,6 +1,4 @@
 
-CPARSE_DIR = $$PWD
-
 SOURCES += \
     $$PWD/packtoken.cpp \
     $$PWD/functions.cpp \
@@ -9,7 +7,7 @@ SOURCES += \
     $$PWD/reftoken.cpp \
     $$PWD/rpnbuilder.cpp
 
-INCLUDEPATH += CPARSE_DIR
+INCLUDEPATH += $$PWD
 HEADERS += \
     $$PWD/config.h \
     $$PWD/cparse-test.h \
@@ -21,12 +19,10 @@ HEADERS += \
     $$PWD/calculator.h \
     $$PWD/reftoken.h \
     $$PWD/rpnbuilder.h \
-    #$$PWD/shunting-yard-exceptions.h \
-    #$$PWD/builtin-features.inc \
     $$PWD/builtin-features\functions.h \
     $$PWD/builtin-features\operations.h \
     $$PWD/builtin-features\reservedwords.h \
-    $$CPARSE_DIR/builtin-features\typespecificfunctions.h \
+    $$PWD/builtin-features\typespecificfunctions.h \
     $$PWD/token.h \
     $$PWD/tokenhelpers.h \
     $$PWD/tokentype.h

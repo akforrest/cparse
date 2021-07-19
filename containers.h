@@ -91,6 +91,8 @@ namespace cparse
             static TokenMap & default_global();
             static PackToken default_constructor(TokenMap scope);
 
+            bool operator==(const TokenMap & other) const;
+
             TokenMap(TokenMap * parent = &TokenMap::base_map())
                 : Container(parent), IterableToken(MAP)
             {

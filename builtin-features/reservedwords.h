@@ -108,7 +108,7 @@ namespace cparse::builtin_reservedWords
             parser.add(".", &DotOperator);
             parser.add('.', &DotOperator);
         }
-    } __CPARSE_STARTUP;
+    };
 
 }  // namespace builtin_reservedWords
 

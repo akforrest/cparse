@@ -59,7 +59,7 @@ namespace cparse::builtin_functions
 
         qreal sum = 0;
 
-        for (PackToken num : list.list())
+        for (const PackToken & num : list.list())
         {
             sum += num.asReal();
         }
@@ -99,7 +99,8 @@ namespace cparse::builtin_functions
             qWarning(cparseLog) << "could not convert \"" << str << "\" to qreal!";
             return PackToken::Error();
         }
-        else if (errno)
+
+        if (errno)
         {
             qWarning(cparseLog) << "value too big or too small to fit a qreal!";
             return PackToken::Error();
@@ -127,7 +128,8 @@ namespace cparse::builtin_functions
             qWarning(cparseLog) << "could not convert \"" << str << "\" to integer!";
             return PackToken::Error();
         }
-        else if (errno)
+
+        if (errno)
         {
             qWarning(cparseLog) << "value too big or too small to fit an integer!";
             return PackToken::Error();
@@ -196,10 +198,8 @@ namespace cparse::builtin_functions
                 {
                     return *p_type;
                 }
-                else
-                {
-                    return PackToken("map");
-                }
+
+                return PackToken("map");
 
             default:
                 return PackToken("unknown_type");
@@ -383,7 +383,7 @@ namespace cparse::builtin_functions
             // Set the custom str function to `PackToken_str()`
             PackToken::str_custom() = PackToken_str;
         }
-    } __CPARSE_STARTUP;
+    };
 
 }  // namespace builtin_functions
 
