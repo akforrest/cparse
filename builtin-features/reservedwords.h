@@ -4,10 +4,10 @@
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
-#include "../shunting-yard.h"
-#include "../shunting-yard-exceptions.h"
+#include "../shuntingyard.h"
+#include "../shuntingyardexceptions.h"
 
-namespace builtin_reservedWords
+namespace cparse::builtin_reservedWords
 {
     using namespace cparse;
     // Literal Tokens: True, False and None:

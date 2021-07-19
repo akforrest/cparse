@@ -2,9 +2,9 @@
 #include <string>
 #include <iostream>
 
-#include "./shunting-yard.h"
+#include "./shuntingyard.h"
 #include "./packtoken.h"
-#include "./shunting-yard-exceptions.h"
+#include "./shuntingyardexceptions.h"
 
 using cparse::PackToken;
 using cparse::TokenBase;

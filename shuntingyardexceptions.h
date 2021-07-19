@@ -2,7 +2,7 @@
 #ifndef SHUNTING_YARD_EXCEPTIONS_H_
 #define SHUNTING_YARD_EXCEPTIONS_H_
 
-#include "./shunting-yard.h"
+#include "./shuntingyard.h"
 
 #include <string>
 #include <stdexcept>

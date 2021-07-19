@@ -6,10 +6,10 @@
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
-#include "../shunting-yard.h"
-#include "../shunting-yard-exceptions.h"
+#include "../shuntingyard.h"
+#include "../shuntingyardexceptions.h"
 
-namespace builtin_operations
+namespace cparse::builtin_operations
 {
     using namespace cparse;
     // Assignment operator "="

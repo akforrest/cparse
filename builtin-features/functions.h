@@ -7,7 +7,7 @@
 #include "../containers.h"
 #include "../functions.h"
 
-namespace builtin_functions
+namespace cparse::builtin_functions
 {
     using namespace cparse;
 

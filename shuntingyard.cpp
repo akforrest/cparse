@@ -1,5 +1,5 @@
-#include "shunting-yard.h"
-#include "shunting-yard-exceptions.h"
+#include "shuntingyard.h"
+#include "shuntingyardexceptions.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -31,8 +31,8 @@ using cparse::REF;
 
 #include "./builtin-features/functions.h"
 #include "./builtin-features/operations.h"
-#include "./builtin-features/reservedWords.h"
-#include "./builtin-features/typeSpecificFunctions.h"
+#include "./builtin-features/reservedwords.h"
+#include "./builtin-features/typespecificfunctions.h"
 
 void cparse::initialize()
 {
