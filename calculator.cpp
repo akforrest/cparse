@@ -4,6 +4,7 @@
 #include "shuntingyardexceptions.h"
 #include "tokenhelpers.h"
 #include "packtoken.h"
+#include "reftoken.h"
 
 using cparse::Calculator;
 using cparse::PackToken;

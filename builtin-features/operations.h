@@ -7,6 +7,7 @@
 #include "../containers.h"
 #include "../functions.h"
 #include "../shuntingyard.h"
+#include "../reftoken.h"
 #include "../shuntingyardexceptions.h"
 
 namespace cparse::builtin_operations

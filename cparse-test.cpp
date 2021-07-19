@@ -8,6 +8,7 @@
 #include "cparse-test.h"
 #include "shuntingyard.h"
 #include "calculator.h"
+#include "reftoken.h"
 
 using namespace cparse;
 

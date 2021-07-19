@@ -6,6 +6,7 @@ SOURCES += \
     $$PWD/functions.cpp \
     $$PWD/containers.cpp \
     $$PWD/calculator.cpp \
+    $$PWD/reftoken.cpp \
     $$PWD/shuntingyard.cpp
 
 INCLUDEPATH += CPARSE_DIR
@@ -18,6 +19,7 @@ HEADERS += \
     $$PWD/functions.h \
     $$PWD/containers.h \
     $$PWD/calculator.h \
+    $$PWD/reftoken.h \
     $$PWD/shuntingyard.h \
     $$PWD/shuntingyardexceptions.h \
     #$$PWD/shunting-yard-exceptions.h \
