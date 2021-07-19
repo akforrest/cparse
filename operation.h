@@ -4,6 +4,8 @@
 #include "packtoken.h"
 #include "containers.h"
 
+#include <set>
+
 namespace cparse
 {
     class RefToken;
@@ -59,6 +61,38 @@ namespace cparse
             opID_t getMask() const;
             PackToken exec(const PackToken & left, const PackToken & right,
                            evaluationData * data) const;
+    };
+
+    class OpMap : public std::map<QString, std::vector<Operation>>
+    {
+        public:
+
+            void add(const opSignature_t & sig, Operation::opFunc_t func);
+            QString str() const;
+    };
+
+    class OpPrecedenceMap
+    {
+        public:
+
+            OpPrecedenceMap();
+
+            void add(const QString & op, int precedence);
+
+            void addUnary(const QString & op, int precedence);
+
+            void addRightUnary(const QString & op, int precedence);
+
+            int prec(const QString & op) const;
+            bool assoc(const QString & op) const;
+            bool exists(const QString & op) const;
+
+        private:
+
+            // Set of operators that should be evaluated from right to left:
+            std::set<QString> m_rtol;
+            // Map of operators precedence:
+            std::map<QString, int> m_prMap;
     };
 }
 

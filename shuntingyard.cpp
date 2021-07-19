@@ -314,23 +314,23 @@ cparse::OpPrecedenceMap::OpPrecedenceMap()
 {
     // These operations are hard-coded inside the Calculator,
     // thus their precedence should always be defined:
-    pr_map["[]"] = -1;
-    pr_map["()"] = -1;
-    pr_map["["] = 0x7FFFFFFF;
-    pr_map["("] = 0x7FFFFFFF;
-    pr_map["{"] = 0x7FFFFFFF;
-    RtoL.insert("=");
+    m_prMap["[]"] = -1;
+    m_prMap["()"] = -1;
+    m_prMap["["] = 0x7FFFFFFF;
+    m_prMap["("] = 0x7FFFFFFF;
+    m_prMap["{"] = 0x7FFFFFFF;
+    m_rtol.insert("=");
 }
 
 void cparse::OpPrecedenceMap::add(const QString & op, int precedence)
 {
     if (precedence < 0)
     {
-        RtoL.insert(op);
+        m_rtol.insert(op);
         precedence = -precedence;
     }
 
-    pr_map[op] = precedence;
+    m_prMap[op] = precedence;
 }
 
 void cparse::OpPrecedenceMap::addUnary(const QString & op, int precedence)
@@ -370,17 +370,17 @@ void cparse::OpPrecedenceMap::addRightUnary(const QString & op, int precedence)
 
 int cparse::OpPrecedenceMap::prec(const QString & op) const
 {
-    return pr_map.at(op);
+    return m_prMap.at(op);
 }
 
 bool cparse::OpPrecedenceMap::assoc(const QString & op) const
 {
-    return RtoL.count(op);
+    return m_rtol.count(op);
 }
 
 bool cparse::OpPrecedenceMap::exists(const QString & op) const
 {
-    return pr_map.count(op);
+    return m_prMap.count(op);
 }
 
 evaluationData::evaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
