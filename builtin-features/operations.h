@@ -9,7 +9,14 @@
 #include "../functions.h"
 #include "../rpnbuilder.h"
 #include "../reftoken.h"
-#include "../exceptions.h"
+
+namespace cparse
+{
+    [[maybe_unused]] static void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
+    {
+        qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
+    }
+}
 
 namespace cparse::builtin_operations
 {

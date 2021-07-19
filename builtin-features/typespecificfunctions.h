@@ -5,7 +5,6 @@
 #include "../containers.h"
 #include "../functions.h"
 #include "../rpnbuilder.h"
-#include "../exceptions.h"
 
 namespace cparse::builtin_typeSpecificFunctions
 {

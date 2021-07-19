@@ -1,5 +1,4 @@
 #include "rpnbuilder.h"
-#include "exceptions.h"
 
 #include <cstdlib>
 #include <iostream>

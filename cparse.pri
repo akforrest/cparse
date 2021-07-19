@@ -14,7 +14,6 @@ HEADERS += \
     $$PWD/config.h \
     $$PWD/cparse-test.h \
     $$PWD/cparse.h \
-    $$PWD/exceptions.h \
     $$PWD/operation.h \
     $$PWD/packtoken.h \
     $$PWD/functions.h \
