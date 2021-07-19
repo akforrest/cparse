@@ -9,7 +9,7 @@
 
 namespace cparse
 {
-    using TokenTypeMap = std::map<cparse::TokenType, TokenMap>;
+    using TokenTypeMap = std::map<TokenType, TokenMap>;
 
     class Calculator
     {
@@ -40,11 +40,9 @@ namespace cparse
             static Config & defaultConfig();
             static TokenTypeMap & typeAttributeMap();
 
-            // Serialization:
             QString str() const;
             static QString str(TokenQueue rpn);
 
-            // Operators:
             Calculator & operator=(const Calculator & calc);
 
         protected:
