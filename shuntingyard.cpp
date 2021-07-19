@@ -18,7 +18,7 @@
 
 using cparse::Calculator;
 using cparse::PackToken;
-using cparse::TokenBase;
+using cparse::Token;
 using cparse::TokenMap;
 using cparse::RefToken;
 using cparse::Operation;
@@ -42,13 +42,13 @@ void cparse::initialize()
     builtin_typeSpecificFunctions::Startup();
 }
 
-TokenBase * cparse::resolve_reference(TokenBase * b, TokenMap * scope)
+Token * cparse::resolve_reference(Token * b, TokenMap * scope)
 {
     if (b->m_type & REF)
     {
         // Resolve the reference:
         auto * ref = static_cast<RefToken *>(b);
-        TokenBase * value = ref->resolve(scope);
+        Token * value = ref->resolve(scope);
 
         delete ref;
         return value;
@@ -57,7 +57,7 @@ TokenBase * cparse::resolve_reference(TokenBase * b, TokenMap * scope)
     return b;
 }
 
-void cparse::cleanStack(std::stack<TokenBase *> st)
+void cparse::cleanStack(std::stack<Token *> st)
 {
     while (!st.empty())
     {
@@ -228,7 +228,7 @@ void rpnBuilder::handle_op(const QString & op)
     }
 }
 
-void rpnBuilder::handle_token(TokenBase * token)
+void rpnBuilder::handle_token(Token * token)
 {
     if (!lastTokenWasOp)
     {
@@ -301,7 +301,7 @@ QString rpnBuilder::parseVar(const char * expr, const char ** rest)
     return ss;
 }
 
-void cleanStack(std::stack<TokenBase *> st)
+void cleanStack(std::stack<Token *> st)
 {
     while (!st.empty())
     {
@@ -420,15 +420,15 @@ cparse::rWordParser_t * cparse::parserMap_t::find(char c)
     return nullptr;
 }
 
-RefToken::RefToken(PackToken k, TokenBase * v, PackToken m) :
-    TokenBase(TokenType(v->m_type | TokenType::REF)), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+RefToken::RefToken(PackToken k, Token * v, PackToken m) :
+    Token(TokenType(v->m_type | TokenType::REF)), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
 RefToken::RefToken(PackToken k, PackToken v, PackToken m) :
-    TokenBase(TokenType(v->m_type | TokenType::REF)), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+    Token(TokenType(v->m_type | TokenType::REF)), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
-TokenBase * RefToken::resolve(TokenMap * localScope) const
+Token * RefToken::resolve(TokenMap * localScope) const
 {
-    TokenBase * result = nullptr;
+    Token * result = nullptr;
 
     // Local variables have no origin == NONE,
     // thus, require a localScope to be resolved:
@@ -447,7 +447,7 @@ TokenBase * RefToken::resolve(TokenMap * localScope) const
     return result ? result : original_value->clone();
 }
 
-TokenBase * RefToken::clone() const
+Token * RefToken::clone() const
 {
     return new RefToken(*this);
 }

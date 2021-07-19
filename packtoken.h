@@ -4,32 +4,32 @@
 #include <QString>
 #include <QDebug>
 
-#include "tokenbase.h"
+#include "token.h"
 
 namespace cparse
 {
     struct TokenMap;
     class TokenList;
-    class TokenBase;
+    class Token;
     class TokenNone;
     class Tuple;
     class STuple;
     class Function;
 
-    // Encapsulate TokenBase* into a friendlier interface
+    // Encapsulate Token* into a friendlier interface
     class PackToken
     {
-            TokenBase * base;
+            Token * base;
 
         public:
             static const PackToken & None();
 
-            typedef QString(*strFunc_t)(const TokenBase *, uint32_t);
+            typedef QString(*strFunc_t)(const Token *, uint32_t);
             static strFunc_t & str_custom();
 
         public:
             PackToken();
-            PackToken(const TokenBase & t);
+            PackToken(const Token & t);
             PackToken(const PackToken & t);
             PackToken(PackToken && t) noexcept;
             PackToken & operator=(const PackToken & t);
@@ -48,15 +48,15 @@ namespace cparse
             PackToken(const TokenList & list);
             ~PackToken();
 
-            TokenBase * operator->() const;
+            Token * operator->() const;
             bool operator==(const PackToken & t) const;
             bool operator!=(const PackToken & t) const;
             PackToken & operator[](const QString & key);
             PackToken & operator[](const char * key);
             const PackToken & operator[](const QString & key) const;
             const PackToken & operator[](const char * key) const;
-            TokenBase * token();
-            const TokenBase * token() const;
+            Token * token();
+            const Token * token() const;
 
             bool asBool() const;
             double asDouble() const;
@@ -75,22 +75,22 @@ namespace cparse
             // The nest argument defines how many times
             // it will recursively print nested structures:
             QString str(uint32_t nest = 3) const;
-            static QString str(const TokenBase * t, uint32_t nest = 3);
+            static QString str(const Token * t, uint32_t nest = 3);
 
         public:
-            // This constructor makes sure the TokenBase*
+            // This constructor makes sure the Token*
             // will be deleted when the packToken destructor is called.
             //
-            // If you still plan to use your TokenBase* use instead:
+            // If you still plan to use your Token* use instead:
             //
             // - packToken(token->clone())
             //
-            explicit PackToken(TokenBase * t) : base(t) {}
+            explicit PackToken(Token * t) : base(t) {}
 
         public:
             // Used to recover the original pointer.
             // The intance whose pointer was removed must be an rvalue.
-            TokenBase * release() && ;
+            Token * release() && ;
     };
 
     // To allow cout to print it:

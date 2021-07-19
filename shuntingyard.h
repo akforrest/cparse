@@ -16,7 +16,7 @@
 
 #include <QString>
 
-#include "tokenbase.h"
+#include "token.h"
 #include "tokentype.h"
 #include "config.h"
 
@@ -72,7 +72,7 @@ namespace cparse
 
         public:
             void handle_op(const QString & op);
-            void handle_token(TokenBase * token);
+            void handle_token(Token * token);
             void open_bracket(const QString & bracket);
             void close_bracket(const QString & bracket);
 
@@ -98,23 +98,23 @@ namespace cparse
     // in which a variable was originally evaluated
     // and allow a final value to be correctly resolved
     // afterwards.
-    class RefToken : public TokenBase
+    class RefToken : public Token
     {
             PackToken original_value;
 
         public:
             PackToken key;
             PackToken origin;
-            RefToken(PackToken k, TokenBase * v, PackToken m = PackToken::None());
+            RefToken(PackToken k, Token * v, PackToken m = PackToken::None());
             RefToken(PackToken k = PackToken::None(), PackToken v = PackToken::None(), PackToken m = PackToken::None());
 
-            TokenBase * resolve(TokenMap * localScope = nullptr) const;
+            Token * resolve(TokenMap * localScope = nullptr) const;
 
-            TokenBase * clone() const override;
+            Token * clone() const override;
     };
 
     template<class T>
-    TokenBase * TokenTyped<T>::clone() const
+    Token * TokenTyped<T>::clone() const
     {
         return new TokenTyped(*this);
     }

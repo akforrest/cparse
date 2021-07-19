@@ -21,7 +21,7 @@ namespace cparse
             static PackToken calculate(const char * expr, const TokenMap & vars = &TokenMap::empty,
                                        const char * delim = nullptr, const char ** rest = nullptr);
 
-            static TokenBase * calculate(const TokenQueue & RPN, const TokenMap & scope,
+            static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
                                          const Config_t & config = Default());
             static TokenQueue toRPN(const char * expr, TokenMap vars,
                                       const char * delim = nullptr, const char ** rest = nullptr,

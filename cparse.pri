@@ -19,12 +19,12 @@ HEADERS += \
     $$PWD/calculator.h \
     $$PWD/shuntingyard.h \
     $$PWD/shuntingyardexceptions.h \
-    $$PWD/tokenbase.h \
     #$$PWD/shunting-yard-exceptions.h \
     #$$PWD/builtin-features.inc \
     $$PWD/builtin-features\functions.h \
     $$PWD/builtin-features\operations.h \
     $$PWD/builtin-features\reservedwords.h \
     $$CPARSE_DIR/builtin-features\typespecificfunctions.h \
+    $$PWD/token.h \
     $$PWD/tokenhelpers.h \
     $$PWD/tokentype.h

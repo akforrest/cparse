@@ -309,7 +309,7 @@ namespace cparse::builtin_functions
     }
 
     // Example of replacement function for PackToken::str():
-    QString PackToken_str(const TokenBase * base, uint32_t nest)
+    QString PackToken_str(const Token * base, uint32_t nest)
     {
         const Function * func;
 

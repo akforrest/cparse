@@ -7,7 +7,7 @@
 
 using cparse::Calculator;
 using cparse::PackToken;
-using cparse::TokenBase;
+using cparse::Token;
 using cparse::TokenMap;
 using cparse::RefToken;
 using cparse::Operation;
@@ -26,8 +26,8 @@ bool match_op_id(opID_t id, opID_t mask)
     return (val[0] && val[1]);
 }
 
-TokenBase * exec_operation(const PackToken & left, const PackToken & right,
-                           evaluationData * data, const QString & OP_MASK)
+Token * exec_operation(const PackToken & left, const PackToken & right,
+                       evaluationData * data, const QString & OP_MASK)
 {
     auto it = data->opMap.find(OP_MASK);
 
@@ -101,22 +101,22 @@ PackToken Calculator::calculate(const char * expr, const TokenMap & vars,
     // Convert to RPN with Dijkstra's Shunting-yard algorithm.
     RAII_TokenQueue_t rpn = Calculator::toRPN(expr, vars, delim, rest);
 
-    TokenBase * ret = Calculator::calculate(rpn, vars);
+    Token * ret = Calculator::calculate(rpn, vars);
 
     return PackToken(resolve_reference(ret));
 }
 
-TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
-                                  const Config_t & config)
+Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
+                              const Config_t & config)
 {
     evaluationData data(rpn, scope, config.opMap);
 
     // Evaluate the expression in RPN form.
-    std::stack<TokenBase *> evaluation;
+    std::stack<Token *> evaluation;
 
     while (!data.rpn.empty())
     {
-        TokenBase * base = data.rpn.front()->clone();
+        Token * base = data.rpn.front()->clone();
         data.rpn.pop();
 
         // Operator:
@@ -133,9 +133,9 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
                 throw std::domain_error("Invalid equation.");
             }
 
-            TokenBase * r_token = evaluation.top();
+            Token * r_token = evaluation.top();
             evaluation.pop();
-            TokenBase * l_token = evaluation.top();
+            Token * l_token = evaluation.top();
             evaluation.pop();
 
             if (r_token->m_type & REF)
@@ -223,7 +223,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
                 data.opID = Operation::build_mask(l_token->m_type, r_token->m_type);
                 PackToken l_pack(l_token);
                 PackToken r_pack(r_token);
-                TokenBase * result = nullptr;
+                Token * result = nullptr;
 
                 try
                 {
@@ -261,7 +261,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
 
             if (value)
             {
-                TokenBase * copy = (*value)->clone();
+                Token * copy = (*value)->clone();
                 evaluation.push(new RefToken(PackToken(key), copy));
                 delete base;
             }
@@ -299,7 +299,7 @@ Calculator::Calculator(const Calculator & calc)
     // safely deallocated:
     while (!_rpn.empty())
     {
-        TokenBase * base = _rpn.front();
+        Token * base = _rpn.front();
         _rpn.pop();
         this->RPN.push(base->clone());
     }
@@ -325,7 +325,7 @@ void Calculator::compile(const char * expr, const TokenMap & vars, const char * 
 
 PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 {
-    TokenBase * value = calculate(this->RPN, vars, Config());
+    Token * value = calculate(this->RPN, vars, Config());
     PackToken p = PackToken(value->clone());
 
     if (keep_refs)
@@ -347,7 +347,7 @@ Calculator & Calculator::operator=(const Calculator & calc)
 
     while (!_rpn.empty())
     {
-        TokenBase * base = _rpn.front();
+        Token * base = _rpn.front();
         _rpn.pop();
         this->RPN.push(base->clone());
     }
@@ -476,7 +476,7 @@ TokenQueue Calculator::toRPN(const char * expr,
                 if (value)
                 {
                     // Save a reference token:
-                    TokenBase * copy = (*value)->clone();
+                    Token * copy = (*value)->clone();
                     data.handle_token(new RefToken(PackToken(key), copy));
                 }
                 else

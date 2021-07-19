@@ -200,7 +200,7 @@ TokenMap * TokenMap::findMap(const QString & key)
     return nullptr;
 }
 
-void TokenMap::assign(const QString & key, TokenBase * value)
+void TokenMap::assign(const QString & key, Token * value)
 {
     if (value)
     {
@@ -223,7 +223,7 @@ void TokenMap::assign(const QString & key, TokenBase * value)
     }
 }
 
-void TokenMap::insert(const QString & key, TokenBase * value)
+void TokenMap::insert(const QString & key, Token * value)
 {
     (*this)[key] = PackToken(value->clone());
 }

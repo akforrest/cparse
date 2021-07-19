@@ -1,7 +1,7 @@
 #ifndef CPARSE_TOKENHELPERS_H
 #define CPARSE_TOKENHELPERS_H
 
-#include "tokenbase.h"
+#include "token.h"
 #include "containers.h"
 
 #include <stack>
@@ -10,11 +10,11 @@ namespace cparse
 {
 
     // Use this function to discard a reference to an object
-    // And obtain the original TokenBase*.
+    // And obtain the original Token*.
     // Please note that it only deletes memory if the token
     // is of type REF.
-    TokenBase * resolve_reference(TokenBase * b, TokenMap * scope = nullptr);
-    void cleanStack(std::stack<TokenBase *> st);
+    Token * resolve_reference(Token * b, TokenMap * scope = nullptr);
+    void cleanStack(std::stack<Token *> st);
 
     inline QString normalize_op(QString op)
     {

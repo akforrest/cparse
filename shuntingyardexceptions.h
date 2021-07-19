@@ -33,7 +33,7 @@ struct type_error : public msg_exception {
 };
 
 struct undefined_operation : public msg_exception {
-  undefined_operation(const QString& op, const TokenBase* left, const TokenBase* right)
+  undefined_operation(const QString& op, const Token* left, const Token* right)
                       : undefined_operation(op, PackToken(left->clone()), PackToken(right->clone())) {}
   undefined_operation(const QString& op, const PackToken& left, const PackToken& right)
     : msg_exception("Unexpected operation with operator '" + op + "' and operands: " + left.str() + " and " + right.str() + ".") {}

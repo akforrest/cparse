@@ -7,7 +7,7 @@
 #include "./shuntingyardexceptions.h"
 
 using cparse::PackToken;
-using cparse::TokenBase;
+using cparse::Token;
 using cparse::TokenMap;
 using cparse::TokenList;
 using cparse::Tuple;
@@ -26,7 +26,7 @@ PackToken::strFunc_t & PackToken::str_custom()
     return func;
 }
 
-PackToken::PackToken(const TokenBase & t) : base(t.clone()) {}
+PackToken::PackToken(const Token & t) : base(t.clone()) {}
 
 PackToken::PackToken() : base(new TokenNone()) {}
 
@@ -73,7 +73,7 @@ bool PackToken::operator!=(const PackToken & token) const
     return !(*this == token);
 }
 
-TokenBase * PackToken::operator->() const
+Token * PackToken::operator->() const
 {
     return base;
 }
@@ -99,12 +99,12 @@ PackToken & PackToken::operator[](const QString & key)
     return (*static_cast<TokenMap *>(base))[key];
 }
 
-TokenBase * PackToken::token()
+Token * PackToken::token()
 {
     return base;
 }
 
-const TokenBase * PackToken::token() const
+const Token * PackToken::token() const
 {
     return base;
 }
@@ -296,7 +296,7 @@ QString PackToken::str(uint32_t nest) const
     return PackToken::str(base, nest);
 }
 
-QString PackToken::str(const TokenBase * base, uint32_t nest)
+QString PackToken::str(const Token * base, uint32_t nest)
 {
     QString ss;
     TokenMap_t * tmap;
@@ -472,9 +472,9 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
     }
 }
 
-TokenBase * PackToken::release() &&
+Token * PackToken::release() &&
 {
-    TokenBase * b = base;
+    Token * b = base;
     // Setting base to 0 leaves the class in an invalid state,
     // except for destruction.
     base = 0;

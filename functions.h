@@ -6,7 +6,7 @@
 
 #include <QString>
 
-#include "tokenbase.h"
+#include "token.h"
 #include "packtoken.h"
 #include "containers.h"
 
@@ -15,20 +15,20 @@ namespace cparse
 
     using args_t = std::list<QString>;
 
-    class Function : public TokenBase
+    class Function : public Token
     {
         public:
             static PackToken call(const PackToken & _this, const Function * func,
                                   TokenList * args, TokenMap scope);
         public:
-            Function() : TokenBase(FUNC) {}
+            Function() : Token(FUNC) {}
             virtual ~Function() {}
 
         public:
             virtual const QString name() const = 0;
             virtual const args_t args() const = 0;
             virtual PackToken exec(TokenMap scope) const = 0;
-            virtual TokenBase * clone() const = 0;
+            virtual Token * clone() const = 0;
     };
 
     class CppFunction : public Function
@@ -67,7 +67,7 @@ namespace cparse
                 return isStdFunc ? stdFunc(scope) : func(scope);
             }
 
-            virtual TokenBase * clone() const
+            virtual Token * clone() const
             {
                 return new CppFunction(static_cast<const CppFunction &>(*this));
             }

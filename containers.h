@@ -9,7 +9,7 @@
 
 #include <QString>
 
-#include "tokenbase.h"
+#include "token.h"
 #include "packtoken.h"
 
 namespace cparse
@@ -37,12 +37,12 @@ namespace cparse
 
     class Iterator;
 
-    class Iterable : public TokenBase
+    class Iterable : public Token
     {
         public:
             virtual ~Iterable() {}
             Iterable() {}
-            Iterable(TokenType type) : TokenBase(type) {}
+            Iterable(TokenType type) : Token(type) {}
 
             virtual Iterator * getIterator() const = 0;
     };
@@ -109,7 +109,7 @@ namespace cparse
                 PackToken * next();
                 void reset();
 
-                TokenBase * clone() const
+                Token * clone() const
                 {
                     return new MapIterator(*this);
                 }
@@ -124,7 +124,7 @@ namespace cparse
             TokenMap(TokenMap * parent = &TokenMap::base_map())
                 : Container(parent), Iterable(MAP)
             {
-                // For the TokenBase super class
+                // For the Token super class
                 this->m_type = MAP;
             }
             TokenMap(const TokenMap & other) : Container(other)
@@ -135,8 +135,8 @@ namespace cparse
             virtual ~TokenMap() {}
 
         public:
-            // Implement the TokenBase abstract class
-            TokenBase * clone() const
+            // Implement the Token abstract class
+            Token * clone() const
             {
                 return new TokenMap(*this);
             }
@@ -145,8 +145,8 @@ namespace cparse
             PackToken * find(const QString & key);
             const PackToken * find(const QString & key) const;
             TokenMap * findMap(const QString & key);
-            void assign(const QString & key, TokenBase * value);
-            void insert(const QString & key, TokenBase * value);
+            void assign(const QString & key, Token * value);
+            void insert(const QString & key, Token * value);
 
             TokenMap getChild();
 
@@ -185,7 +185,7 @@ namespace cparse
                 PackToken * next();
                 void reset();
 
-                TokenBase * clone() const
+                Token * clone() const
                 {
                     return new ListIterator(*this);
                 }
@@ -225,8 +225,8 @@ namespace cparse
             }
 
         public:
-            // Implement the TokenBase abstract class
-            TokenBase * clone() const
+            // Implement the Token abstract class
+            Token * clone() const
             {
                 return new TokenList(*this);
             }
@@ -239,14 +239,14 @@ namespace cparse
             {
                 this->m_type = TUPLE;
             }
-            Tuple(const TokenBase * first)
+            Tuple(const Token * first)
             {
                 this->m_type = TUPLE;
                 list().push_back(PackToken(first->clone()));
             }
             Tuple(const PackToken first) : Tuple(first.token()) {}
 
-            Tuple(const TokenBase * first, const TokenBase * second)
+            Tuple(const Token * first, const Token * second)
             {
                 this->m_type = TUPLE;
                 list().push_back(PackToken(first->clone()));
@@ -256,8 +256,8 @@ namespace cparse
                 : Tuple(first.token(), second.token()) {}
 
         public:
-            // Implement the TokenBase abstract class
-            TokenBase * clone() const
+            // Implement the Token abstract class
+            Token * clone() const
             {
                 return new Tuple(*this);
             }
@@ -279,14 +279,14 @@ namespace cparse
             {
                 this->m_type = STUPLE;
             }
-            STuple(const TokenBase * first)
+            STuple(const Token * first)
             {
                 this->m_type = STUPLE;
                 list().push_back(PackToken(first->clone()));
             }
             STuple(const PackToken first) : STuple(first.token()) {}
 
-            STuple(const TokenBase * first, const TokenBase * second)
+            STuple(const Token * first, const Token * second)
             {
                 this->m_type = STUPLE;
                 list().push_back(PackToken(first->clone()));
@@ -296,8 +296,8 @@ namespace cparse
                 : STuple(first.token(), second.token()) {}
 
         public:
-            // Implement the TokenBase abstract class
-            TokenBase * clone() const
+            // Implement the Token abstract class
+            Token * clone() const
             {
                 return new STuple(*this);
             }
