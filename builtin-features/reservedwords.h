@@ -85,7 +85,7 @@ namespace cparse::builtin_reservedWords
 
         // Parse the variable name and save it as a string:
         auto key = rpnBuilder::parseVar(expr, rest);
-        data->handle_token(new Token<QString>(key, STR));
+        data->handle_token(new TokenTyped<QString>(key, STR));
     }
 
     struct Startup

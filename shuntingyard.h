@@ -114,9 +114,9 @@ namespace cparse
     };
 
     template<class T>
-    TokenBase * Token<T>::clone() const
+    TokenBase * TokenTyped<T>::clone() const
     {
-        return new Token(*this);
+        return new TokenTyped(*this);
     }
 
 }  // namespace cparse

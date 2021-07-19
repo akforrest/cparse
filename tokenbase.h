@@ -20,11 +20,11 @@ namespace cparse
             TokenType m_type = TokenType::ANY_TYPE;
     };
 
-    template<class T> class Token : public TokenBase
+    template<class T> class TokenTyped : public TokenBase
     {
         public:
 
-            Token(T t, TokenType type) : TokenBase(type), m_val(t) {}
+            TokenTyped(T t, TokenType type) : TokenBase(type), m_val(t) {}
             TokenBase * clone() const override;
 
             T m_val;

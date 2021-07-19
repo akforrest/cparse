@@ -122,7 +122,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
         // Operator:
         if (base->m_type == OP)
         {
-            data.op = static_cast<Token<QString>*>(base)->m_val;
+            data.op = static_cast<TokenTyped<QString>*>(base)->m_val;
             delete base;
 
             /* * * * * Resolve operands Values and References: * * * * */
@@ -145,7 +145,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
             }
             else if (r_token->m_type == VAR)
             {
-                auto key = PackToken(static_cast<Token<QString>*>(r_token)->m_val);
+                auto key = PackToken(static_cast<TokenTyped<QString>*>(r_token)->m_val);
                 data.right = std::make_unique<RefToken>(key);
             }
             else
@@ -160,7 +160,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
             }
             else if (l_token->m_type == VAR)
             {
-                auto key = PackToken(static_cast<Token<QString>*>(l_token)->m_val);
+                auto key = PackToken(static_cast<TokenTyped<QString>*>(l_token)->m_val);
                 data.left = std::make_unique<RefToken>(key);
             }
             else
@@ -255,7 +255,7 @@ TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope
         else if (base->m_type == VAR)      // Variable
         {
             PackToken * value = nullptr;
-            QString key = static_cast<Token<QString>*>(base)->m_val;
+            QString key = static_cast<TokenTyped<QString>*>(base)->m_val;
 
             value = data.scope.find(key);
 
@@ -384,8 +384,8 @@ QString Calculator::str(TokenQueue rpn)
 /* * * * * Calculator class * * * * */
 
 TokenQueue Calculator::toRPN(const char * expr,
-                               TokenMap vars, const char * delim,
-                               const char ** rest, Config_t config)
+                             TokenMap vars, const char * delim,
+                             const char ** rest, Config_t config)
 {
     rpnBuilder data(vars, config.opPrecedence);
     char * nextChar = nullptr;
@@ -438,12 +438,12 @@ TokenQueue Calculator::toRPN(const char * expr,
             // If the number was not a float:
             if (base != 10 || !strchr(".eE", *nextChar))
             {
-                data.handle_token(new Token<int64_t>(_int, INT));
+                data.handle_token(new TokenTyped<int64_t>(_int, INT));
             }
             else
             {
                 double digit = strtod(expr, &nextChar);
-                data.handle_token(new Token<double>(digit, REAL));
+                data.handle_token(new TokenTyped<double>(digit, REAL));
             }
 
             expr = nextChar;
@@ -482,7 +482,7 @@ TokenQueue Calculator::toRPN(const char * expr,
                 else
                 {
                     // Save the variable name:
-                    data.handle_token(new Token<QString>(key, VAR));
+                    data.handle_token(new TokenTyped<QString>(key, VAR));
                 }
             }
         }
@@ -536,7 +536,7 @@ TokenQueue Calculator::toRPN(const char * expr,
             }
 
             ++expr;
-            data.handle_token(new Token<QString>(ss, STR));
+            data.handle_token(new TokenTyped<QString>(ss, STR));
         }
         else
         {
@@ -687,7 +687,7 @@ TokenQueue Calculator::toRPN(const char * expr,
     while (!data.opStack.empty())
     {
         cur_op = normalize_op(data.opStack.top());
-        data.rpn.push(new Token<QString>(cur_op, OP));
+        data.rpn.push(new TokenTyped<QString>(cur_op, OP));
         data.opStack.pop();
     }
 

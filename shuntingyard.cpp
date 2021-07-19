@@ -137,7 +137,7 @@ void rpnBuilder::handle_opStack(const QString & op)
                opp.prec(op) >= opp.prec(opStack.top()))
         {
             cur_op = normalize_op(opStack.top());
-            rpn.push(new Token<QString>(cur_op, OP));
+            rpn.push(new TokenTyped<QString>(cur_op, OP));
             opStack.pop();
         }
     }
@@ -147,7 +147,7 @@ void rpnBuilder::handle_opStack(const QString & op)
                opp.prec(op) > opp.prec(opStack.top()))
         {
             cur_op = normalize_op(opStack.top());
-            rpn.push(new Token<QString>(cur_op, OP));
+            rpn.push(new TokenTyped<QString>(cur_op, OP));
             opStack.pop();
         }
     }
@@ -177,7 +177,7 @@ void rpnBuilder::handle_right_unary(const QString & unary_op)
     // Add the unary token:
     this->rpn.push(new TokenUnary());
     // Then add the current op directly into the rpn:
-    rpn.push(new Token<QString>(normalize_op(unary_op), OP));
+    rpn.push(new TokenTyped<QString>(normalize_op(unary_op), OP));
 }
 
 // Find out if op is a binary or unary operator and handle it:
@@ -260,7 +260,7 @@ void rpnBuilder::close_bracket(const QString & bracket)
     while (!opStack.empty() && opStack.top() != bracket)
     {
         cur_op = normalize_op(opStack.top());
-        rpn.push(new Token<QString>(cur_op, OP));
+        rpn.push(new TokenTyped<QString>(cur_op, OP));
         opStack.pop();
     }
 

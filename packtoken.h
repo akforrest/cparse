@@ -35,15 +35,15 @@ namespace cparse
             PackToken & operator=(const PackToken & t);
 
             template<class C>
-            PackToken(C c, TokenType type) : base(new Token<C>(c, type)) {}
-            PackToken(int i) : base(new Token<int64_t>(i, INT)) {}
-            PackToken(int64_t l) : base(new Token<int64_t>(l, INT)) {}
-            PackToken(bool b) : base(new Token<uint8_t>(b, BOOL)) {}
-            PackToken(size_t s) : base(new Token<int64_t>(s, INT)) {}
-            PackToken(float f) : base(new Token<double>(f, REAL)) {}
-            PackToken(double d) : base(new Token<double>(d, REAL)) {}
-            PackToken(const char * s) : base(new Token<QString>(s, STR)) {}
-            PackToken(const QString & s) : base(new Token<QString>(s, STR)) {}
+            PackToken(C c, TokenType type) : base(new TokenTyped<C>(c, type)) {}
+            PackToken(int i) : base(new TokenTyped<int64_t>(i, INT)) {}
+            PackToken(int64_t l) : base(new TokenTyped<int64_t>(l, INT)) {}
+            PackToken(bool b) : base(new TokenTyped<uint8_t>(b, BOOL)) {}
+            PackToken(size_t s) : base(new TokenTyped<int64_t>(s, INT)) {}
+            PackToken(float f) : base(new TokenTyped<double>(f, REAL)) {}
+            PackToken(double d) : base(new TokenTyped<double>(d, REAL)) {}
+            PackToken(const char * s) : base(new TokenTyped<QString>(s, STR)) {}
+            PackToken(const QString & s) : base(new TokenTyped<QString>(s, STR)) {}
             PackToken(const TokenMap & map);
             PackToken(const TokenList & list);
             ~PackToken();

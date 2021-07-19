@@ -144,16 +144,16 @@ bool PackToken::asBool() const
     switch (base->m_type)
     {
         case REAL:
-            return static_cast<Token<double>*>(base)->m_val != 0;
+            return static_cast<TokenTyped<double>*>(base)->m_val != 0;
 
         case INT:
-            return static_cast<Token<int64_t>*>(base)->m_val != 0;
+            return static_cast<TokenTyped<int64_t>*>(base)->m_val != 0;
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->m_val != 0;
+            return static_cast<TokenTyped<uint8_t>*>(base)->m_val != 0;
 
         case STR:
-            return !static_cast<Token<std::string>*>(base)->m_val.empty();
+            return !static_cast<TokenTyped<QString>*>(base)->m_val.isEmpty();
 
         case MAP:
         case FUNC:
@@ -176,13 +176,13 @@ double PackToken::asDouble() const
     switch (base->m_type)
     {
         case REAL:
-            return static_cast<Token<double>*>(base)->m_val;
+            return static_cast<TokenTyped<double>*>(base)->m_val;
 
         case INT:
-            return static_cast<double>(static_cast<Token<int64_t>*>(base)->m_val);
+            return static_cast<double>(static_cast<TokenTyped<int64_t>*>(base)->m_val);
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->m_val;
+            return static_cast<TokenTyped<uint8_t>*>(base)->m_val;
 
         default:
             if (!(base->m_type & NUM))
@@ -203,13 +203,13 @@ int64_t PackToken::asInt() const
     switch (base->m_type)
     {
         case REAL:
-            return static_cast<int64_t>(static_cast<Token<double>*>(base)->m_val);
+            return static_cast<int64_t>(static_cast<TokenTyped<double>*>(base)->m_val);
 
         case INT:
-            return static_cast<Token<int64_t>*>(base)->m_val;
+            return static_cast<TokenTyped<int64_t>*>(base)->m_val;
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->m_val;
+            return static_cast<TokenTyped<uint8_t>*>(base)->m_val;
 
         default:
             if (!(base->m_type & NUM))
@@ -233,7 +233,7 @@ QString PackToken::asString() const
             "The Token is not a string!");
     }
 
-    return static_cast<Token<QString>*>(base)->m_val;
+    return static_cast<TokenTyped<QString>*>(base)->m_val;
 }
 
 TokenMap & PackToken::asMap() const
@@ -342,25 +342,25 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
             return "UnaryToken";
 
         case OP:
-            return static_cast<const Token<QString>*>(base)->m_val;
+            return static_cast<const TokenTyped<QString>*>(base)->m_val;
 
         case VAR:
-            return static_cast<const Token<QString>*>(base)->m_val;
+            return static_cast<const TokenTyped<QString>*>(base)->m_val;
 
         case REAL:
-            ss += QString::number(static_cast<const Token<double>*>(base)->m_val);
+            ss += QString::number(static_cast<const TokenTyped<double>*>(base)->m_val);
             return ss;
 
         case INT:
-            ss += QString::number(static_cast<const Token<int64_t>*>(base)->m_val);
+            ss += QString::number(static_cast<const TokenTyped<int64_t>*>(base)->m_val);
             return ss;
 
         case BOOL:
-            boolval = static_cast<const Token<uint8_t>*>(base)->m_val;
+            boolval = static_cast<const TokenTyped<uint8_t>*>(base)->m_val;
             return boolval ? "true" : "false";
 
         case STR:
-            return "\"" + static_cast<const Token<QString>*>(base)->m_val + "\"";
+            return "\"" + static_cast<const TokenTyped<QString>*>(base)->m_val + "\"";
 
         case FUNC:
             func = static_cast<const Function *>(base);
