@@ -19,31 +19,33 @@ namespace cparse
     // Encapsulate Token* into a friendlier interface
     class PackToken
     {
-            Token * base;
-
         public:
-            static const PackToken & None();
 
-            using strFunc_t = QString(*)(const Token *, uint32_t);
-            static strFunc_t & str_custom();
-
-        public:
             PackToken();
             PackToken(const Token & t);
             PackToken(const PackToken & t);
             PackToken(PackToken && t) noexcept;
             PackToken & operator=(const PackToken & t);
 
+            // This constructor makes sure the Token*
+            // will be deleted when the packToken destructor is called.
+            //
+            // If you still plan to use your Token* use instead:
+            //
+            // - packToken(token->clone())
+            //
+            explicit PackToken(Token * t) : m_base(t) {}
+
             template<class C>
-            PackToken(C c, TokenType type) : base(new TokenTyped<C>(c, type)) {}
-            PackToken(int i) : base(new TokenTyped<int64_t>(i, INT)) {}
-            PackToken(int64_t l) : base(new TokenTyped<int64_t>(l, INT)) {}
-            PackToken(bool b) : base(new TokenTyped<uint8_t>(b, BOOL)) {}
-            PackToken(size_t s) : base(new TokenTyped<int64_t>(s, INT)) {}
-            PackToken(float f) : base(new TokenTyped<double>(f, REAL)) {}
-            PackToken(double d) : base(new TokenTyped<double>(d, REAL)) {}
-            PackToken(const char * s) : base(new TokenTyped<QString>(s, STR)) {}
-            PackToken(const QString & s) : base(new TokenTyped<QString>(s, STR)) {}
+            PackToken(C c, TokenType type) : m_base(new TokenTyped<C>(c, type)) {}
+            PackToken(int i) : m_base(new TokenTyped<int64_t>(i, INT)) {}
+            PackToken(int64_t l) : m_base(new TokenTyped<int64_t>(l, INT)) {}
+            PackToken(bool b) : m_base(new TokenTyped<uint8_t>(b, BOOL)) {}
+            PackToken(size_t s) : m_base(new TokenTyped<int64_t>(s, INT)) {}
+            PackToken(float f) : m_base(new TokenTyped<double>(f, REAL)) {}
+            PackToken(double d) : m_base(new TokenTyped<double>(d, REAL)) {}
+            PackToken(const char * s) : m_base(new TokenTyped<QString>(s, STR)) {}
+            PackToken(const QString & s) : m_base(new TokenTyped<QString>(s, STR)) {}
             PackToken(const TokenMap & map);
             PackToken(const TokenList & list);
             ~PackToken();
@@ -72,25 +74,23 @@ namespace cparse
             // MyType& m = packToken.as<MyType>();
             template<typename T> T & as() const;
 
+            static const PackToken & None();
+
+            using ToStringFunc = QString(*)(const Token *, quint32);
+            static ToStringFunc & str_custom();
+
             // The nest argument defines how many times
             // it will recursively print nested structures:
             QString str(uint32_t nest = 3) const;
             static QString str(const Token * t, uint32_t nest = 3);
 
-        public:
-            // This constructor makes sure the Token*
-            // will be deleted when the packToken destructor is called.
-            //
-            // If you still plan to use your Token* use instead:
-            //
-            // - packToken(token->clone())
-            //
-            explicit PackToken(Token * t) : base(t) {}
-
-        public:
             // Used to recover the original pointer.
             // The intance whose pointer was removed must be an rvalue.
             Token * release() && ;
+
+        private:
+
+            Token * m_base;
     };
 
     QDebug operator<<(QDebug os, const cparse::PackToken & t);
