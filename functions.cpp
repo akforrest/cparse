@@ -4,13 +4,8 @@
 #include "cparse.h"
 #include "rpnbuilder.h"
 #include "functions.h"
-#include "exceptions.h"
 
-using cparse::PackToken;
-using cparse::Function;
-using cparse::TokenList;
-using cparse::TokenMap;
-using cparse::CppFunction;
+using namespace cparse;
 
 /* * * * * class Function * * * * */
 PackToken Function::call(const PackToken & _this, const Function * func,

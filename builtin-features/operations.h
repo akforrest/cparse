@@ -10,16 +10,13 @@
 #include "../rpnbuilder.h"
 #include "../reftoken.h"
 
-namespace cparse
+namespace cparse::builtin_operations
 {
     [[maybe_unused]] static void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
     {
         qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
     }
-}
 
-namespace cparse::builtin_operations
-{
     using namespace cparse;
     // Assignment operator "="
     PackToken Assign(const PackToken &, const PackToken & right, EvaluationData * data)

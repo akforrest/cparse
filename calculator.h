@@ -17,10 +17,14 @@ namespace cparse
 
             Calculator();
             Calculator(const Calculator & calc);
+            Calculator(Calculator && calc) noexcept;
             Calculator(const QString & expr, const TokenMap & vars = &TokenMap::empty,
                        const QString & delim = QString(), int * rest = nullptr,
                        const Config & config = defaultConfig());
             virtual ~Calculator();
+
+            Calculator & operator=(const Calculator & calc);
+            Calculator & operator=(Calculator &&) noexcept;
 
             bool compiled() const;
 
@@ -44,8 +48,6 @@ namespace cparse
 
             QString str() const;
             static QString str(TokenQueue rpn);
-
-            Calculator & operator=(const Calculator & calc);
 
         protected:
 

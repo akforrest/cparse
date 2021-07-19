@@ -2,14 +2,19 @@
 
 #include "cparse.h"
 #include "rpnbuilder.h"
-#include "exceptions.h"
 #include "tokenhelpers.h"
 #include "packtoken.h"
 #include "reftoken.h"
+#include "operation.h"
 
 namespace
 {
     using namespace cparse;
+
+    [[maybe_unused]] void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
+    {
+        qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
+    }
 
     bool match_op_id(OpId id, OpId mask)
     {
@@ -107,6 +112,12 @@ Calculator::Calculator(const Calculator & calc)
     }
 }
 
+Calculator::Calculator(Calculator && calc) noexcept
+    : m_compiled(calc.m_compiled)
+{
+    std::swap(calc.m_rpn, m_rpn);
+}
+
 Calculator::Calculator(const QString & expr, const TokenMap & vars,
                        const QString & delim, int * rest, const Config & config)
 {
@@ -117,6 +128,32 @@ Calculator::Calculator(const QString & expr, const TokenMap & vars,
 Calculator::~Calculator()
 {
     RpnBuilder::clearRPN(&this->m_rpn);
+}
+
+Calculator & Calculator::operator=(const Calculator & calc)
+{
+    // Make sure the RPN is empty:
+    RpnBuilder::clearRPN(&this->m_rpn);
+
+    // Deep copy the token list, so everything can be
+    // safely deallocated:
+    TokenQueue _rpn = calc.m_rpn;
+
+    while (!_rpn.empty())
+    {
+        Token * base = _rpn.front();
+        _rpn.pop();
+        this->m_rpn.push(base->clone());
+    }
+
+    return *this;
+}
+
+Calculator & Calculator::operator=(Calculator && calc) noexcept
+{
+    std::swap(calc.m_rpn, m_rpn);
+    std::swap(calc.m_compiled, m_compiled);
+    return *this;
 }
 
 bool Calculator::compiled() const
@@ -346,25 +383,6 @@ PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
     }
 
     return PackToken(resolve_reference(value));
-}
-
-Calculator & Calculator::operator=(const Calculator & calc)
-{
-    // Make sure the RPN is empty:
-    RpnBuilder::clearRPN(&this->m_rpn);
-
-    // Deep copy the token list, so everything can be
-    // safely deallocated:
-    TokenQueue _rpn = calc.m_rpn;
-
-    while (!_rpn.empty())
-    {
-        Token * base = _rpn.front();
-        _rpn.pop();
-        this->m_rpn.push(base->clone());
-    }
-
-    return *this;
 }
 
 /* * * * * For Debug Only * * * * */
