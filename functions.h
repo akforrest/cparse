@@ -1,5 +1,5 @@
-#ifndef FUNCTIONS_H_
-#define FUNCTIONS_H_
+#ifndef CPARSE_FUNCTIONS_H_
+#define CPARSE_FUNCTIONS_H_
 
 #include <list>
 #include <functional>
@@ -75,4 +75,4 @@ namespace cparse
 
 }  // namespace cparse
 
-#endif  // FUNCTIONS_H_
+#endif  // CPARSE_FUNCTIONS_H_

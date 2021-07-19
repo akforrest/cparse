@@ -1,3 +1,6 @@
+#ifndef CPARSE_BUILTIN_OPERATIONS_H
+#define CPARSE_BUILTIN_OPERATIONS_H
+
 #include <cmath>
 
 #include "../calculator.h"
@@ -531,3 +534,5 @@ namespace builtin_operations
     } __CPARSE_STARTUP;
 
 }  // namespace builtin_operations
+
+#endif // CPARSE_BUILTIN_OPERATIONS_H

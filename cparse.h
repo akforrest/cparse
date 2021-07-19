@@ -1,5 +1,5 @@
-#ifndef CPARSE_H
-#define CPARSE_H
+#ifndef CPARSE_CPARSE_H
+#define CPARSE_CPARSE_H
 
 #include "calculator.h"
 #include "containers.h"
@@ -9,4 +9,4 @@ namespace cparse
     void initialize();
 }
 
-#endif // CPARSE_H
+#endif // CPARSE_CPARSE_H

@@ -1,5 +1,5 @@
-#ifndef SHUNTING_YARD_H_
-#define SHUNTING_YARD_H_
+#ifndef CPARSE_SHUNTING_YARD_H_
+#define CPARSE_SHUNTING_YARD_H_
 
 #include <iostream>
 
@@ -121,4 +121,4 @@ namespace cparse
 
 }  // namespace cparse
 
-#endif  // SHUNTING_YARD_H_
+#endif  // CPARSE_SHUNTING_YARD_H_

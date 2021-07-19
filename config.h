@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CPARSE_CONFIG_H
+#define CPARSE_CONFIG_H
 
 #include <map>
 #include <set>
@@ -75,4 +75,4 @@ namespace cparse
         Config_t(parserMap_t p, OppMap_t opp, opMap_t opMap);
     };
 }
-#endif // CONFIG_H
+#endif // CPARSE_CONFIG_H

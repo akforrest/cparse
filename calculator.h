@@ -1,5 +1,5 @@
-#ifndef CALCULATOR_H
-#define CALCULATOR_H
+#ifndef CPARSE_CALCULATOR_H
+#define CPARSE_CALCULATOR_H
 
 #include <QString>
 
@@ -59,4 +59,4 @@ namespace cparse
     };
 }
 
-#endif // CALCULATOR_H
+#endif // CPARSE_CALCULATOR_H

@@ -1,5 +1,5 @@
-#ifndef CPARSETYPES_H
-#define CPARSETYPES_H
+#ifndef CPARSE_CPARSETYPES_H
+#define CPARSE_CPARSETYPES_H
 
 namespace cparse
 {
@@ -40,4 +40,4 @@ namespace cparse
     };
 }
 
-#endif // CPARSETYPES_H
+#endif // CPARSE_CPARSETYPES_H

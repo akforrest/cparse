@@ -1,6 +1,5 @@
-
-#ifndef CONTAINERS_H_
-#define CONTAINERS_H_
+#ifndef CPARSE_CONTAINERS_H_
+#define CPARSE_CONTAINERS_H_
 
 #include <map>
 #include <list>
@@ -306,4 +305,4 @@ namespace cparse
 
 }  // namespace cparse
 
-#endif  // CONTAINERS_H_
+#endif  // CPARSE_CONTAINERS_H_

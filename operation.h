@@ -1,5 +1,5 @@
-#ifndef OPERATION_H
-#define OPERATION_H
+#ifndef CPARSE_OPERATION_H
+#define CPARSE_OPERATION_H
 
 #include "packtoken.h"
 #include "containers.h"
@@ -60,4 +60,4 @@ namespace cparse
     };
 }
 
-#endif // OPERATION_H
+#endif // CPARSE_OPERATION_H

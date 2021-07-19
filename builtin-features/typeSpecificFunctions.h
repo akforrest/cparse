@@ -1,3 +1,6 @@
+#ifndef CPARSE_BUILTIN_TYPESPECIFICFUNCTIONS_H
+#define CPARSE_BUILTIN_TYPESPECIFICFUNCTIONS_H
+
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
@@ -202,3 +205,5 @@ namespace builtin_typeSpecificFunctions
     } __CPARSE_STARTUP;
 
 }  // namespace builtin_typeSpecificFunctions
+
+#endif // CPARSE_BUILTIN_TYPESPECIFICFUNCTIONS_H

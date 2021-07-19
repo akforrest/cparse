@@ -1,5 +1,5 @@
-#ifndef TOKENHELPERS_H
-#define TOKENHELPERS_H
+#ifndef CPARSE_TOKENHELPERS_H
+#define CPARSE_TOKENHELPERS_H
 
 #include "tokenbase.h"
 #include "containers.h"
@@ -28,4 +28,4 @@ namespace cparse
     }
 }
 
-#endif // TOKENHELPERS_H
+#endif // CPARSE_TOKENHELPERS_H

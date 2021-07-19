@@ -1,3 +1,5 @@
+#ifndef CPARSE_BUILTIN_RESERVEDWORDS_H
+#define CPARSE_BUILTIN_RESERVEDWORDS_H
 
 #include "../calculator.h"
 #include "../containers.h"
@@ -105,3 +107,5 @@ namespace builtin_reservedWords
     } __CPARSE_STARTUP;
 
 }  // namespace builtin_reservedWords
+
+#endif // CPARSE_BUILTIN_RESERVEDWORDS_H

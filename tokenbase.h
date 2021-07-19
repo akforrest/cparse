@@ -1,5 +1,5 @@
-#ifndef TOKENBASE_H
-#define TOKENBASE_H
+#ifndef CPARSE_TOKENBASE_H
+#define CPARSE_TOKENBASE_H
 
 #include "cparse-types.h"
 
@@ -50,4 +50,4 @@ namespace cparse
     };
     using TokenQueue_t = std::queue<TokenBase *>;
 }
-#endif // TOKENBASE_H
+#endif // CPARSE_TOKENBASE_H

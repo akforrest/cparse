@@ -1,5 +1,5 @@
-#ifndef PACKTOKEN_H_
-#define PACKTOKEN_H_
+#ifndef CPARSE_PACKTOKEN_H_
+#define CPARSE_PACKTOKEN_H_
 
 #include <QString>
 #include <QDebug>
@@ -102,4 +102,4 @@ namespace cparse
 QDebug & operator<<(QDebug & os, const cparse::PackToken & t);
 std::ostream & operator<<(std::ostream & os, const cparse::PackToken & t);
 
-#endif  // PACKTOKEN_H_
+#endif  // CPARSE_PACKTOKEN_H_
