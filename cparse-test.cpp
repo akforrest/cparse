@@ -944,11 +944,11 @@ void parsing_as_slave_parser()
 //TEST_CASE("operation_id() function", "[op_id]")
 void operation_id_function()
 {
-#define opID(t1, t2) Operation::build_mask(t1, t2)
-    REQUIRE((opID(NONE, NONE)) == 0x0000000100000001);
-    REQUIRE((opID(FUNC, FUNC)) == 0x0000002000000020);
-    REQUIRE((opID(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
-    REQUIRE((opID(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
+#define opIdTest(t1, t2) Operation::buildMask(t1, t2)
+    REQUIRE((opIdTest(NONE, NONE)) == 0x0000000100000001);
+    REQUIRE((opIdTest(FUNC, FUNC)) == 0x0000002000000020);
+    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
+    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
 }
 
 /* * * * * Declaring adhoc operations * * * * */
@@ -970,49 +970,49 @@ struct myCalc : public Calculator
 };
 
 PackToken op1(const PackToken & left, const PackToken & right,
-              evaluationData * data)
+              EvaluationData * data)
 {
     return Calculator::defaultConfig().opMap["%"][0].exec(left, right, data);
 }
 
 PackToken op2(const PackToken & left, const PackToken & right,
-              evaluationData * data)
+              EvaluationData * data)
 {
     return Calculator::defaultConfig().opMap[","][0].exec(left, right, data);
 }
 
 PackToken op3(const PackToken & left, const PackToken & right,
-              evaluationData *)
+              EvaluationData *)
 {
     return left.asDouble() - right.asDouble();
 }
 
 PackToken op4(const PackToken & left, const PackToken & right,
-              evaluationData *)
+              EvaluationData *)
 {
     return left.asDouble() * right.asDouble();
 }
 
 PackToken slash_op(const PackToken & left, const PackToken & right,
-                   evaluationData *)
+                   EvaluationData *)
 {
     return left.asDouble() / right.asDouble();
 }
 
 PackToken not_unary_op(const PackToken &, const PackToken & right,
-                       evaluationData *)
+                       EvaluationData *)
 {
     return ~right.asInt();
 }
 
 PackToken not_right_unary_op(const PackToken & left, const PackToken &,
-                             evaluationData *)
+                             EvaluationData *)
 {
     return ~left.asInt();
 }
 
 PackToken lazy_increment(const PackToken &, const PackToken &,
-                         evaluationData * data)
+                         EvaluationData * data)
 {
     auto var_name = data->left->m_key.asString();
 
@@ -1029,7 +1029,7 @@ PackToken lazy_increment(const PackToken &, const PackToken &,
 }
 
 PackToken eager_increment(const PackToken &, const PackToken &,
-                          evaluationData * data)
+                          EvaluationData * data)
 {
     auto var_name = data->right->m_key.asString();
 
@@ -1044,7 +1044,7 @@ PackToken eager_increment(const PackToken &, const PackToken &,
 }
 
 PackToken assign_right(const PackToken & left, const PackToken &,
-                       evaluationData * data)
+                       EvaluationData * data)
 {
     auto var_name = data->right->m_key.asString();
 
@@ -1059,7 +1059,7 @@ PackToken assign_right(const PackToken & left, const PackToken &,
 }
 
 PackToken assign_left(const PackToken &, const PackToken & right,
-                      evaluationData * data)
+                      EvaluationData * data)
 {
     auto var_name = data->left->m_key.asString();
 

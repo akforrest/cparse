@@ -10,7 +10,7 @@ namespace
 {
     using namespace cparse;
 
-    bool match_op_id(opID_t id, opID_t mask)
+    bool match_op_id(OpId id, OpId mask)
     {
         uint64_t result = id & mask;
         auto * val = reinterpret_cast<uint32_t *>(&result);
@@ -18,7 +18,7 @@ namespace
     }
 
     Token * exec_operation(const PackToken & left, const PackToken & right,
-                           evaluationData * data, const QString & OP_MASK)
+                           EvaluationData * data, const QString & OP_MASK)
     {
         auto it = data->opMap.find(OP_MASK);
 
@@ -131,7 +131,7 @@ PackToken Calculator::calculate(const QString & expr, const TokenMap & vars,
 Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
                               const Config & config)
 {
-    evaluationData data(rpn, scope, config.opMap);
+    EvaluationData data(rpn, scope, config.opMap);
 
     // Evaluate the expression in RPN form.
     std::stack<Token *> evaluation;
@@ -242,7 +242,7 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
             {
                 // * * * * * Resolve All Other Operations: * * * * * //
 
-                data.opID = Operation::build_mask(l_token->m_type, r_token->m_type);
+                data.opID = Operation::buildMask(l_token->m_type, r_token->m_type);
                 PackToken l_pack(l_token);
                 PackToken r_pack(r_token);
                 Token * result = nullptr;

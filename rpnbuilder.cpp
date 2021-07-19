@@ -22,10 +22,10 @@ using cparse::Token;
 using cparse::TokenMap;
 using cparse::RefToken;
 using cparse::Operation;
-using cparse::opID_t;
+using cparse::OpId;
 using cparse::Config;
 using cparse::TokenQueue;
-using cparse::evaluationData;
+using cparse::EvaluationData;
 using cparse::RpnBuilder;
 using cparse::REF;
 
@@ -80,23 +80,26 @@ uint32_t Operation::mask(TokenType type)
 }
 
 // Build a mask for each pair of operands
-opID_t Operation::build_mask(TokenType left, TokenType right)
+OpId Operation::buildMask(TokenType left, TokenType right)
 {
-    opID_t result = mask(left);
+    OpId result = mask(left);
     return (result << 32) | mask(right);
 }
 
-Operation::Operation(const opSignature_t & sig, opFunc_t func)
-    : _mask(build_mask(sig.left, sig.right)), _exec(func) {}
-
-cparse::opID_t Operation::getMask() const
+Operation::Operation(const OpSignature & sig, OpFunc func)
+    : m_mask(buildMask(sig.left, sig.right)),
+      m_exec(func)
 {
-    return _mask;
 }
 
-PackToken Operation::exec(const PackToken & left, const PackToken & right, evaluationData * data) const
+cparse::OpId Operation::getMask() const
 {
-    return _exec(left, right, data);
+    return m_mask;
+}
+
+PackToken Operation::exec(const PackToken & left, const PackToken & right, EvaluationData * data) const
+{
+    return m_exec(left, right, data);
 }
 
 /* * * * * rpnBuilder Class: * * * * */
@@ -444,7 +447,7 @@ bool cparse::OpPrecedenceMap::exists(const QString & op) const
     return m_prMap.count(op);
 }
 
-evaluationData::evaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
+EvaluationData::EvaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
     : rpn(std::move(rpn)), scope(scope), opMap(opMap) {}
 
 void cparse::ParserMap::add(const QString & word, WordParserFunc * parser)
@@ -481,10 +484,10 @@ cparse::WordParserFunc * cparse::ParserMap::find(char c)
     return nullptr;
 }
 
-cparse::opSignature_t::opSignature_t(const TokenType L, const QString & op, const TokenType R)
+cparse::OpSignature::OpSignature(const TokenType L, const QString & op, const TokenType R)
     : left(L), op(op), right(R) {}
 
-void cparse::OpMap::add(const opSignature_t & sig, Operation::opFunc_t func)
+void cparse::OpMap::add(const OpSignature & sig, Operation::OpFunc func)
 {
     (*this)[sig.op].push_back(Operation(sig, func));
 }

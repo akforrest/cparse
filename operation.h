@@ -10,18 +10,18 @@ namespace cparse
 {
     class RefToken;
 
-    struct opSignature_t
+    using OpId = quint64;
+
+    struct OpSignature
     {
         TokenType left;
         QString op;
         TokenType right;
-        opSignature_t(TokenType L, const QString & op, TokenType R);
+        OpSignature(TokenType L, const QString & op, TokenType R);
     };
 
-    using opID_t = quint64;
-
     class OpMap;
-    struct evaluationData
+    struct EvaluationData
     {
         TokenQueue rpn;
         TokenMap scope;
@@ -31,43 +31,43 @@ namespace cparse
         std::unique_ptr<RefToken> right;
 
         QString op;
-        opID_t opID{};
+        OpId opID{};
 
-        evaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap);
+        EvaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap);
     };
 
     class Operation
     {
         public:
-            using opFunc_t = PackToken(*)(const PackToken &, const PackToken &, evaluationData *);
 
-        public:
+            using OpFunc = PackToken(*)(const PackToken &, const PackToken &, EvaluationData *);
+
+            Operation(const OpSignature & sig, OpFunc func);
+
             // Use this exception to reject an operation.
             // Without stoping the operation matching process.
             struct Reject : public std::exception {};
 
-        public:
             static inline uint32_t mask(TokenType type);
-            static opID_t build_mask(TokenType left, TokenType right);
+            static OpId buildMask(TokenType left, TokenType right);
+
+            OpId getMask() const;
+
+            PackToken exec(const PackToken & left,
+                           const PackToken & right,
+                           EvaluationData * data) const;
 
         private:
-            opID_t _mask;
-            opFunc_t _exec;
 
-        public:
-            Operation(const opSignature_t & sig, opFunc_t func);
-
-        public:
-            opID_t getMask() const;
-            PackToken exec(const PackToken & left, const PackToken & right,
-                           evaluationData * data) const;
+            OpId m_mask;
+            OpFunc m_exec;
     };
 
     class OpMap : public std::map<QString, std::vector<Operation>>
     {
         public:
 
-            void add(const opSignature_t & sig, Operation::opFunc_t func);
+            void add(const OpSignature & sig, Operation::OpFunc func);
             QString str() const;
     };
 

@@ -14,7 +14,7 @@ namespace cparse::builtin_operations
 {
     using namespace cparse;
     // Assignment operator "="
-    PackToken Assign(const PackToken &, const PackToken & right, evaluationData * data)
+    PackToken Assign(const PackToken &, const PackToken & right, EvaluationData * data)
     {
         PackToken & key = data->left->m_key;
         PackToken & origin = data->left->m_origin;
@@ -74,7 +74,7 @@ namespace cparse::builtin_operations
         return right;
     }
 
-    PackToken Comma(const PackToken & left, const PackToken & right, evaluationData *)
+    PackToken Comma(const PackToken & left, const PackToken & right, EvaluationData *)
     {
         if (left->m_type == TokenType::TUPLE)
         {
@@ -87,7 +87,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken Colon(const PackToken & left, const PackToken & right, evaluationData *)
+    PackToken Colon(const PackToken & left, const PackToken & right, EvaluationData *)
     {
         if (left->m_type == TokenType::STUPLE)
         {
@@ -100,7 +100,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken Equal(const PackToken & left, const PackToken & right, evaluationData * data)
+    PackToken Equal(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
         {
@@ -110,7 +110,7 @@ namespace cparse::builtin_operations
         return PackToken(left == right);
     }
 
-    PackToken Different(const PackToken & left, const PackToken & right, evaluationData * data)
+    PackToken Different(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
         {
@@ -120,7 +120,7 @@ namespace cparse::builtin_operations
         return PackToken(left != right);
     }
 
-    PackToken MapIndex(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken MapIndex(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         TokenMap & left = p_left.asMap();
         auto right = p_right.asString();
@@ -146,7 +146,7 @@ namespace cparse::builtin_operations
     }
 
     // Resolve build-in operations for non-map types, e.g.: 'str'.len()
-    PackToken TypeSpecificFunction(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken TypeSpecificFunction(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         if (p_left->m_type == TokenType::MAP)
         {
@@ -171,7 +171,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken UnaryNumeralOperation(const PackToken & left, const PackToken & right, evaluationData * data)
+    PackToken UnaryNumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         const QString & op = data->op;
 
@@ -189,7 +189,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken NumeralOperation(const PackToken & left, const PackToken & right, evaluationData * data)
+    PackToken NumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         double left_d, right_d;
         int64_t left_i, right_i;
@@ -265,7 +265,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken FormatOperation(const PackToken & p_left, const PackToken & p_right, evaluationData *)
+    PackToken FormatOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData *)
     {
         QString s_left = p_left.asString();
         auto stdstring = s_left.toStdString();
@@ -342,7 +342,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken StringOnStringOperation(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken StringOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         const QString & left = p_left.asString();
         const QString & right = p_right.asString();
@@ -366,7 +366,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken StringOnNumberOperation(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken StringOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         const QString & left = p_left.asString();
         const QString & op = data->op;
@@ -402,7 +402,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken NumberOnStringOperation(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken NumberOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         double left = p_left.asDouble();
         const QString & right = p_right.asString();
@@ -420,7 +420,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken ListOnNumberOperation(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken ListOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         TokenList left = p_left.asList();
 
@@ -449,7 +449,7 @@ namespace cparse::builtin_operations
         }
     }
 
-    PackToken ListOnListOperation(const PackToken & p_left, const PackToken & p_right, evaluationData * data)
+    PackToken ListOnListOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
         TokenList & left = p_left.asList();
         TokenList & right = p_right.asList();
