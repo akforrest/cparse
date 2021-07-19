@@ -17,17 +17,17 @@ namespace cparse::builtin_reservedWords
 
     void True(const char *, const char **, RpnBuilder * data)
     {
-        data->handle_token(trueToken->clone());
+        data->handleToken(trueToken->clone());
     }
 
     void False(const char *, const char **, RpnBuilder * data)
     {
-        data->handle_token(falseToken->clone());
+        data->handleToken(falseToken->clone());
     }
 
     void None(const char *, const char **, RpnBuilder * data)
     {
-        data->handle_token(noneToken->clone());
+        data->handleToken(noneToken->clone());
     }
 
     void LineComment(const char * expr, const char ** rest, RpnBuilder *)
@@ -60,17 +60,17 @@ namespace cparse::builtin_reservedWords
     void KeywordOperator(const char *, const char **, RpnBuilder * data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
-        if (data->rpn.back()->m_type == VAR)
+        if (data->backType() == VAR)
         {
-            data->rpn.back()->m_type = STR;
+            data->setBackType(STR);
         }
 
-        data->handle_op(":");
+        data->handleOp(":");
     }
 
     void DotOperator(const char * expr, const char ** rest, RpnBuilder * data)
     {
-        data->handle_op(".");
+        data->handleOp(".");
 
         while (*expr && isspace(*expr))
         {
@@ -85,7 +85,7 @@ namespace cparse::builtin_reservedWords
 
         // Parse the variable name and save it as a string:
         auto key = RpnBuilder::parseVar(expr, rest);
-        data->handle_token(new TokenTyped<QString>(key, STR));
+        data->handleToken(new TokenTyped<QString>(key, STR));
     }
 
     struct Startup

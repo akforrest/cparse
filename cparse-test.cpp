@@ -1075,7 +1075,7 @@ PackToken assign_left(const PackToken &, const PackToken & right,
 
 void slash(const char * expr, const char ** rest, RpnBuilder * data)
 {
-    data->handle_op("*");
+    data->handleOp("*");
 
     // Eat the next character:
     *rest = ++expr;
@@ -1083,7 +1083,7 @@ void slash(const char * expr, const char ** rest, RpnBuilder * data)
 
 void slash_slash(const char *, const char **, RpnBuilder * data)
 {
-    data->handle_op("-");
+    data->handleOp("-");
 }
 
 struct myCalcStartup

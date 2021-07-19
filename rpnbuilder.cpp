@@ -101,13 +101,18 @@ PackToken Operation::exec(const PackToken & left, const PackToken & right, evalu
 
 /* * * * * rpnBuilder Class: * * * * */
 
-void RpnBuilder::cleanRPN(TokenQueue * rpn)
+void RpnBuilder::clearRPN(TokenQueue * rpn)
 {
     while (!rpn->empty())
     {
         delete cparse::resolve_reference(rpn->front());
         rpn->pop();
     }
+}
+
+void RpnBuilder::clear()
+{
+    clearRPN(&m_rpn);
 }
 
 /**
@@ -126,154 +131,210 @@ void RpnBuilder::cleanRPN(TokenQueue * rpn)
  *     pop o2 off the stack onto the output queue.
  *   Push o1 on the stack.
  */
-void RpnBuilder::handle_opStack(const QString & op)
+void RpnBuilder::handleOpStack(const QString & op)
 {
     QString cur_op;
 
     // If it associates from left to right:
-    if (opp.assoc(op) == 0)
+    if (m_opp.assoc(op) == 0)
     {
-        while (!opStack.empty() &&
-               opp.prec(op) >= opp.prec(opStack.top()))
+        while (!m_opStack.empty() &&
+               m_opp.prec(op) >= m_opp.prec(m_opStack.top()))
         {
-            cur_op = normalize_op(opStack.top());
-            rpn.push(new TokenTyped<QString>(cur_op, OP));
-            opStack.pop();
+            cur_op = normalize_op(m_opStack.top());
+            m_rpn.push(new TokenTyped<QString>(cur_op, OP));
+            m_opStack.pop();
         }
     }
     else
     {
-        while (!opStack.empty() &&
-               opp.prec(op) > opp.prec(opStack.top()))
+        while (!m_opStack.empty() &&
+               m_opp.prec(op) > m_opp.prec(m_opStack.top()))
         {
-            cur_op = normalize_op(opStack.top());
-            rpn.push(new TokenTyped<QString>(cur_op, OP));
-            opStack.pop();
+            cur_op = normalize_op(m_opStack.top());
+            m_rpn.push(new TokenTyped<QString>(cur_op, OP));
+            m_opStack.pop();
         }
     }
 }
 
-void RpnBuilder::handle_binary(const QString & op)
+void RpnBuilder::handleBinary(const QString & op)
 {
     // Handle OP precedence
-    handle_opStack(op);
+    handleOpStack(op);
     // Then push the current op into the stack:
-    opStack.push(op);
+    m_opStack.push(op);
 }
 
 // Convert left unary operators to binary and handle them:
-void RpnBuilder::handle_left_unary(const QString & unary_op)
+void RpnBuilder::handleLeftUnary(const QString & unary_op)
 {
-    this->rpn.push(new TokenUnary());
+    this->m_rpn.push(new TokenUnary());
     // Only put it on the stack and wait to check op precedence:
-    opStack.push(unary_op);
+    m_opStack.push(unary_op);
 }
 
 // Convert right unary operators to binary and handle them:
-void RpnBuilder::handle_right_unary(const QString & unary_op)
+void RpnBuilder::handleRightUnary(const QString & unary_op)
 {
     // Handle OP precedence:
-    handle_opStack(unary_op);
+    handleOpStack(unary_op);
     // Add the unary token:
-    this->rpn.push(new TokenUnary());
+    this->m_rpn.push(new TokenUnary());
     // Then add the current op directly into the rpn:
-    rpn.push(new TokenTyped<QString>(normalize_op(unary_op), OP));
+    m_rpn.push(new TokenTyped<QString>(normalize_op(unary_op), OP));
 }
 
 // Find out if op is a binary or unary operator and handle it:
-void RpnBuilder::handle_op(const QString & op)
+void RpnBuilder::processOpStack()
+{
+    while (!m_opStack.empty())
+    {
+        QString cur_op = normalize_op(m_opStack.top());
+        m_rpn.push(new TokenTyped<QString>(cur_op, OP));
+        m_opStack.pop();
+    }
+
+    // In case one of the custom parsers left an empty expression:
+    if (m_rpn.empty())
+    {
+        m_rpn.push(new TokenNone());
+    }
+}
+
+cparse::TokenType RpnBuilder::backType() const
+{
+    return m_rpn.back()->m_type;
+}
+
+void RpnBuilder::setBackType(TokenType type)
+{
+    m_rpn.back()->m_type = type;
+}
+
+QString RpnBuilder::topOp() const
+{
+    return m_opStack.top();
+}
+
+uint32_t RpnBuilder::bracketLevel() const
+{
+    return m_bracketLevel;
+}
+
+bool RpnBuilder::lastTokenWasOp() const
+{
+    return m_lastTokenWasOp;
+}
+
+bool RpnBuilder::lastTokenWasUnary() const
+{
+    return m_lastTokenWasUnary;
+}
+
+const cparse::TokenQueue & RpnBuilder::rpn() const
+{
+    return m_rpn;
+}
+
+bool RpnBuilder::opExists(const QString & op) const
+{
+    return m_opp.exists(op);
+}
+
+void RpnBuilder::handleOp(const QString & op)
 {
     // If it's a left unary operator:
-    if (this->lastTokenWasOp)
+    if (this->m_lastTokenWasOp)
     {
-        if (opp.exists("L" + op))
+        if (m_opp.exists("L" + op))
         {
-            handle_left_unary("L" + op);
-            this->lastTokenWasUnary = true;
-            this->lastTokenWasOp = op[0].unicode();
+            handleLeftUnary("L" + op);
+            this->m_lastTokenWasUnary = true;
+            this->m_lastTokenWasOp = op[0].unicode();
         }
         else
         {
-            cleanRPN(&(this->rpn));
+            clearRPN(&(this->m_rpn));
             throw std::domain_error("Unrecognized unary operator: '" + op.toStdString() + "'.");
         }
 
         // If its a right unary operator:
     }
-    else if (opp.exists("R" + op))
+    else if (m_opp.exists("R" + op))
     {
-        handle_right_unary("R" + op);
+        handleRightUnary("R" + op);
 
         // Set it to false, since we have already added
         // an unary token and operand to the stack:
-        this->lastTokenWasUnary = false;
-        this->lastTokenWasOp = false;
+        this->m_lastTokenWasUnary = false;
+        this->m_lastTokenWasOp = false;
 
         // If it is a binary operator:
     }
     else
     {
-        if (opp.exists(op))
+        if (m_opp.exists(op))
         {
-            handle_binary(op);
+            handleBinary(op);
         }
         else
         {
-            cleanRPN(&(rpn));
+            clearRPN(&(m_rpn));
             throw std::domain_error("Undefined operator: `" + op.toStdString() + "`!");
         }
 
-        this->lastTokenWasUnary = false;
-        this->lastTokenWasOp = op[0].unicode();
+        this->m_lastTokenWasUnary = false;
+        this->m_lastTokenWasOp = op[0].unicode();
     }
 }
 
-void RpnBuilder::handle_token(Token * token)
+void RpnBuilder::handleToken(Token * token)
 {
-    if (!lastTokenWasOp)
+    if (!m_lastTokenWasOp)
     {
         throw syntax_error("Expected an operator or bracket but got " + PackToken::str(token));
     }
 
-    rpn.push(token);
-    lastTokenWasOp = false;
-    lastTokenWasUnary = false;
+    m_rpn.push(token);
+    m_lastTokenWasOp = false;
+    m_lastTokenWasUnary = false;
 }
 
-void RpnBuilder::open_bracket(const QString & bracket)
+void RpnBuilder::openBracket(const QString & bracket)
 {
-    opStack.push(bracket);
-    lastTokenWasOp = bracket[0].unicode();
-    lastTokenWasUnary = false;
-    ++bracketLevel;
+    m_opStack.push(bracket);
+    m_lastTokenWasOp = bracket[0].unicode();
+    m_lastTokenWasUnary = false;
+    ++m_bracketLevel;
 }
 
-void RpnBuilder::close_bracket(const QString & bracket)
+void RpnBuilder::closeBracket(const QString & bracket)
 {
-    if (char(lastTokenWasOp) == bracket[0])
+    if (char(m_lastTokenWasOp) == bracket[0])
     {
-        rpn.push(new Tuple());
+        m_rpn.push(new Tuple());
     }
 
     QString cur_op;
 
-    while (!opStack.empty() && opStack.top() != bracket)
+    while (!m_opStack.empty() && m_opStack.top() != bracket)
     {
-        cur_op = normalize_op(opStack.top());
-        rpn.push(new TokenTyped<QString>(cur_op, OP));
-        opStack.pop();
+        cur_op = normalize_op(m_opStack.top());
+        m_rpn.push(new TokenTyped<QString>(cur_op, OP));
+        m_opStack.pop();
     }
 
-    if (opStack.empty())
+    if (m_opStack.empty())
     {
-        RpnBuilder::cleanRPN(&rpn);
+        RpnBuilder::clearRPN(&m_rpn);
         throw syntax_error("Extra '" + bracket + "' on the expression!");
     }
 
-    opStack.pop();
-    lastTokenWasOp = false;
-    lastTokenWasUnary = false;
-    --bracketLevel;
+    m_opStack.pop();
+    m_lastTokenWasOp = false;
+    m_lastTokenWasUnary = false;
+    --m_bracketLevel;
 }
 
 bool RpnBuilder::isvarchar(const char c)

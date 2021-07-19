@@ -31,28 +31,33 @@ namespace cparse
     {
         public:
 
-            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : scope(scope), opp(opp) {}
+            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : m_scope(scope), m_opp(opp) {}
 
-            TokenQueue rpn;
-            std::stack<QString> opStack;
-            uint8_t lastTokenWasOp = true;
-            bool lastTokenWasUnary = false;
-            TokenMap scope;
-            const OpPrecedenceMap & opp;
+            void processOpStack();
 
-            // Used to make sure the expression won't
-            // end inside a bracket evaluation just because
-            // found a delimiter like '\n' or ')'
-            uint32_t bracketLevel = 0;
+            TokenType backType() const;
+            void setBackType(TokenType type);
 
-            static void cleanRPN(TokenQueue * rpn);
+            QString topOp() const;
 
-            void handle_op(const QString & op);
-            void handle_token(Token * token);
-            void open_bracket(const QString & bracket);
-            void close_bracket(const QString & bracket);
+            uint32_t bracketLevel() const;
+
+            bool lastTokenWasOp() const;
+            bool lastTokenWasUnary() const;
+
+            const TokenQueue & rpn() const;
+
+            bool opExists(const QString & op) const;
+
+            void handleOp(const QString & op);
+            void handleToken(Token * token);
+            void openBracket(const QString & bracket);
+            void closeBracket(const QString & bracket);
+
+            void clear();
 
             // * * * * * Static parsing helpers: * * * * * //
+            static void clearRPN(TokenQueue * rpn);
 
             // Check if a character is the first character of a variable:
             static bool isvarchar(char c);
@@ -60,10 +65,23 @@ namespace cparse
             static QString parseVar(const char * expr, const char ** rest = nullptr);
 
         private:
-            void handle_opStack(const QString & op);
-            void handle_binary(const QString & op);
-            void handle_left_unary(const QString & op);
-            void handle_right_unary(const QString & op);
+
+            void handleOpStack(const QString & op);
+            void handleBinary(const QString & op);
+            void handleLeftUnary(const QString & op);
+            void handleRightUnary(const QString & op);
+
+            TokenQueue m_rpn;
+            std::stack<QString> m_opStack;
+            uint8_t m_lastTokenWasOp = true;
+            bool m_lastTokenWasUnary = false;
+            TokenMap m_scope;
+            const OpPrecedenceMap & m_opp;
+
+            // Used to make sure the expression won't
+            // end inside a bracket evaluation just because
+            // found a delimiter like '\n' or ')'
+            uint32_t m_bracketLevel = 0;
     };
 
 }  // namespace cparse
