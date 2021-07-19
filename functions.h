@@ -2,58 +2,72 @@
 #define FUNCTIONS_H_
 
 #include <list>
-#include <string>
-#include<functional>
+#include <functional>
 
-namespace cparse {
+#include <QString>
 
-typedef std::list<std::string> args_t;
+namespace cparse
+{
 
-class Function : public TokenBase {
- public:
-  static packToken call(packToken _this, const Function* func,
-                        TokenList* args, TokenMap scope);
- public:
-  Function() : TokenBase(FUNC) {}
-  virtual ~Function() {}
+    using args_t = std::list<QString>;
 
- public:
-  virtual const std::string name() const = 0;
-  virtual const args_t args() const = 0;
-  virtual packToken exec(TokenMap scope) const = 0;
-  virtual TokenBase* clone() const = 0;
-};
+    class Function : public TokenBase
+    {
+        public:
+            static PackToken call(const PackToken & _this, const Function * func,
+                                  TokenList * args, TokenMap scope);
+        public:
+            Function() : TokenBase(FUNC) {}
+            virtual ~Function() {}
 
-class CppFunction : public Function {
- public:
-  packToken (*func)(TokenMap);
-  std::function<packToken(TokenMap)> stdFunc;
-  args_t _args;
-  std::string _name;
-  bool isStdFunc;
+        public:
+            virtual const QString name() const = 0;
+            virtual const args_t args() const = 0;
+            virtual PackToken exec(TokenMap scope) const = 0;
+            virtual TokenBase * clone() const = 0;
+    };
 
-  CppFunction();
-  CppFunction(packToken (*func)(TokenMap), const args_t args,
-              std::string name = "");
-  CppFunction(packToken (*func)(TokenMap), unsigned int nargs,
-              const char** args, std::string name = "");
-  CppFunction(packToken (*func)(TokenMap), std::string name = "");
-  CppFunction(std::function<packToken(TokenMap)> func, const args_t args,
-              std::string name = "");
-  CppFunction(const args_t args, std::function<packToken(TokenMap)> func,
-              std::string name = "");
-  CppFunction(std::function<packToken(TokenMap)> func, unsigned int nargs,
-              const char** args, std::string name = "");
-  CppFunction(std::function<packToken(TokenMap)> func, std::string name = "");
+    class CppFunction : public Function
+    {
+        public:
+            PackToken(*func)(TokenMap) {};
+            std::function<PackToken(TokenMap)> stdFunc;
+            args_t _args;
+            QString _name;
+            bool isStdFunc;
 
-  virtual const std::string name() const { return _name; }
-  virtual const args_t args() const { return _args; }
-  virtual packToken exec(TokenMap scope) const { return isStdFunc ? stdFunc(scope) : func(scope); }
+            CppFunction();
+            CppFunction(PackToken(*func)(TokenMap), const args_t & args,
+                        QString name = "");
+            CppFunction(PackToken(*func)(TokenMap), unsigned int nargs,
+                        const char ** args, QString name = "");
+            CppFunction(PackToken(*func)(TokenMap), QString name = "");
+            CppFunction(std::function<PackToken(TokenMap)> func, const args_t & args,
+                        QString name = "");
+            CppFunction(const args_t & args, std::function<PackToken(TokenMap)> func,
+                        QString name = "");
+            CppFunction(std::function<PackToken(TokenMap)> func, unsigned int nargs,
+                        const char ** args, QString name = "");
+            CppFunction(std::function<PackToken(TokenMap)> func, QString name = "");
 
-  virtual TokenBase* clone() const {
-    return new CppFunction(static_cast<const CppFunction&>(*this));
-  }
-};
+            virtual const QString name() const
+            {
+                return _name;
+            }
+            virtual const args_t args() const
+            {
+                return _args;
+            }
+            virtual PackToken exec(TokenMap scope) const
+            {
+                return isStdFunc ? stdFunc(scope) : func(scope);
+            }
+
+            virtual TokenBase * clone() const
+            {
+                return new CppFunction(static_cast<const CppFunction &>(*this));
+            }
+    };
 
 }  // namespace cparse
 

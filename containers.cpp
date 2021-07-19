@@ -6,7 +6,7 @@
 #include "./functions.h"
 
 using cparse::TokenMap;
-using cparse::packToken;
+using cparse::PackToken;
 using cparse::Iterator;
 using cparse::TokenList;
 using cparse::MapData_t;
@@ -19,18 +19,21 @@ using cparse::MapData_t;
 //
 // - https://isocpp.org/wiki/faq/ctors#static-init-order
 //
-TokenMap& TokenMap::base_map() {
-  static TokenMap _base_map(0);
-  return _base_map;
+TokenMap & TokenMap::base_map()
+{
+    static TokenMap _base_map(nullptr);
+    return _base_map;
 }
 
-TokenMap& TokenMap::default_global() {
-  static TokenMap global_map(base_map());
-  return global_map;
+TokenMap & TokenMap::default_global()
+{
+    static TokenMap global_map(base_map());
+    return global_map;
 }
 
-packToken TokenMap::default_constructor(TokenMap scope) {
-  return scope["kwargs"];
+PackToken TokenMap::default_constructor(TokenMap scope)
+{
+    return scope["kwargs"];
 }
 
 TokenMap TokenMap::empty = TokenMap(&default_global());
@@ -38,150 +41,204 @@ TokenMap TokenMap::empty = TokenMap(&default_global());
 
 /* * * * * Iterator functions * * * * */
 
-Iterator*  Iterator::getIterator() const {
-  return static_cast<Iterator*>(this->clone());
+Iterator * Iterator::getIterator() const
+{
+    return static_cast<Iterator *>(this->clone());
 }
 
 /* * * * * TokenMap iterator implemented functions * * * * */
 
-packToken* TokenMap::MapIterator::next() {
-  if (it != map.end()) {
-    last = packToken(it->first);
-    ++it;
-    return &last;
-  } else {
+PackToken * TokenMap::MapIterator::next()
+{
+    if (it != map.end())
+    {
+        last = PackToken(it->first);
+        ++it;
+        return &last;
+    }
+
     it = map.begin();
-    return NULL;
-  }
+    return nullptr;
 }
 
-void TokenMap::MapIterator::reset() { it = map.begin(); }
+void TokenMap::MapIterator::reset()
+{
+    it = map.begin();
+}
 
 /* * * * * TokenList functions: * * * * */
 
-packToken TokenList::default_constructor(TokenMap scope) {
-  // Get the arguments:
-  TokenList list = scope["args"].asList();
+PackToken TokenList::default_constructor(TokenMap scope)
+{
+    // Get the arguments:
+    TokenList list = scope["args"].asList();
 
-  // If the only argument is iterable:
-  if (list.list().size() == 1 && list.list()[0]->type & IT) {
-    TokenList new_list;
-    Iterator* it = static_cast<Iterable*>(list.list()[0].token())->getIterator();
+    // If the only argument is iterable:
+    if (list.list().size() == 1 && list.list()[0]->type & IT)
+    {
+        TokenList new_list;
+        Iterator * it = static_cast<Iterable *>(list.list()[0].token())->getIterator();
 
-    packToken* next = it->next();
-    while (next) {
-      new_list.list().push_back(*next);
-      next = it->next();
+        PackToken * next = it->next();
+
+        while (next)
+        {
+            new_list.list().push_back(*next);
+            next = it->next();
+        }
+
+        delete it;
+        return new_list;
     }
 
-    delete it;
-    return new_list;
-  } else {
     return list;
-  }
 }
 
 /* * * * * TokenList iterator implemented functions * * * * */
 
-packToken* TokenList::ListIterator::next() {
-  if (i < list->size()) {
-    return &list->at(i++);
-  } else {
+PackToken * TokenList::ListIterator::next()
+{
+    if (i < list->size())
+    {
+        return &list->at(i++);
+    }
+
     i = 0;
-    return NULL;
-  }
+    return nullptr;
 }
 
-void TokenList::ListIterator::reset() { i = 0; }
+void TokenList::ListIterator::reset()
+{
+    i = 0;
+}
 
 /* * * * * MapData_t struct: * * * * */
 MapData_t::MapData_t() {}
-MapData_t::MapData_t(TokenMap* p) : parent(p ? new TokenMap(*p) : 0) {}
-MapData_t::MapData_t(const MapData_t& other) {
-  map = other.map;
-  if (other.parent) {
-    parent = new TokenMap(*(other.parent));
-  } else {
-    parent = 0;
-  }
-}
-MapData_t::~MapData_t() { if (parent) delete parent; }
-
-MapData_t& MapData_t::operator=(const MapData_t& other) {
-  if (this != &other) {
-    if (parent) delete parent;
+MapData_t::MapData_t(TokenMap * p) : parent(p ? new TokenMap(*p) : nullptr) {}
+MapData_t::MapData_t(const MapData_t & other)
+{
     map = other.map;
-    parent = other.parent;
-  }
-  return *this;
+
+    if (other.parent)
+    {
+        parent = new TokenMap(*(other.parent));
+    }
+    else
+    {
+        parent = nullptr;
+    }
+}
+
+MapData_t::~MapData_t()
+{
+    delete parent;
+}
+
+MapData_t & MapData_t::operator=(const MapData_t & other)
+{
+    if (this != &other)
+    {
+        delete parent;
+
+        map = other.map;
+        parent = other.parent;
+    }
+
+    return *this;
 }
 
 /* * * * * TokenMap Class: * * * * */
 
-packToken* TokenMap::find(const std::string& key) {
-  TokenMap_t::iterator it = map().find(key);
+PackToken * TokenMap::find(const QString & key)
+{
+    auto it = map().find(key);
 
-  if (it != map().end()) {
-    return &it->second;
-  } else if (parent()) {
-    return parent()->find(key);
-  } else {
-    return 0;
-  }
+    if (it != map().end())
+    {
+        return &it->second;
+    }
+
+    if (parent())
+    {
+        return parent()->find(key);
+    }
+
+    return nullptr;
 }
 
-const packToken* TokenMap::find(const std::string& key) const {
-  TokenMap_t::const_iterator it = map().find(key);
+const PackToken * TokenMap::find(const QString & key) const
+{
+    TokenMap_t::const_iterator it = map().find(key);
 
-  if (it != map().end()) {
-    return &it->second;
-  } else if (parent()) {
-    return parent()->find(key);
-  } else {
-    return 0;
-  }
+    if (it != map().end())
+    {
+        return &it->second;
+    }
+
+    if (parent())
+    {
+        return parent()->find(key);
+    }
+
+    return nullptr;
 }
 
-TokenMap* TokenMap::findMap(const std::string& key) {
-  TokenMap_t::iterator it = map().find(key);
+TokenMap * TokenMap::findMap(const QString & key)
+{
+    auto it = map().find(key);
 
-  if (it != map().end()) {
-    return this;
-  } else if (parent()) {
-    return parent()->findMap(key);
-  } else {
-    return 0;
-  }
+    if (it != map().end())
+    {
+        return this;
+    }
+
+    if (parent())
+    {
+        return parent()->findMap(key);
+    }
+
+    return nullptr;
 }
 
-void TokenMap::assign(std::string key, TokenBase* value) {
-  if (value) {
-    value = value->clone();
-  } else {
-    throw std::invalid_argument("TokenMap assignment expected a non NULL argument as value!");
-  }
+void TokenMap::assign(const QString & key, TokenBase * value)
+{
+    if (value)
+    {
+        value = value->clone();
+    }
+    else
+    {
+        throw std::invalid_argument("TokenMap assignment expected a non NULL argument as value!");
+    }
 
-  packToken* variable = find(key);
+    PackToken * variable = find(key);
 
-  if (variable) {
-    (*variable) = packToken(value);
-  } else {
-    map()[key] = packToken(value);
-  }
+    if (variable)
+    {
+        (*variable) = PackToken(value);
+    }
+    else
+    {
+        map()[key] = PackToken(value);
+    }
 }
 
-void TokenMap::insert(std::string key, TokenBase* value) {
-  (*this)[key] = packToken(value->clone());
+void TokenMap::insert(const QString & key, TokenBase * value)
+{
+    (*this)[key] = PackToken(value->clone());
 }
 
-packToken& TokenMap::operator[](const std::string& key) {
-  return map()[key];
+PackToken & TokenMap::operator[](const QString & key)
+{
+    return map()[key];
 }
 
-TokenMap TokenMap::getChild() {
-  return TokenMap(this);
+TokenMap TokenMap::getChild()
+{
+    return TokenMap(this);
 }
 
-void TokenMap::erase(std::string key) {
-  map().erase(key);
+void TokenMap::erase(const QString & key)
+{
+    map().erase(key);
 }

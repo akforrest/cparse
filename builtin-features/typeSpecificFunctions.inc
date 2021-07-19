@@ -4,32 +4,32 @@ namespace builtin_typeSpecificFunctions {
 /* * * * * MAP Type built-in functions * * * * */
 
 const args_t map_pop_args = {"key", "default"};
-packToken map_pop(TokenMap scope) {
+PackToken map_pop(TokenMap scope) {
   TokenMap map = scope["this"].asMap();
-  std::string key = scope["key"].asString();
+  QString key = scope["key"].asString();
 
   // Check if the item is available and remove it:
   if (map.map().count(key)) {
-    packToken value = map[key];
+    PackToken value = map[key];
     map.erase(key);
     return value;
   }
 
   // If not available return the default value or None
-  packToken* def = scope.find("default");
+  PackToken* def = scope.find("default");
   if (def) {
     return *def;
   } else {
-    return packToken::None();
+    return PackToken::None();
   }
 }
 
-packToken map_len(TokenMap scope) {
+PackToken map_len(TokenMap scope) {
   TokenMap map = scope.find("this")->asMap();
   return map.map().size();
 }
 
-packToken default_instanceof(TokenMap scope) {
+PackToken default_instanceof(TokenMap scope) {
   TokenMap _super = scope["value"].asMap();
   TokenMap* _this = scope["this"].asMap().parent();
 
@@ -48,9 +48,9 @@ packToken default_instanceof(TokenMap scope) {
 /* * * * * LIST Type built-in functions * * * * */
 
 const args_t push_args = {"item"};
-packToken list_push(TokenMap scope) {
-  packToken* list = scope.find("this");
-  packToken* token = scope.find("item");
+PackToken list_push(TokenMap scope) {
+  PackToken* list = scope.find("this");
+  PackToken* token = scope.find("item");
 
   // If "this" is not a list it will throw here:
   list->asList().list().push_back(*token);
@@ -59,9 +59,9 @@ packToken list_push(TokenMap scope) {
 }
 
 const args_t list_pop_args = {"pos"};
-packToken list_pop(TokenMap scope) {
+PackToken list_pop(TokenMap scope) {
   TokenList list = scope.find("this")->asList();
-  packToken* token = scope.find("pos");
+  PackToken* token = scope.find("pos");
 
   int64_t pos;
 
@@ -74,7 +74,7 @@ packToken list_pop(TokenMap scope) {
     pos = list.list().size()-1;
   }
 
-  packToken result = list.list()[pos];
+  PackToken result = list.list()[pos];
 
   // Erase the item from the list:
   // Note that this operation is optimal if pos == list.size()-1
@@ -83,81 +83,57 @@ packToken list_pop(TokenMap scope) {
   return result;
 }
 
-packToken list_len(TokenMap scope) {
+PackToken list_len(TokenMap scope) {
   TokenList list = scope.find("this")->asList();
   return list.list().size();
 }
 
-packToken list_join(TokenMap scope) {
+PackToken list_join(TokenMap scope) {
   TokenList list = scope["this"].asList();
-  std::string chars = scope["chars"].asString();
+  QString chars = scope["chars"].asString();
   std::stringstream result;
 
-  std::vector<packToken>::const_iterator it = list.list().begin();
+  std::vector<PackToken>::const_iterator it = list.list().begin();
   result << it->asString();
   for (++it; it != list.list().end(); ++it) {
     result << chars << it->asString();
   }
 
-  return result.str();
+  return QString::fromStdString(result.str());
 }
 
 /* * * * * STR Type built-in functions * * * * */
 
-packToken string_len(TokenMap scope) {
-  std::string str = scope["this"].asString();
-  return static_cast<int64_t>(str.size());
+PackToken string_len(TokenMap scope) {
+  QString str = scope["this"].asString();
+  return str.length();
 }
 
-packToken string_lower(TokenMap scope) {
-  std::string str = scope["this"].asString();
-  std::string out;
-  for (char c : str) {
-    out.push_back(tolower(c));
-  }
-  return out;
+PackToken string_lower(TokenMap scope) {
+  QString str = scope["this"].asString();
+  return str.toLower();
 }
 
-packToken string_upper(TokenMap scope) {
-  std::string str = scope["this"].asString();
-  std::string out;
-  for (char c : str) {
-    out.push_back(toupper(c));
-  }
-  return out;
+PackToken string_upper(TokenMap scope) {
+  QString str = scope["this"].asString();
+  return str.toUpper();
 }
 
-packToken string_strip(TokenMap scope) {
-  std::string str = scope["this"].asString();
-
-  std::string::const_iterator it = str.begin();
-  while (it != str.end() && isspace(*it)) ++it;
-
-  std::string::const_reverse_iterator rit = str.rbegin();
-  while (rit.base() != it && isspace(*rit)) ++rit;
-
-  return std::string(it, rit.base());
+PackToken string_strip(TokenMap scope) {
+  QString str = scope["this"].asString();
+  return str.trimmed();
 }
 
-packToken string_split(TokenMap scope) {
+PackToken string_split(TokenMap scope) {
   TokenList list;
-  std::string str = scope["this"].asString();
-  std::string split_chars = scope["chars"].asString();
+  QString str = scope["this"].asString();
+  QString split_chars = scope["chars"].asString();
 
-  // Split the string:
-  size_t start = 0;
-  size_t i = str.find(split_chars, 0);
-  size_t size = split_chars.size();
-  while (i < str.size()) {
-    // Add a new item:
-    list.push(std::string(str, start, i-start));
-    // Resume search:
-    start = i + size;
-    i = str.find(split_chars, start);
+  auto split = str.split(split_chars);
+
+  for (auto ss : split) {
+      list.push(ss);
   }
-
-  // Add a new item:
-  list.push(std::string(str, start, str.size()-start));
 
   return list;
 }
@@ -166,13 +142,13 @@ packToken string_split(TokenMap scope) {
 
 struct Startup {
   Startup() {
-    TokenMap& base_list = calculator::type_attribute_map()[LIST];
+    TokenMap& base_list = Calculator::type_attribute_map()[LIST];
     base_list["push"] = CppFunction(list_push, push_args, "push");
     base_list["pop"] = CppFunction(list_pop, list_pop_args, "pop");
     base_list["len"] = CppFunction(list_len, "len");
     base_list["join"] = CppFunction(list_join, {"chars"}, "join");
 
-    TokenMap& base_str = calculator::type_attribute_map()[STR];
+    TokenMap& base_str = Calculator::type_attribute_map()[STR];
     base_str["len"] = CppFunction(&string_len, "len");
     base_str["lower"] = CppFunction(&string_lower, "lower");
     base_str["upper"] = CppFunction(&string_upper, "upper");

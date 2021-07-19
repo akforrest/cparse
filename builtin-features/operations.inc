@@ -3,13 +3,13 @@
 namespace builtin_operations {
 
 // Assignment operator "="
-packToken Assign(const packToken& left, const packToken& right, evaluationData* data) {
-  packToken& key = data->left->key;
-  packToken& origin = data->left->origin;
+PackToken Assign(const PackToken& , const PackToken& right, evaluationData* data) {
+  PackToken& key = data->left->key;
+  PackToken& origin = data->left->origin;
 
   // If the left operand has a name:
   if (key->type == STR) {
-    std::string& var_name = key.asString();
+    auto var_name = key.asString();
 
     // If it is an attribute of a TokenMap:
     if (origin->type == MAP) {
@@ -46,7 +46,7 @@ packToken Assign(const packToken& left, const packToken& right, evaluationData* 
   return right;
 }
 
-packToken Comma(const packToken& left, const packToken& right, evaluationData* data) {
+PackToken Comma(const PackToken& left, const PackToken& right, evaluationData* ) {
   if (left->type == TUPLE) {
     left.asTuple().list().push_back(right);
     return left;
@@ -55,7 +55,7 @@ packToken Comma(const packToken& left, const packToken& right, evaluationData* d
   }
 }
 
-packToken Colon(const packToken& left, const packToken& right, evaluationData* data) {
+PackToken Colon(const PackToken& left, const PackToken& right, evaluationData* ) {
   if (left->type == STUPLE) {
     left.asSTuple().list().push_back(right);
     return left;
@@ -64,34 +64,34 @@ packToken Colon(const packToken& left, const packToken& right, evaluationData* d
   }
 }
 
-packToken Equal(const packToken& left, const packToken& right, evaluationData* data) {
+PackToken Equal(const PackToken& left, const PackToken& right, evaluationData* data) {
   if (left->type == VAR || right->type == VAR) {
     throw undefined_operation(data->op, left, right);
   }
 
-  return left == right;
+  return PackToken(left == right);
 }
 
-packToken Different(const packToken& left, const packToken& right, evaluationData* data) {
+PackToken Different(const PackToken& left, const PackToken& right, evaluationData* data) {
   if (left->type == VAR || right->type == VAR) {
     throw undefined_operation(data->op, left, right);
   }
 
-  return left != right;
+  return PackToken(left != right);
 }
 
-packToken MapIndex(const packToken& p_left, const packToken& p_right, evaluationData* data) {
+PackToken MapIndex(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
   TokenMap& left = p_left.asMap();
-  std::string& right = p_right.asString();
-  const std::string& op = data->op;
+  auto right = p_right.asString();
+  const auto & op = data->op;
 
   if (op == "[]" || op == ".") {
-    packToken* p_value = left.find(right);
+    PackToken* p_value = left.find(right);
 
     if (p_value) {
       return RefToken(right, *p_value, left);
     } else {
-      return RefToken(right, packToken::None(), left);
+      return RefToken(right, PackToken::None(), left);
     }
   } else {
     throw undefined_operation(op, left, right);
@@ -99,13 +99,13 @@ packToken MapIndex(const packToken& p_left, const packToken& p_right, evaluation
 }
 
 // Resolve build-in operations for non-map types, e.g.: 'str'.len()
-packToken TypeSpecificFunction(const packToken& p_left, const packToken& p_right, evaluationData* data) {
+PackToken TypeSpecificFunction(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
   if (p_left->type == MAP) throw Operation::Reject();
 
-  TokenMap& attr_map = calculator::type_attribute_map()[p_left->type];
-  std::string& key = p_right.asString();
+  TokenMap& attr_map = Calculator::type_attribute_map()[p_left->type];
+  QString key = p_right.asString();
 
-  packToken* attr = attr_map.find(key);
+  PackToken* attr = attr_map.find(key);
   if (attr) {
     // Note: If attr is a function, it will receive have
     // scope["this"] == source, so it can make changes on this object.
@@ -116,8 +116,8 @@ packToken TypeSpecificFunction(const packToken& p_left, const packToken& p_right
   }
 }
 
-packToken UnaryNumeralOperation(const packToken& left, const packToken& right, evaluationData* data) {
-  const std::string& op = data->op;
+PackToken UnaryNumeralOperation(const PackToken& left, const PackToken& right, evaluationData* data) {
+  const QString& op = data->op;
 
   if (op == "+") {
     return right;
@@ -128,7 +128,7 @@ packToken UnaryNumeralOperation(const packToken& left, const packToken& right, e
   }
 }
 
-packToken NumeralOperation(const packToken& left, const packToken& right, evaluationData* data) {
+PackToken NumeralOperation(const PackToken& left, const PackToken& right, evaluationData* data) {
   double left_d, right_d;
   int64_t left_i, right_i;
 
@@ -139,7 +139,7 @@ packToken NumeralOperation(const packToken& left, const packToken& right, evalua
   right_d = right.asDouble();
   right_i = right.asInt();
 
-  const std::string& op = data->op;
+  const QString& op = data->op;
 
   if (op == "+") {
     return left_d + right_d;
@@ -174,9 +174,9 @@ packToken NumeralOperation(const packToken& left, const packToken& right, evalua
   }
 }
 
-packToken FormatOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
-  std::string& s_left = p_left.asString();
-  const char* left = s_left.c_str();
+PackToken FormatOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* ) {
+  QString s_left = p_left.asString();
+  const char* left = s_left.toStdString().c_str();
 
   Tuple right;
 
@@ -186,8 +186,8 @@ packToken FormatOperation(const packToken& p_left, const packToken& p_right, eva
     right = Tuple(p_right);
   }
 
-  std::string result;
-  for (const packToken& token : right.list()) {
+  QString result;
+  for (const PackToken& token : right.list()) {
     // Find the next occurrence of "%s"
     while (*left && (*left != '%' || left[1] != 's')) {
       if (*left == '\\' && left[1] == '%') ++left;
@@ -203,7 +203,7 @@ packToken FormatOperation(const packToken& p_left, const packToken& p_right, eva
 
     // Replace it by the token string representation:
     if (token->type == STR) {
-      // Avoid using packToken::str for strings
+      // Avoid using PackToken::str for strings
       // or it will enclose it quotes `"str"`
       result += token.asString();
     } else {
@@ -225,10 +225,10 @@ packToken FormatOperation(const packToken& p_left, const packToken& p_right, eva
   }
 }
 
-packToken StringOnStringOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
-  const std::string& left = p_left.asString();
-  const std::string& right = p_right.asString();
-  const std::string& op = data->op;
+PackToken StringOnStringOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
+  const QString& left = p_left.asString();
+  const QString& right = p_right.asString();
+  const QString& op = data->op;
 
   if (op == "+") {
     return left + right;
@@ -241,14 +241,14 @@ packToken StringOnStringOperation(const packToken& p_left, const packToken& p_ri
   }
 }
 
-packToken StringOnNumberOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
-  const std::string& left = p_left.asString();
-  const std::string& op = data->op;
+PackToken StringOnNumberOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
+  const QString& left = p_left.asString();
+  const QString& op = data->op;
 
   std::stringstream ss;
   if (op == "+") {
-    ss << left << p_right.asDouble();
-    return ss.str();
+    ss << left.toStdString() << p_right.asDouble();
+    return QString::fromStdString(ss.str());
   } else if (op == "[]") {
     int64_t index = p_right.asInt();
 
@@ -260,27 +260,27 @@ packToken StringOnNumberOperation(const packToken& p_left, const packToken& p_ri
       throw std::domain_error("String index out of range!");
     }
 
-    ss << left[index];
-    return ss.str();
+    ss << QString(left.at(index)).toStdString();
+    return QString::fromStdString(ss.str());
   } else {
     throw undefined_operation(op, p_left, p_right);
   }
 }
 
-packToken NumberOnStringOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
+PackToken NumberOnStringOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
   double left = p_left.asDouble();
-  const std::string& right = p_right.asString();
+  const QString& right = p_right.asString();
 
   std::stringstream ss;
   if (data->op == "+") {
     ss << left << right;
-    return ss.str();
+    return QString::fromStdString(ss.str());
   } else {
     throw undefined_operation(data->op, p_left, p_right);
   }
 }
 
-packToken ListOnNumberOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
+PackToken ListOnNumberOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
   TokenList left = p_left.asList();
 
   if (data->op == "[]") {
@@ -295,7 +295,7 @@ packToken ListOnNumberOperation(const packToken& p_left, const packToken& p_righ
       throw std::domain_error("List index out of range!");
     }
 
-    packToken& value = left.list()[index];
+    PackToken& value = left.list()[index];
 
     return RefToken(index, value, p_left);
   } else {
@@ -303,7 +303,7 @@ packToken ListOnNumberOperation(const packToken& p_left, const packToken& p_righ
   }
 }
 
-packToken ListOnListOperation(const packToken& p_left, const packToken& p_right, evaluationData* data) {
+PackToken ListOnListOperation(const PackToken& p_left, const PackToken& p_right, evaluationData* data) {
   TokenList& left = p_left.asList();
   TokenList& right = p_right.asList();
 
@@ -313,7 +313,7 @@ packToken ListOnListOperation(const packToken& p_left, const packToken& p_right,
     result.list() = left.list();
 
     // Insert items from the right list into the left:
-    for (packToken& p : right.list()) {
+    for (PackToken& p : right.list()) {
       result.list().push_back(p);
     }
 
@@ -328,7 +328,7 @@ struct Startup {
     // Create the operator precedence map based on C++ default
     // precedence order as described on cppreference website:
     // http://en.cppreference.com/w/cpp/language/operator_precedence
-    OppMap_t& opp = calculator::Default().opPrecedence;
+    OppMap_t& opp = Calculator::Default().opPrecedence;
     opp.add("[]", 2); opp.add("()", 2); opp.add(".", 2);
     opp.add("**", 3);
     opp.add("*",  5); opp.add("/", 5); opp.add("%", 5);
@@ -345,7 +345,7 @@ struct Startup {
     opp.addUnary("+",  3); opp.addUnary("-", 3);
 
     // Link operations to respective operators:
-    opMap_t& opMap = calculator::Default().opMap;
+    opMap_t& opMap = Calculator::Default().opMap;
     opMap.add({ANY_TYPE, "=", ANY_TYPE}, &Assign);
     opMap.add({ANY_TYPE, ",", ANY_TYPE}, &Comma);
     opMap.add({ANY_TYPE, ":", ANY_TYPE}, &Colon);
@@ -355,6 +355,8 @@ struct Startup {
     opMap.add({ANY_TYPE, ".", STR}, &TypeSpecificFunction);
     opMap.add({MAP, ".", STR}, &MapIndex);
     opMap.add({STR, "%", ANY_TYPE}, &FormatOperation);
+
+    auto ANY_OP = "";
 
     // Note: The order is important:
     opMap.add({NUM, ANY_OP, NUM}, &NumeralOperation);
