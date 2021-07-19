@@ -86,7 +86,7 @@ namespace cparse::builtin_typeSpecificFunctions
         TokenList list = scope.find("this")->asList();
         PackToken * token = scope.find("pos");
 
-        int64_t pos;
+        qint64 pos;
 
         if ((*token)->m_type & NUM)
         {

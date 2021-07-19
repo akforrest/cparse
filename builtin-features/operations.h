@@ -192,7 +192,7 @@ namespace cparse::builtin_operations
     PackToken NumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         qreal left_d, right_d;
-        int64_t left_i, right_i;
+        qint64 left_i, right_i;
 
         // Extract integer and real values of the operators:
         left_d = left.asReal();
@@ -380,7 +380,7 @@ namespace cparse::builtin_operations
         }
         else if (op == "[]")
         {
-            int64_t index = p_right.asInt();
+            auto index = p_right.asInt();
 
             if (index < 0)
             {
@@ -426,7 +426,7 @@ namespace cparse::builtin_operations
 
         if (data->op == "[]")
         {
-            int64_t index = p_right.asInt();
+            auto index = p_right.asInt();
 
             if (index < 0)
             {

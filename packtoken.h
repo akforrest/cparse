@@ -38,10 +38,10 @@ namespace cparse
 
             template<class C>
             PackToken(C c, TokenType type) : m_base(new TokenTyped<C>(c, type)) {}
-            PackToken(int i) : m_base(new TokenTyped<int64_t>(i, INT)) {}
-            PackToken(int64_t l) : m_base(new TokenTyped<int64_t>(l, INT)) {}
+            PackToken(int i) : m_base(new TokenTyped<qint64>(i, INT)) {}
+            PackToken(qint64 l) : m_base(new TokenTyped<qint64>(l, INT)) {}
             PackToken(bool b) : m_base(new TokenTyped<uint8_t>(b, BOOL)) {}
-            PackToken(size_t s) : m_base(new TokenTyped<int64_t>(s, INT)) {}
+            PackToken(size_t s) : m_base(new TokenTyped<qint64>(s, INT)) {}
             PackToken(qreal d) : m_base(new TokenTyped<qreal>(d, REAL)) {}
             PackToken(const char * s) : m_base(new TokenTyped<QString>(s, STR)) {}
             PackToken(const QString & s) : m_base(new TokenTyped<QString>(s, STR)) {}
@@ -61,7 +61,7 @@ namespace cparse
 
             bool asBool() const;
             qreal asReal() const;
-            int64_t asInt() const;
+            qint64 asInt() const;
             QString asString() const;
             TokenMap & asMap() const;
             TokenList & asList() const;

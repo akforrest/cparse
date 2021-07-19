@@ -186,7 +186,7 @@ namespace cparse
             struct ListIterator : public TokenIterator
             {
                 ListType * list;
-                uint64_t i = 0;
+                quint64 i = 0;
 
                 ListIterator(ListType * list) : list(list) {}
 
@@ -204,7 +204,7 @@ namespace cparse
                 return new ListIterator(&list());
             }
 
-            PackToken & operator[](const uint64_t idx) const
+            PackToken & operator[](const quint64 idx) const
             {
                 if (list().size() <= idx)
                 {

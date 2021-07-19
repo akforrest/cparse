@@ -148,7 +148,7 @@ bool PackToken::asBool() const
             return static_cast<TokenTyped<qreal>*>(m_base)->m_val != 0;
 
         case INT:
-            return static_cast<TokenTyped<int64_t>*>(m_base)->m_val != 0;
+            return static_cast<TokenTyped<qint64>*>(m_base)->m_val != 0;
 
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val != 0;
@@ -180,7 +180,7 @@ qreal PackToken::asReal() const
             return static_cast<TokenTyped<qreal>*>(m_base)->m_val;
 
         case INT:
-            return static_cast<qreal>(static_cast<TokenTyped<int64_t>*>(m_base)->m_val);
+            return static_cast<qreal>(static_cast<TokenTyped<qint64>*>(m_base)->m_val);
 
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
@@ -199,15 +199,15 @@ qreal PackToken::asReal() const
     }
 }
 
-int64_t PackToken::asInt() const
+qint64 PackToken::asInt() const
 {
     switch (m_base->m_type)
     {
         case REAL:
-            return static_cast<int64_t>(static_cast<TokenTyped<qreal>*>(m_base)->m_val);
+            return static_cast<qint64>(static_cast<TokenTyped<qreal>*>(m_base)->m_val);
 
         case INT:
-            return static_cast<TokenTyped<int64_t>*>(m_base)->m_val;
+            return static_cast<TokenTyped<qint64>*>(m_base)->m_val;
 
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
@@ -353,7 +353,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
             return ss;
 
         case INT:
-            ss += QString::number(static_cast<const TokenTyped<int64_t>*>(base)->m_val);
+            ss += QString::number(static_cast<const TokenTyped<qint64>*>(base)->m_val);
             return ss;
 
         case BOOL:

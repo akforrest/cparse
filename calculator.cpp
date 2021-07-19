@@ -12,7 +12,7 @@ namespace
 
     bool match_op_id(OpId id, OpId mask)
     {
-        uint64_t result = id & mask;
+        quint64 result = id & mask;
         auto * val = reinterpret_cast<uint32_t *>(&result);
         return (val[0] && val[1]);
     }
@@ -426,12 +426,12 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
             }
 
             // If the token is a number, add it to the output queue.
-            int64_t _int = strtoll(expr, &nextChar, base);
+            qint64 _int = strtoll(expr, &nextChar, base);
 
             // If the number was not a float:
             if (base != 10 || !strchr(".eE", *nextChar))
             {
-                data.handleToken(new TokenTyped<int64_t>(_int, INT));
+                data.handleToken(new TokenTyped<qint64>(_int, INT));
             }
             else
             {

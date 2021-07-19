@@ -111,7 +111,7 @@ namespace cparse::builtin_functions
         char * rest;
         const QString & str = tok.asString();
         errno = 0;
-        int64_t ret = strtol(str.toStdString().c_str(), &rest, 10);
+        qint64 ret = strtol(str.toStdString().c_str(), &rest, 10);
 
         if (str == rest)
         {
@@ -334,7 +334,7 @@ namespace cparse::builtin_functions
             func = p_func->asFunc();
             PackToken _this = PackToken(base->clone());
             TokenList args;
-            args.push(PackToken(static_cast<int64_t>(nest)));
+            args.push(PackToken(static_cast<qint64>(nest)));
             return Function::call(_this, func, &args, TokenMap()).asString();
         }
 
