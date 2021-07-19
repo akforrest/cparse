@@ -1,5 +1,6 @@
 #include "calculator.h"
 
+#include "cparse.h"
 #include "rpnbuilder.h"
 #include "exceptions.h"
 #include "tokenhelpers.h"
@@ -31,14 +32,14 @@ namespace
         {
             if (match_op_id(data->opID, operation.getMask()))
             {
-                try
-                {
-                    return operation.exec(left, right, data).release();
-                }
-                catch (const Operation::Reject &)
+                auto * execToken = operation.exec(left, right, data).release();
+
+                if (execToken->m_type == TokenType::REJECT)
                 {
                     continue;
                 }
+
+                return execToken;
             }
         }
 
@@ -48,10 +49,6 @@ namespace
     /* * * * * RAII_TokenQueue_t struct  * * * * */
 
     // Used to make sure an rpn is dealloc'd correctly
-    // even when an exception is thrown.
-    //
-    // Note: This is needed because C++ does not
-    // allow a try-finally block.
     struct RaiiTokenQueue : TokenQueue
     {
         RaiiTokenQueue() {}
@@ -64,11 +61,12 @@ namespace
         RaiiTokenQueue(const RaiiTokenQueue & rpn)
             : TokenQueue(rpn)
         {
-            throw std::runtime_error("You should not copy this class!");
+            Q_ASSERT_X(false, "RaiiTokenQueue", "You should not copy this class!");
         }
         RaiiTokenQueue & operator=(const RaiiTokenQueue &)
         {
-            throw std::runtime_error("You should not copy this class!");
+            Q_ASSERT_X(false, "RaiiTokenQueue", "You should not copy this class!");
+            return *this;
         }
     };
 }
@@ -112,7 +110,8 @@ Calculator::Calculator(const Calculator & calc)
 Calculator::Calculator(const QString & expr, const TokenMap & vars,
                        const QString & delim, int * rest, const Config & config)
 {
-    this->m_rpn = Calculator::toRPN(expr, vars, delim, rest, config);
+    m_rpn = Calculator::toRPN(expr, vars, delim, rest, config);
+    m_compiled = !m_rpn.empty();
 }
 
 Calculator::~Calculator()
@@ -120,17 +119,39 @@ Calculator::~Calculator()
     RpnBuilder::clearRPN(&this->m_rpn);
 }
 
+bool Calculator::compiled() const
+{
+    return m_compiled;
+}
+
 PackToken Calculator::calculate(const QString & expr, const TokenMap & vars,
                                 const QString & delim, int * rest)
 {
     RaiiTokenQueue rpn = Calculator::toRPN(expr, vars, delim, rest);
+
+    if (rpn.empty())
+    {
+        return PackToken::Error();
+    }
+
     Token * ret = Calculator::calculate(rpn, vars);
+
+    if (ret == nullptr)
+    {
+        return PackToken::Error();
+    }
+
     return PackToken(resolve_reference(ret));
 }
 
 Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
                               const Config & config)
 {
+    if (rpn.empty())
+    {
+        return nullptr;
+    }
+
     EvaluationData data(rpn, scope, config.opMap);
 
     // Evaluate the expression in RPN form.
@@ -152,7 +173,8 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
             if (evaluation.size() < 2)
             {
                 cleanStack(evaluation);
-                throw std::domain_error("Invalid equation.");
+                qWarning(cparseLog) << "Invalid equation.";
+                return nullptr;
             }
 
             Token * r_token = evaluation.top();
@@ -222,17 +244,13 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
                 }
 
                 // Execute the function:
-                PackToken ret;
+                PackToken ret = Function::call(_this, l_func, &right, data.scope);
 
-                try
-                {
-                    ret = Function::call(_this, l_func, &right, data.scope);
-                }
-                catch (...)
+                if (ret->m_type == TokenType::ERROR)
                 {
                     cleanStack(evaluation);
                     delete l_func;
-                    throw;
+                    return nullptr;
                 }
 
                 delete l_func;
@@ -245,32 +263,30 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
                 data.opID = Operation::buildMask(l_token->m_type, r_token->m_type);
                 PackToken l_pack(l_token);
                 PackToken r_pack(r_token);
-                Token * result = nullptr;
 
-                try
-                {
-                    // Resolve the operation:
-                    result = exec_operation(l_pack, r_pack, &data, data.op);
+                // Resolve the operation:
+                Token * result = exec_operation(l_pack, r_pack, &data, data.op);
 
-                    if (!result)
-                    {
-                        result = exec_operation(l_pack, r_pack, &data, "");
-                    }
-                }
-                catch (...)
+                if (!result)
                 {
-                    cleanStack(evaluation);
-                    throw;
+                    result = exec_operation(l_pack, r_pack, &data, "");
                 }
 
                 if (result)
                 {
+                    if (result->m_type == TokenType::ERROR)
+                    {
+                        cleanStack(evaluation);
+                        return nullptr;
+                    }
+
                     evaluation.push(result);
                 }
                 else
                 {
                     cleanStack(evaluation);
-                    throw undefined_operation(data.op, l_pack, r_pack);
+                    log_undefined_operation(data.op, l_pack, r_pack);
+                    return nullptr;
                 }
             }
         }
@@ -303,17 +319,25 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
 
 /* * * * * Non Static Functions * * * * */
 
-void Calculator::compile(const QString & expr, const TokenMap & vars,
+bool Calculator::compile(const QString & expr, const TokenMap & vars,
                          const QString & delim, int * rest)
 {
     // Make sure it is empty:
     RpnBuilder::clearRPN(&this->m_rpn);
-    this->m_rpn = Calculator::toRPN(expr, vars, delim, rest, config());
+    m_rpn = Calculator::toRPN(expr, vars, delim, rest, config());
+    m_compiled = !m_rpn.empty();
+    return this->compiled();
 }
 
 PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 {
     Token * value = calculate(this->m_rpn, vars, config());
+
+    if (value == nullptr)
+    {
+        return PackToken::Error();
+    }
+
     PackToken p = PackToken(value->clone());
 
     if (keep_refs)
@@ -397,7 +421,8 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
 
     if (*expr == '\0' || strchr(delim, *expr))
     {
-        throw std::invalid_argument("Cannot build a Calculator from an empty expression!");
+        qWarning(cparseLog) << "Cannot build a Calculator from an empty expression!";
+        return {};
     }
 
     // In one pass, ignore whitespace and parse the expression into RPN
@@ -431,12 +456,19 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
             // If the number was not a float:
             if (base != 10 || !strchr(".eE", *nextChar))
             {
-                data.handleToken(new TokenTyped<qint64>(_int, INT));
+                if (!data.handleToken(new TokenTyped<qint64>(_int, INT)))
+                {
+                    return {};
+                }
             }
             else
             {
                 qreal digit = strtod(expr, &nextChar);
-                data.handleToken(new TokenTyped<qreal>(digit, REAL));
+
+                if (!data.handleToken(new TokenTyped<qreal>(digit, REAL)))
+                {
+                    return {};
+                }
             }
 
             expr = nextChar;
@@ -452,14 +484,10 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
             if ((parser = config.parserMap.find(key)))
             {
                 // Parse reserved words:
-                try
-                {
-                    parser(expr, &expr, &data);
-                }
-                catch (...)
+                if (!parser(expr, &expr, &data))
                 {
                     data.clear();
-                    throw;
+                    return {};
                 }
             }
             else
@@ -470,12 +498,19 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
                 {
                     // Save a reference token:
                     Token * copy = (*value)->clone();
-                    data.handleToken(new RefToken(PackToken(key), copy));
+
+                    if (!data.handleToken(new RefToken(PackToken(key), copy)))
+                    {
+                        return {};
+                    }
                 }
                 else
                 {
                     // Save the variable name:
-                    data.handleToken(new TokenTyped<QString>(key, VAR));
+                    if (!data.handleToken(new TokenTyped<QString>(key, VAR)))
+                    {
+                        return {};
+                    }
                 }
             }
         }
@@ -525,11 +560,16 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
             {
                 QString squote = (quote == '"' ? "\"" : "'");
                 data.clear();
-                throw syntax_error("Expected quote (" + squote + ") at end of string declaration: " + squote + ss + ".");
+                qWarning(cparseLog) << "Expected quote (" + squote + ") at end of string declaration: " + squote + ss + ".";
+                return {};
             }
 
             ++expr;
-            data.handleToken(new TokenTyped<QString>(ss, STR));
+
+            if (!data.handleToken(new TokenTyped<QString>(ss, STR)))
+            {
+                return {};
+            }
         }
         else
         {
@@ -542,7 +582,11 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
                     if (!data.lastTokenWasOp())
                     {
                         // This counts as a bracket and as an operator:
-                        data.handleOp("()");
+                        if (!data.handleOp("()"))
+                        {
+                            return {};
+                        }
+
                         // Add it as a bracket to the op stack:
                     }
 
@@ -554,16 +598,25 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
                     if (!data.lastTokenWasOp())
                     {
                         // If it is an operator:
-                        data.handleOp("[]");
+                        if (!data.handleOp("[]"))
+                        {
+                            return {};
+                        }
                     }
                     else
                     {
                         // If it is the list constructor:
                         // Add the list constructor to the rpn:
-                        data.handleToken(new CppFunction(&TokenList::default_constructor, "list"));
+                        if (!data.handleToken(new CppFunction(&TokenList::default_constructor, "list")))
+                        {
+                            return {};
+                        }
 
                         // We make the program see it as a normal function call:
-                        data.handleOp("()");
+                        if (!data.handleOp("()"))
+                        {
+                            return {};
+                        }
                     }
 
                     // Add it as a bracket to the op stack:
@@ -572,12 +625,24 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
                     break;
 
                 case '{':
+
                     // Add a map constructor call to the rpn:
-                    data.handleToken(new CppFunction(&TokenMap::default_constructor, "map"));
+                    if (!data.handleToken(new CppFunction(&TokenMap::default_constructor, "map")))
+                    {
+                        return {};
+                    }
 
                     // We make the program see it as a normal function call:
-                    data.handleOp("()");
-                    data.openBracket("{");
+                    if (!data.handleOp("()"))
+                    {
+                        return {};
+                    }
+
+                    if (!data.openBracket("{"))
+                    {
+                        return {};
+                    }
+
                     ++expr;
                     break;
 
@@ -623,38 +688,35 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
                     if (parser)
                     {
                         // Parse reserved operators:
-                        try
-                        {
-                            parser(expr, &expr, &data);
-                        }
-                        catch (...)
+
+                        if (!parser(expr, &expr, &data))
                         {
                             data.clear();
-                            throw;
+                            return {};
                         }
                     }
                     else if (data.opExists(op))
                     {
-                        data.handleOp(op);
+                        if (!data.handleOp(op))
+                        {
+                            return {};
+                        }
                     }
                     else if ((parser = config.parserMap.find(QString(op[0]))))
                     {
                         expr = start + 1;
 
-                        try
-                        {
-                            parser(expr, &expr, &data);
-                        }
-                        catch (...)
+                        if (!parser(expr, &expr, &data))
                         {
                             data.clear();
-                            throw;
+                            return {};
                         }
                     }
                     else
                     {
                         data.clear();
-                        throw syntax_error("Invalid operator: " + op);
+                        qWarning(cparseLog) << "Invalid operator: " + op;
+                        return {};
                     }
                 }
             }
@@ -672,7 +734,8 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
     if (data.lastTokenWasUnary())
     {
         data.clear();
-        throw syntax_error("Expected operand after unary operator `" + data.topOp() + "`");
+        qWarning(cparseLog) << "Expected operand after unary operator `" << data.topOp() << "`";
+        return {};
     }
 
     data.processOpStack();

@@ -16,23 +16,14 @@
 #include "calculator.h"
 #include "tokenhelpers.h"
 
-using cparse::Calculator;
-using cparse::PackToken;
-using cparse::Token;
-using cparse::TokenMap;
-using cparse::RefToken;
-using cparse::Operation;
-using cparse::OpId;
-using cparse::Config;
-using cparse::TokenQueue;
-using cparse::EvaluationData;
-using cparse::RpnBuilder;
-using cparse::REF;
+#include "builtin-features/functions.h"
+#include "builtin-features/operations.h"
+#include "builtin-features/reservedwords.h"
+#include "builtin-features/typespecificfunctions.h"
 
-#include "./builtin-features/functions.h"
-#include "./builtin-features/operations.h"
-#include "./builtin-features/reservedwords.h"
-#include "./builtin-features/typespecificfunctions.h"
+using namespace cparse;
+
+Q_LOGGING_CATEGORY(cparseLog, "cparse")
 
 void cparse::initialize()
 {
@@ -245,7 +236,7 @@ bool RpnBuilder::opExists(const QString & op) const
     return m_opp.exists(op);
 }
 
-void RpnBuilder::handleOp(const QString & op)
+bool RpnBuilder::handleOp(const QString & op)
 {
     // If it's a left unary operator:
     if (this->m_lastTokenWasOp)
@@ -259,7 +250,8 @@ void RpnBuilder::handleOp(const QString & op)
         else
         {
             clearRPN(&(this->m_rpn));
-            throw std::domain_error("Unrecognized unary operator: '" + op.toStdString() + "'.");
+            qWarning(cparseLog) << "Unrecognized unary operator: '" << op << "'.";
+            return false;
         }
 
         // If its a right unary operator:
@@ -284,35 +276,42 @@ void RpnBuilder::handleOp(const QString & op)
         else
         {
             clearRPN(&(m_rpn));
-            throw std::domain_error("Undefined operator: `" + op.toStdString() + "`!");
+            qWarning(cparseLog) << "Undefined operator: `" << op << "`!";
+            return false;
         }
 
         this->m_lastTokenWasUnary = false;
         this->m_lastTokenWasOp = op[0].unicode();
     }
+
+    return true;
 }
 
-void RpnBuilder::handleToken(Token * token)
+bool RpnBuilder::handleToken(Token * token)
 {
     if (!m_lastTokenWasOp)
     {
-        throw syntax_error("Expected an operator or bracket but got " + PackToken::str(token));
+        qWarning(cparseLog) << "Expected an operator or bracket but got " << PackToken::str(token);
+        delete token;
+        return false;
     }
 
     m_rpn.push(token);
     m_lastTokenWasOp = false;
     m_lastTokenWasUnary = false;
+    return true;
 }
 
-void RpnBuilder::openBracket(const QString & bracket)
+bool RpnBuilder::openBracket(const QString & bracket)
 {
     m_opStack.push(bracket);
     m_lastTokenWasOp = bracket[0].unicode();
     m_lastTokenWasUnary = false;
     ++m_bracketLevel;
+    return true;
 }
 
-void RpnBuilder::closeBracket(const QString & bracket)
+bool RpnBuilder::closeBracket(const QString & bracket)
 {
     if (char(m_lastTokenWasOp) == bracket[0])
     {
@@ -331,13 +330,15 @@ void RpnBuilder::closeBracket(const QString & bracket)
     if (m_opStack.empty())
     {
         RpnBuilder::clearRPN(&m_rpn);
-        throw syntax_error("Extra '" + bracket + "' on the expression!");
+        qWarning(cparseLog) << "Extra '" + bracket + "' on the expression!";
+        return false;
     }
 
     m_opStack.pop();
     m_lastTokenWasOp = false;
     m_lastTokenWasUnary = false;
     --m_bracketLevel;
+    return true;
 }
 
 bool RpnBuilder::isvarchar(const char c)

@@ -44,10 +44,6 @@ namespace cparse
 
             Operation(const OpSignature & sig, OpFunc func);
 
-            // Use this exception to reject an operation.
-            // Without stoping the operation matching process.
-            struct Reject : public std::exception {};
-
             static inline uint32_t mask(TokenType type);
             static OpId buildMask(TokenType left, TokenType right);
 

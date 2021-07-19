@@ -41,6 +41,28 @@ namespace cparse
             }
     };
 
+    class TokenReject : public Token
+    {
+        public:
+
+            TokenReject() : Token(REJECT) {}
+            Token * clone() const override
+            {
+                return new TokenReject(*this);
+            }
+    };
+
+    class TokenError : public Token
+    {
+        public:
+
+            TokenError() : Token(ERROR) {}
+            Token * clone() const override
+            {
+                return new TokenError(*this);
+            }
+    };
+
     class TokenUnary : public Token
     {
         public:

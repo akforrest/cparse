@@ -15,10 +15,42 @@ using cparse::Tuple;
 using cparse::STuple;
 using cparse::Function;
 
-const PackToken & PackToken::None()
+namespace
 {
-    static PackToken none = PackToken(TokenNone());
-    return none;
+    using namespace cparse;
+
+    PackToken & noneToken()
+    {
+        static PackToken none = PackToken(TokenNone());
+        return none;
+    }
+
+    PackToken & errorToken()
+    {
+        static PackToken none = PackToken(TokenError());
+        return none;
+    }
+
+    PackToken & rejectToken()
+    {
+        static PackToken none = PackToken(TokenReject());
+        return none;
+    }
+}
+
+PackToken & PackToken::None()
+{
+    return noneToken();
+}
+
+PackToken & PackToken::Error()
+{
+    return errorToken();
+}
+
+PackToken & PackToken::Reject()
+{
+    return rejectToken();
 }
 
 PackToken::ToStringFunc & PackToken::str_custom()
@@ -93,8 +125,8 @@ PackToken & PackToken::operator[](const QString & key)
 {
     if (m_base->m_type != MAP)
     {
-        throw bad_cast(
-            "The Token is not a map!");
+        Q_ASSERT(false);
+        return errorToken();
     }
 
     return (*static_cast<TokenMap *>(m_base))[key];
@@ -109,12 +141,23 @@ const Token * PackToken::token() const
 {
     return m_base;
 }
+
+TokenType PackToken::type() const
+{
+    return m_base->m_type;
+}
+
+bool PackToken::isError() const
+{
+    return m_base->m_type == TokenType::ERROR;
+}
+
 const PackToken & PackToken::operator[](const QString & key) const
 {
     if (m_base->m_type != MAP)
     {
-        throw bad_cast(
-            "The Token is not a map!");
+        Q_ASSERT(false);
+        return errorToken();
     }
 
     return (*static_cast<TokenMap *>(m_base))[key];
@@ -123,21 +166,44 @@ PackToken & PackToken::operator[](const char * key)
 {
     if (m_base->m_type != MAP)
     {
-        throw bad_cast(
-            "The Token is not a map!");
+        Q_ASSERT(false);
+        return errorToken();
     }
 
     return (*static_cast<TokenMap *>(m_base))[key];
 }
+
 const PackToken & PackToken::operator[](const char * key) const
 {
     if (m_base->m_type != MAP)
     {
-        throw bad_cast(
-            "The Token is not a map!");
+        Q_ASSERT(false);
+        return errorToken();
     }
 
     return (*static_cast<TokenMap *>(m_base))[key];
+}
+
+bool PackToken::canConvertToBool() const
+{
+    switch (m_base->m_type)
+    {
+        case REAL:
+        case INT:
+        case BOOL:
+        case STR:
+        case MAP:
+        case FUNC:
+        case NONE:
+        case TUPLE:
+        case STUPLE:
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 bool PackToken::asBool() const
@@ -168,8 +234,26 @@ bool PackToken::asBool() const
             return !static_cast<Tuple *>(m_base)->list().empty();
 
         default:
-            throw bad_cast("Token type can not be cast to boolean!");
+            Q_ASSERT_X(false, "PackToken::asBool", "internal type can not be cast to boolean!");
     }
+
+    return false;
+}
+
+bool PackToken::canConvertToReal() const
+{
+    switch (m_base->m_type)
+    {
+        case REAL:
+        case INT:
+        case BOOL:
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 qreal PackToken::asReal() const
@@ -186,17 +270,35 @@ qreal PackToken::asReal() const
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
 
         default:
+        {
             if (!(m_base->m_type & NUM))
             {
-                throw bad_cast(
-                    "The Token is not a number!");
+                Q_ASSERT_X(false, "PackToken::asReal", "internal type is not a number!");
             }
             else
             {
-                throw bad_cast(
-                    "Unknown numerical type, can't convert it to qreal!");
+                Q_ASSERT_X(false, "PackToken::asReal", "internal type is an unsupported number type!");
             }
+        }
     }
+
+    return 0.0;
+}
+
+bool PackToken::canConvertToInt() const
+{
+    switch (m_base->m_type)
+    {
+        case REAL:
+        case INT:
+        case BOOL:
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 qint64 PackToken::asInt() const
@@ -215,34 +317,61 @@ qint64 PackToken::asInt() const
         default:
             if (!(m_base->m_type & NUM))
             {
-                throw bad_cast(
-                    "The Token is not a number!");
+                Q_ASSERT_X(false, "PackToken::asInt", "internal type is not a number!");
             }
             else
             {
-                throw bad_cast(
-                    "Unknown numerical type, can't convert it to integer!");
+                Q_ASSERT_X(false, "PackToken::asInt", "internal type is an unsupported number type!");
             }
     }
+
+    return 0;
+}
+
+bool PackToken::canConvertToString() const
+{
+    return (!(m_base->m_type != STR && m_base->m_type != VAR && m_base->m_type != OP));
 }
 
 QString PackToken::asString() const
 {
-    if (m_base->m_type != STR && m_base->m_type != VAR && m_base->m_type != OP)
+    if (!this->canConvertToString())
     {
-        throw bad_cast(
-            "The Token is not a string!");
+        Q_ASSERT_X(false, "PackToken::asString", "internal type is not a string!");
+        return QString();
     }
 
     return static_cast<TokenTyped<QString>*>(m_base)->m_val;
+}
+
+bool PackToken::canConvertToMap() const
+{
+    return m_base->m_type == MAP;
+}
+bool PackToken::canConvertToList() const
+{
+    return m_base->m_type == LIST;
+}
+bool PackToken::canConvertToTuple() const
+{
+    return m_base->m_type == TUPLE;
+}
+bool PackToken::canConvertToSTuple() const
+{
+    return m_base->m_type == STUPLE;
+}
+bool PackToken::canConvertToFunc() const
+{
+    return m_base->m_type == FUNC;
 }
 
 TokenMap & PackToken::asMap() const
 {
     if (m_base->m_type != MAP)
     {
-        throw bad_cast(
-            "The Token is not a map!");
+        Q_ASSERT(false);
+        static TokenMap nonType;
+        return nonType;
     }
 
     return *static_cast<TokenMap *>(m_base);
@@ -252,8 +381,9 @@ TokenList & PackToken::asList() const
 {
     if (m_base->m_type != LIST)
     {
-        throw bad_cast(
-            "The Token is not a list!");
+        Q_ASSERT(false);
+        static TokenList nonType;
+        return nonType;
     }
 
     return *static_cast<TokenList *>(m_base);
@@ -263,8 +393,9 @@ Tuple & PackToken::asTuple() const
 {
     if (m_base->m_type != TUPLE)
     {
-        throw bad_cast(
-            "The Token is not a tuple!");
+        Q_ASSERT(false);
+        static Tuple nonType;
+        return nonType;
     }
 
     return *static_cast<Tuple *>(m_base);
@@ -274,8 +405,9 @@ STuple & PackToken::asSTuple() const
 {
     if (m_base->m_type != STUPLE)
     {
-        throw bad_cast(
-            "The Token is not an special tuple!");
+        Q_ASSERT(false);
+        static STuple nonType;
+        return nonType;
     }
 
     return *static_cast<STuple *>(m_base);
@@ -285,8 +417,9 @@ Function * PackToken::asFunc() const
 {
     if (m_base->m_type != FUNC)
     {
-        throw bad_cast(
-            "The Token is not a function!");
+        Q_ASSERT(false);
+        static Function * nonType = nullptr;
+        return nonType;
     }
 
     return static_cast<Function *>(m_base);

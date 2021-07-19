@@ -22,7 +22,9 @@ namespace cparse
                        const Config & config = defaultConfig());
             virtual ~Calculator();
 
-            void compile(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+            bool compiled() const;
+
+            bool compile(const QString & expr, const TokenMap & vars = &TokenMap::empty,
                          const QString & delim = QString(), int * rest = nullptr);
 
             static PackToken calculate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
@@ -52,6 +54,7 @@ namespace cparse
         private:
 
             TokenQueue m_rpn;
+            bool m_compiled = false;
     };
 
     QDebug & operator<<(QDebug & os, const cparse::Calculator & t);

@@ -1,9 +1,9 @@
 #include <string>
 
-#include "./rpnbuilder.h"
-
-#include "./containers.h"
-#include "./functions.h"
+#include "cparse.h"
+#include "rpnbuilder.h"
+#include "containers.h"
+#include "functions.h"
 
 using cparse::TokenMap;
 using cparse::PackToken;
@@ -92,6 +92,17 @@ PackToken TokenList::default_constructor(TokenMap scope)
     }
 
     return list;
+}
+
+PackToken & TokenList::operator[](const quint64 idx) const
+{
+    if (list().size() <= idx)
+    {
+        qWarning(cparseLog) << "List index out of range";
+        return PackToken::Error();
+    }
+
+    return list()[idx];
 }
 
 /* * * * * TokenList iterator implemented functions * * * * */
@@ -208,7 +219,9 @@ void TokenMap::assign(const QString & key, Token * value)
     }
     else
     {
-        throw std::invalid_argument("TokenMap assignment expected a non NULL argument as value!");
+        qWarning(cparseLog) << "TokenMap assignment expected a non NULL argument as value!";
+        Q_ASSERT(false);
+        return;
     }
 
     PackToken * variable = find(key);

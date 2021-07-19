@@ -1,9 +1,10 @@
 #include <string>
 #include <utility>
 
-#include "./rpnbuilder.h"
-#include "./functions.h"
-#include "./exceptions.h"
+#include "cparse.h"
+#include "rpnbuilder.h"
+#include "functions.h"
+#include "exceptions.h"
 
 using cparse::PackToken;
 using cparse::Function;
@@ -65,19 +66,22 @@ PackToken Function::call(const PackToken & _this, const Function * func,
 
         if (arg->m_type != STUPLE)
         {
-            throw syntax_error("Positional argument follows keyword argument");
+            qWarning(cparseLog) << "Positional argument follows keyword argument";
+            return PackToken::Error();
         }
 
         auto * st = static_cast<STuple *>(arg.token());
 
         if (st->list().size() != 2)
         {
-            throw syntax_error("Keyword tuples must have exactly 2 items!");
+            qWarning(cparseLog) << "Keyword tuples must have exactly 2 items";
+            return PackToken::Error();
         }
 
         if (st->list()[0]->m_type != STR)
         {
-            throw syntax_error("Keyword first argument should be of type string!");
+            qWarning(cparseLog) << "Keyword first argument should be of type string";
+            return PackToken::Error();
         }
 
         // Save it:

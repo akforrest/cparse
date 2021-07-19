@@ -49,10 +49,10 @@ namespace cparse
 
             bool opExists(const QString & op) const;
 
-            void handleOp(const QString & op);
-            void handleToken(Token * token);
-            void openBracket(const QString & bracket);
-            void closeBracket(const QString & bracket);
+            bool handleOp(const QString & op);
+            bool handleToken(Token * token);
+            bool openBracket(const QString & bracket);
+            bool closeBracket(const QString & bracket);
 
             void clear();
 

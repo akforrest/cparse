@@ -13,7 +13,7 @@ namespace cparse
     enum TokenType
     {
         // Internal types:
-        NONE, OP, UNARY, VAR,
+        NONE, OP, UNARY, VAR, ERROR, REJECT,
 
         // Base types:
         // Note: The mask system accepts at most 29 (32-3) different base types.

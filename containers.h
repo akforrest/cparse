@@ -204,15 +204,7 @@ namespace cparse
                 return new ListIterator(&list());
             }
 
-            PackToken & operator[](const quint64 idx) const
-            {
-                if (list().size() <= idx)
-                {
-                    throw std::out_of_range("List index out of range!");
-                }
-
-                return list()[idx];
-            }
+            PackToken & operator[](quint64 idx) const;
 
             void push(const PackToken & val) const
             {

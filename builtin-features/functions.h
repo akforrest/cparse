@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+#include "../cparse.h"
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
@@ -82,6 +83,12 @@ namespace cparse::builtin_functions
             return PackToken(tok.asReal());
         }
 
+        if (!tok.canConvertToString())
+        {
+            qWarning(cparseLog) << "could not convert \"" << tok << "\" to qreal!";
+            return PackToken::Error();
+        }
+
         char * rest;
         const QString & str = tok.asString();
         errno = 0;
@@ -89,11 +96,13 @@ namespace cparse::builtin_functions
 
         if (str == rest)
         {
-            throw std::runtime_error("Could not convert \"" + str.toStdString() + "\" to float!");
+            qWarning(cparseLog) << "could not convert \"" << str << "\" to qreal!";
+            return PackToken::Error();
         }
         else if (errno)
         {
-            std::range_error("Value too big or too small to fit a Double!");
+            qWarning(cparseLog) << "value too big or too small to fit a qreal!";
+            return PackToken::Error();
         }
 
         return PackToken(ret);
@@ -115,11 +124,13 @@ namespace cparse::builtin_functions
 
         if (str == rest)
         {
-            throw std::runtime_error("Could not convert \"" + str.toStdString() + "\" to integer!");
+            qWarning(cparseLog) << "could not convert \"" << str << "\" to integer!";
+            return PackToken::Error();
         }
         else if (errno)
         {
-            std::range_error("Value too big or too small to fit an Integer!");
+            qWarning(cparseLog) << "value too big or too small to fit an integer!";
+            return PackToken::Error();
         }
 
         return PackToken(ret);
@@ -299,7 +310,8 @@ namespace cparse::builtin_functions
             return tok.asMap().getChild();
         }
 
-        throw std::runtime_error(tok.str().toStdString() + " is not extensible!");
+        qWarning(cparseLog) << tok.str() << " is not extensible!";
+        return PackToken::Error();
     }
 
     // Example of replacement function for PackToken::str():

@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+#include "../cparse.h"
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
@@ -63,12 +64,14 @@ namespace cparse::builtin_operations
             }
             else
             {
-                throw std::domain_error("Left operand of assignment is not a list!");
+                qWarning(cparseLog) << "left operand of assignment is not a list";
+                return PackToken::Error();
             }
         }
         else
         {
-            throw undefined_operation(data->op, key, right);
+            log_undefined_operation(data->op, key, right);
+            return PackToken::Error();
         }
 
         return right;
@@ -81,10 +84,8 @@ namespace cparse::builtin_operations
             left.asTuple().list().push_back(right);
             return left;
         }
-        else
-        {
-            return Tuple(left, right);
-        }
+
+        return Tuple(left, right);
     }
 
     PackToken Colon(const PackToken & left, const PackToken & right, EvaluationData *)
@@ -94,17 +95,16 @@ namespace cparse::builtin_operations
             left.asSTuple().list().push_back(right);
             return left;
         }
-        else
-        {
-            return STuple(left, right);
-        }
+
+        return STuple(left, right);
     }
 
     PackToken Equal(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
         if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
         {
-            throw undefined_operation(data->op, left, right);
+            log_undefined_operation(data->op, left, right);
+            return PackToken::Error();
         }
 
         return PackToken(left == right);
@@ -114,7 +114,8 @@ namespace cparse::builtin_operations
     {
         if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
         {
-            throw undefined_operation(data->op, left, right);
+            log_undefined_operation(data->op, left, right);
+            return PackToken::Error();
         }
 
         return PackToken(left != right);
@@ -122,6 +123,12 @@ namespace cparse::builtin_operations
 
     PackToken MapIndex(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToMap() ||
+            !p_right.canConvertToString())
+        {
+            return PackToken::Reject();
+        }
+
         TokenMap & left = p_left.asMap();
         auto right = p_right.asString();
         const auto & op = data->op;
@@ -134,23 +141,21 @@ namespace cparse::builtin_operations
             {
                 return RefToken(right, *p_value, left);
             }
-            else
-            {
-                return RefToken(right, PackToken::None(), left);
-            }
+
+            return RefToken(right, PackToken::None(), left);
         }
-        else
-        {
-            throw undefined_operation(op, left, right);
-        }
+
+        log_undefined_operation(op, left, right);
+        return PackToken::Error();
     }
 
     // Resolve build-in operations for non-map types, e.g.: 'str'.len()
     PackToken TypeSpecificFunction(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
-        if (p_left->m_type == TokenType::MAP)
+        if (p_left->m_type == TokenType::MAP ||
+            !p_right.canConvertToString())
         {
-            throw Operation::Reject();
+            return PackToken::Reject();
         }
 
         TokenMap & attr_map = Calculator::typeAttributeMap()[p_left->m_type];
@@ -165,10 +170,9 @@ namespace cparse::builtin_operations
             // Or just read some information for example: its length.
             return RefToken(key, (*attr), p_left);
         }
-        else
-        {
-            throw undefined_operation(data->op, p_left, p_right);
-        }
+
+        log_undefined_operation(data->op, p_left, p_right);
+        return PackToken::Error();
     }
 
     PackToken UnaryNumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
@@ -179,18 +183,29 @@ namespace cparse::builtin_operations
         {
             return right;
         }
-        else if (op == "-")
+
+        if (op == "-")
         {
+            if (!right.canConvertToReal())
+            {
+                return false;
+            }
+
             return -right.asReal();
         }
-        else
-        {
-            throw undefined_operation(data->op, left, right);
-        }
+
+        log_undefined_operation(data->op, left, right);
+        return PackToken::Error();
     }
 
     PackToken NumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
+        if (!left.canConvertToReal() ||
+            !right.canConvertToReal())
+        {
+            return PackToken::Error();
+        }
+
         qreal left_d, right_d;
         qint64 left_i, right_i;
 
@@ -207,66 +222,83 @@ namespace cparse::builtin_operations
         {
             return left_d + right_d;
         }
-        else if (op == "*")
+
+        if (op == "*")
         {
             return left_d * right_d;
         }
-        else if (op == "-")
+
+        if (op == "-")
         {
             return left_d - right_d;
         }
-        else if (op == "/")
+
+        if (op == "/")
         {
             return left_d / right_d;
         }
-        else if (op == "<<")
+
+        if (op == "<<")
         {
             return left_i << right_i;
         }
-        else if (op == "**")
+
+        if (op == "**")
         {
             return pow(left_d, right_d);
         }
-        else if (op == ">>")
+
+        if (op == ">>")
         {
             return left_i >> right_i;
         }
-        else if (op == "%")
+
+        if (op == "%")
         {
             return left_i % right_i;
         }
-        else if (op == "<")
+
+        if (op == "<")
         {
             return left_d < right_d;
         }
-        else if (op == ">")
+
+        if (op == ">")
         {
             return left_d > right_d;
         }
-        else if (op == "<=")
+
+        if (op == "<=")
         {
             return left_d <= right_d;
         }
-        else if (op == ">=")
+
+        if (op == ">=")
         {
             return left_d >= right_d;
         }
-        else if (op == "&&")
+
+        if (op == "&&")
         {
             return left_i && right_i;
         }
-        else if (op == "||")
+
+        if (op == "||")
         {
             return left_i || right_i;
         }
-        else
-        {
-            throw undefined_operation(op, left, right);
-        }
+
+        log_undefined_operation(op, left, right);
+        return PackToken::Error();
     }
 
     PackToken FormatOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData *)
     {
+        if (!p_left.canConvertToString())
+        {
+            return PackToken::Error();
+        }
+
         QString s_left = p_left.asString();
         auto stdstring = s_left.toStdString();
         const char * left = stdstring.c_str();
@@ -300,12 +332,11 @@ namespace cparse::builtin_operations
 
             if (*left == '\0')
             {
-                throw type_error("Not all arguments converted during string formatting");
+                qWarning(cparseLog) << "Not all arguments converted during string formatting";
+                return PackToken::Error();
             }
-            else
-            {
-                left += 2;
-            }
+
+            left += 2;
 
             // Replace it by the token string representation:
             if (token->m_type == TokenType::STR)
@@ -334,16 +365,21 @@ namespace cparse::builtin_operations
 
         if (*left != '\0')
         {
-            throw type_error("Not enough arguments for format string");
+            qWarning(cparseLog) << "Not enough arguments for format string";
+            return PackToken::Error();
         }
-        else
-        {
-            return result;
-        }
+
+        return result;
     }
 
     PackToken StringOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToString() ||
+            !p_right.canConvertToString())
+        {
+            return PackToken::Error();
+        }
+
         const QString & left = p_left.asString();
         const QString & right = p_right.asString();
         const QString & op = data->op;
@@ -352,34 +388,48 @@ namespace cparse::builtin_operations
         {
             return left + right;
         }
-        else if (op == "==")
+
+        if (op == "==")
         {
             return (left == right);
         }
-        else if (op == "!=")
+
+        if (op == "!=")
         {
             return (left != right);
         }
-        else
-        {
-            throw undefined_operation(op, p_left, p_right);
-        }
+
+        log_undefined_operation(op, p_left, p_right);
+        return PackToken::Error();
     }
 
     PackToken StringOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToString())
+        {
+            return PackToken::Error();
+        }
+
         const QString & left = p_left.asString();
         const QString & op = data->op;
 
-        std::stringstream ss;
-
         if (op == "+")
         {
-            ss << left.toStdString() << p_right.asReal();
-            return QString::fromStdString(ss.str());
+            if (!p_right.canConvertToReal())
+            {
+                return PackToken::Error();
+            }
+
+            return left + QString::number(p_right.asReal());
         }
-        else if (op == "[]")
+
+        if (op == "[]")
         {
+            if (!p_right.canConvertToInt())
+            {
+                return PackToken::Error();
+            }
+
             auto index = p_right.asInt();
 
             if (index < 0)
@@ -390,41 +440,46 @@ namespace cparse::builtin_operations
 
             if (index < 0 || static_cast<size_t>(index) >= left.size())
             {
-                throw std::domain_error("String index out of range!");
+                qWarning(cparseLog) << "String index out of range";
+                return PackToken::Error();
             }
 
-            ss << QString(left.at(index)).toStdString();
-            return QString::fromStdString(ss.str());
+            return QString(left.at(index));
         }
-        else
-        {
-            throw undefined_operation(op, p_left, p_right);
-        }
+
+        log_undefined_operation(op, p_left, p_right);
+        return PackToken::Error();
     }
 
     PackToken NumberOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToReal() || !p_right.canConvertToString())
+        {
+            return PackToken::Error();
+        }
+
         auto left = p_left.asReal();
         auto right = p_right.asString();
 
-        std::stringstream ss;
-
         if (data->op == "+")
         {
-            ss << left << right;
-            return QString::fromStdString(ss.str());
+            return QString::number(left) + right;
         }
-        else
-        {
-            throw undefined_operation(data->op, p_left, p_right);
-        }
+
+        log_undefined_operation(data->op, p_left, p_right);
+        return PackToken::Error();
     }
 
     PackToken ListOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToList())
+        {
+            return PackToken::Error();
+        }
+
         TokenList left = p_left.asList();
 
-        if (data->op == "[]")
+        if (data->op == "[]" && p_right.canConvertToInt())
         {
             auto index = p_right.asInt();
 
@@ -436,21 +491,26 @@ namespace cparse::builtin_operations
 
             if (index < 0 || static_cast<size_t>(index) >= left.list().size())
             {
-                throw std::domain_error("List index out of range!");
+                qWarning(cparseLog) << "List index out of range!";
+                return PackToken::Error();
             }
 
             PackToken & value = left.list()[index];
 
             return RefToken(index, value, p_left);
         }
-        else
-        {
-            throw undefined_operation(data->op, p_left, p_right);
-        }
+
+        log_undefined_operation(data->op, p_left, p_right);
+        return PackToken::Error();
     }
 
     PackToken ListOnListOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
+        if (!p_left.canConvertToList() || !p_right.canConvertToList())
+        {
+            return PackToken::Error();
+        }
+
         TokenList & left = p_left.asList();
         TokenList & right = p_right.asList();
 
@@ -468,10 +528,9 @@ namespace cparse::builtin_operations
 
             return result;
         }
-        else
-        {
-            throw undefined_operation(data->op, left, right);
-        }
+
+        log_undefined_operation(data->op, left, right);
+        return PackToken::Error();
     }
 
     struct Startup

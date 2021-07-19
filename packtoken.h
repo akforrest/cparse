@@ -59,6 +59,20 @@ namespace cparse
             Token * token();
             const Token * token() const;
 
+            TokenType type() const;
+
+            bool isError() const;
+
+            bool canConvertToBool() const;
+            bool canConvertToString() const;
+            bool canConvertToReal() const;
+            bool canConvertToInt() const;
+            bool canConvertToMap() const;
+            bool canConvertToList() const;
+            bool canConvertToTuple() const;
+            bool canConvertToSTuple() const;
+            bool canConvertToFunc() const;
+
             bool asBool() const;
             qreal asReal() const;
             qint64 asInt() const;
@@ -73,7 +87,9 @@ namespace cparse
             // MyType& m = packToken.as<MyType>();
             template<typename T> T & as() const;
 
-            static const PackToken & None();
+            static PackToken & None();
+            static PackToken & Error();
+            static PackToken & Reject();
 
             using ToStringFunc = QString(*)(const Token *, quint32);
             static ToStringFunc & str_custom();

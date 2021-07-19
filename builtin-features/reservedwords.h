@@ -1,6 +1,7 @@
 #ifndef CPARSE_BUILTIN_RESERVEDWORDS_H
 #define CPARSE_BUILTIN_RESERVEDWORDS_H
 
+#include "../cparse.h"
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
@@ -15,22 +16,22 @@ namespace cparse::builtin_reservedWords
     PackToken falseToken = PackToken(false);
     PackToken noneToken = PackToken::None();
 
-    void True(const char *, const char **, RpnBuilder * data)
+    bool True(const char *, const char **, RpnBuilder * data)
     {
-        data->handleToken(trueToken->clone());
+        return data->handleToken(trueToken->clone());
     }
 
-    void False(const char *, const char **, RpnBuilder * data)
+    bool False(const char *, const char **, RpnBuilder * data)
     {
-        data->handleToken(falseToken->clone());
+        return data->handleToken(falseToken->clone());
     }
 
-    void None(const char *, const char **, RpnBuilder * data)
+    bool None(const char *, const char **, RpnBuilder * data)
     {
-        data->handleToken(noneToken->clone());
+        return data->handleToken(noneToken->clone());
     }
 
-    void LineComment(const char * expr, const char ** rest, RpnBuilder *)
+    bool LineComment(const char * expr, const char ** rest, RpnBuilder *)
     {
         while (*expr && *expr != '\n')
         {
@@ -38,9 +39,10 @@ namespace cparse::builtin_reservedWords
         }
 
         *rest = expr;
+        return true;
     }
 
-    void SlashStarComment(const char * expr, const char ** rest, RpnBuilder *)
+    bool SlashStarComment(const char * expr, const char ** rest, RpnBuilder *)
     {
         while (*expr && !(expr[0] == '*' && expr[1] == '/'))
         {
@@ -49,15 +51,17 @@ namespace cparse::builtin_reservedWords
 
         if (*expr == '\0')
         {
-            throw syntax_error("Unexpected end of file after '/*' comment!");
+            qWarning(cparseLog) << "Unexpected end of file after '/*' comment!";
+            return false;
         }
 
         // Drop the characters `*/`:
         expr += 2;
         *rest = expr;
+        return true;
     }
 
-    void KeywordOperator(const char *, const char **, RpnBuilder * data)
+    bool KeywordOperator(const char *, const char **, RpnBuilder * data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
         if (data->backType() == VAR)
@@ -65,10 +69,10 @@ namespace cparse::builtin_reservedWords
             data->setBackType(STR);
         }
 
-        data->handleOp(":");
+        return data->handleOp(":");
     }
 
-    void DotOperator(const char * expr, const char ** rest, RpnBuilder * data)
+    bool DotOperator(const char * expr, const char ** rest, RpnBuilder * data)
     {
         data->handleOp(".");
 
@@ -80,12 +84,13 @@ namespace cparse::builtin_reservedWords
         // If it did not find a valid variable name after it:
         if (!RpnBuilder::isvarchar(*expr))
         {
-            throw syntax_error("Expected variable name after '.' operator");
+            qWarning(cparseLog) << "Expected variable name after '.' operator";
+            return false;
         }
 
         // Parse the variable name and save it as a string:
         auto key = RpnBuilder::parseVar(expr, rest);
-        data->handleToken(new TokenTyped<QString>(key, STR));
+        return data->handleToken(new TokenTyped<QString>(key, STR));
     }
 
     struct Startup

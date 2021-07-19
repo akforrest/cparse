@@ -16,7 +16,7 @@ namespace cparse
     // WordParserFunc is the function type called when
     // a reserved word or character is found at parsing time
 
-    using WordParserFunc = void (const char *, const char **, RpnBuilder *);
+    using WordParserFunc = bool (const char *, const char **, RpnBuilder *);
     using WordParserFuncMap = std::map<QString, WordParserFunc *>;
     using CharParserFuncMap = std::map<char, WordParserFunc *>;
 
