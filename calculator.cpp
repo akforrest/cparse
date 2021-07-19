@@ -14,7 +14,7 @@ using cparse::Operation;
 using cparse::opID_t;
 using cparse::Config_t;
 using cparse::typeMap_t;
-using cparse::TokenQueue_t;
+using cparse::TokenQueue;
 using cparse::evaluationData;
 using cparse::rpnBuilder;
 using cparse::REF;
@@ -75,17 +75,17 @@ typeMap_t & Calculator::type_attribute_map()
 //
 // Note: This is needed because C++ does not
 // allow a try-finally block.
-struct Calculator::RAII_TokenQueue_t : TokenQueue_t
+struct Calculator::RAII_TokenQueue_t : TokenQueue
 {
     RAII_TokenQueue_t() {}
-    RAII_TokenQueue_t(const TokenQueue_t & rpn) : TokenQueue_t(rpn) {}
+    RAII_TokenQueue_t(const TokenQueue & rpn) : TokenQueue(rpn) {}
     ~RAII_TokenQueue_t()
     {
         rpnBuilder::cleanRPN(this);
     }
 
     RAII_TokenQueue_t(const RAII_TokenQueue_t & rpn)
-        : TokenQueue_t(rpn)
+        : TokenQueue(rpn)
     {
         throw std::runtime_error("You should not copy this class!");
     }
@@ -106,7 +106,7 @@ PackToken Calculator::calculate(const char * expr, const TokenMap & vars,
     return PackToken(resolve_reference(ret));
 }
 
-TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & scope,
+TokenBase * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
                                   const Config_t & config)
 {
     evaluationData data(rpn, scope, config.opMap);
@@ -120,9 +120,9 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
         data.rpn.pop();
 
         // Operator:
-        if (base->type == OP)
+        if (base->m_type == OP)
         {
-            data.op = static_cast<Token<QString>*>(base)->val;
+            data.op = static_cast<Token<QString>*>(base)->m_val;
             delete base;
 
             /* * * * * Resolve operands Values and References: * * * * */
@@ -138,14 +138,14 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
             TokenBase * l_token = evaluation.top();
             evaluation.pop();
 
-            if (r_token->type & REF)
+            if (r_token->m_type & REF)
             {
                 data.right.reset(static_cast<RefToken *>(r_token));
                 r_token = data.right->resolve(&data.scope);
             }
-            else if (r_token->type == VAR)
+            else if (r_token->m_type == VAR)
             {
-                auto key = PackToken(static_cast<Token<QString>*>(r_token)->val);
+                auto key = PackToken(static_cast<Token<QString>*>(r_token)->m_val);
                 data.right = std::make_unique<RefToken>(key);
             }
             else
@@ -153,14 +153,14 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
                 data.right = std::make_unique<RefToken>();
             }
 
-            if (l_token->type & REF)
+            if (l_token->m_type & REF)
             {
                 data.left.reset(static_cast<RefToken *>(l_token));
                 l_token = data.left->resolve(&data.scope);
             }
-            else if (l_token->type == VAR)
+            else if (l_token->m_type == VAR)
             {
-                auto key = PackToken(static_cast<Token<QString>*>(l_token)->val);
+                auto key = PackToken(static_cast<Token<QString>*>(l_token)->m_val);
                 data.left = std::make_unique<RefToken>(key);
             }
             else
@@ -168,7 +168,7 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
                 data.left = std::make_unique<RefToken>();
             }
 
-            if (l_token->type == FUNC && data.op == "()")
+            if (l_token->m_type == FUNC && data.op == "()")
             {
                 // * * * * * Resolve Function Calls: * * * * * //
 
@@ -177,7 +177,7 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
                 // Collect the parameter tuple:
                 Tuple right;
 
-                if (r_token->type == TUPLE)
+                if (r_token->m_type == TUPLE)
                 {
                     right = *static_cast<Tuple *>(r_token);
                 }
@@ -190,7 +190,7 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
 
                 PackToken _this;
 
-                if (data.left->origin->type != NONE)
+                if (data.left->origin->m_type != NONE)
                 {
                     _this = data.left->origin;
                 }
@@ -220,7 +220,7 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
             {
                 // * * * * * Resolve All Other Operations: * * * * * //
 
-                data.opID = Operation::build_mask(l_token->type, r_token->type);
+                data.opID = Operation::build_mask(l_token->m_type, r_token->m_type);
                 PackToken l_pack(l_token);
                 PackToken r_pack(r_token);
                 TokenBase * result = nullptr;
@@ -252,10 +252,10 @@ TokenBase * Calculator::calculate(const TokenQueue_t & rpn, const TokenMap & sco
                 }
             }
         }
-        else if (base->type == VAR)      // Variable
+        else if (base->m_type == VAR)      // Variable
         {
             PackToken * value = nullptr;
-            QString key = static_cast<Token<QString>*>(base)->val;
+            QString key = static_cast<Token<QString>*>(base)->m_val;
 
             value = data.scope.find(key);
 
@@ -293,7 +293,7 @@ Calculator::Calculator()
 
 Calculator::Calculator(const Calculator & calc)
 {
-    TokenQueue_t _rpn = calc.RPN;
+    TokenQueue _rpn = calc.RPN;
 
     // Deep copy the token list, so everything can be
     // safely deallocated:
@@ -343,7 +343,7 @@ Calculator & Calculator::operator=(const Calculator & calc)
 
     // Deep copy the token list, so everything can be
     // safely deallocated:
-    TokenQueue_t _rpn = calc.RPN;
+    TokenQueue _rpn = calc.RPN;
 
     while (!_rpn.empty())
     {
@@ -362,7 +362,7 @@ QString Calculator::str() const
     return str(this->RPN);
 }
 
-QString Calculator::str(TokenQueue_t rpn)
+QString Calculator::str(TokenQueue rpn)
 {
     QString ss;
 
@@ -383,7 +383,7 @@ QString Calculator::str(TokenQueue_t rpn)
 
 /* * * * * Calculator class * * * * */
 
-TokenQueue_t Calculator::toRPN(const char * expr,
+TokenQueue Calculator::toRPN(const char * expr,
                                TokenMap vars, const char * delim,
                                const char ** rest, Config_t config)
 {

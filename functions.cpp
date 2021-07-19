@@ -29,7 +29,7 @@ PackToken Function::call(const PackToken & _this, const Function * func,
     while (args_it != args->list().end() && names_it != arg_names.end())
     {
         // If the positional argument list is over:
-        if ((*args_it)->type == STUPLE)
+        if ((*args_it)->m_type == STUPLE)
         {
             break;
         }
@@ -48,7 +48,7 @@ PackToken Function::call(const PackToken & _this, const Function * func,
     for (; args_it != args->list().end(); ++args_it)
     {
         // If there is a keyword argument:
-        if ((*args_it)->type == STUPLE)
+        if ((*args_it)->m_type == STUPLE)
         {
             break;
         }
@@ -63,7 +63,7 @@ PackToken Function::call(const PackToken & _this, const Function * func,
     {
         PackToken & arg = *args_it;
 
-        if (arg->type != STUPLE)
+        if (arg->m_type != STUPLE)
         {
             throw syntax_error("Positional argument follows keyword argument");
         }
@@ -75,7 +75,7 @@ PackToken Function::call(const PackToken & _this, const Function * func,
             throw syntax_error("Keyword tuples must have exactly 2 items!");
         }
 
-        if (st->list()[0]->type != STR)
+        if (st->list()[0]->m_type != STR)
         {
             throw syntax_error("Keyword first argument should be of type string!");
         }

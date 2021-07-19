@@ -16,10 +16,12 @@ namespace cparse
         opSignature_t(TokenType L, const QString & op, TokenType R);
     };
 
+    using opID_t = quint64;
+
     class opMap_t;
     struct evaluationData
     {
-        TokenQueue_t rpn;
+        TokenQueue rpn;
         TokenMap scope;
         const opMap_t & opMap;
 
@@ -29,7 +31,7 @@ namespace cparse
         QString op;
         opID_t opID{};
 
-        evaluationData(TokenQueue_t rpn, const TokenMap & scope, const opMap_t & opMap);
+        evaluationData(TokenQueue rpn, const TokenMap & scope, const opMap_t & opMap);
     };
 
     class Operation

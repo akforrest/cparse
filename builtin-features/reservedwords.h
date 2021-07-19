@@ -60,9 +60,9 @@ namespace cparse::builtin_reservedWords
     void KeywordOperator(const char *, const char **, rpnBuilder * data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
-        if (data->rpn.back()->type == VAR)
+        if (data->rpn.back()->m_type == VAR)
         {
-            data->rpn.back()->type = STR;
+            data->rpn.back()->m_type = STR;
         }
 
         data->handle_op(":");

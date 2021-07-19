@@ -125,11 +125,11 @@ namespace cparse
                 : Container(parent), Iterable(MAP)
             {
                 // For the TokenBase super class
-                this->type = MAP;
+                this->m_type = MAP;
             }
             TokenMap(const TokenMap & other) : Container(other)
             {
-                this->type = MAP;
+                this->m_type = MAP;
             }
 
             virtual ~TokenMap() {}
@@ -199,7 +199,7 @@ namespace cparse
         public:
             TokenList()
             {
-                this->type = LIST;
+                this->m_type = LIST;
             }
             virtual ~TokenList() {}
 
@@ -237,18 +237,18 @@ namespace cparse
         public:
             Tuple()
             {
-                this->type = TUPLE;
+                this->m_type = TUPLE;
             }
             Tuple(const TokenBase * first)
             {
-                this->type = TUPLE;
+                this->m_type = TUPLE;
                 list().push_back(PackToken(first->clone()));
             }
             Tuple(const PackToken first) : Tuple(first.token()) {}
 
             Tuple(const TokenBase * first, const TokenBase * second)
             {
-                this->type = TUPLE;
+                this->m_type = TUPLE;
                 list().push_back(PackToken(first->clone()));
                 list().push_back(PackToken(second->clone()));
             }
@@ -277,18 +277,18 @@ namespace cparse
         public:
             STuple()
             {
-                this->type = STUPLE;
+                this->m_type = STUPLE;
             }
             STuple(const TokenBase * first)
             {
-                this->type = STUPLE;
+                this->m_type = STUPLE;
                 list().push_back(PackToken(first->clone()));
             }
             STuple(const PackToken first) : STuple(first.token()) {}
 
             STuple(const TokenBase * first, const TokenBase * second)
             {
-                this->type = STUPLE;
+                this->m_type = STUPLE;
                 list().push_back(PackToken(first->clone()));
                 list().push_back(PackToken(second->clone()));
             }

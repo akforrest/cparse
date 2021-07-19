@@ -88,7 +88,7 @@ namespace cparse::builtin_typeSpecificFunctions
 
         int64_t pos;
 
-        if ((*token)->type & NUM)
+        if ((*token)->m_type & NUM)
         {
             pos = token->asInt();
 

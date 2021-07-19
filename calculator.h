@@ -21,9 +21,9 @@ namespace cparse
             static PackToken calculate(const char * expr, const TokenMap & vars = &TokenMap::empty,
                                        const char * delim = nullptr, const char ** rest = nullptr);
 
-            static TokenBase * calculate(const TokenQueue_t & RPN, const TokenMap & scope,
+            static TokenBase * calculate(const TokenQueue & RPN, const TokenMap & scope,
                                          const Config_t & config = Default());
-            static TokenQueue_t toRPN(const char * expr, TokenMap vars,
+            static TokenQueue toRPN(const char * expr, TokenMap vars,
                                       const char * delim = nullptr, const char ** rest = nullptr,
                                       Config_t config = Default());
 
@@ -39,7 +39,7 @@ namespace cparse
 
             // Serialization:
             QString str() const;
-            static QString str(TokenQueue_t rpn);
+            static QString str(TokenQueue rpn);
 
             // Operators:
             Calculator & operator=(const Calculator & calc);
@@ -55,7 +55,7 @@ namespace cparse
 
             // Used to dealloc a TokenQueue_t safely.
             struct RAII_TokenQueue_t;
-            TokenQueue_t RPN;
+            TokenQueue RPN;
     };
 }
 

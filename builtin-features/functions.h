@@ -33,7 +33,7 @@ namespace cparse::builtin_functions
                 dbg << " ";
             }
 
-            if (item->type == TokenType::STR)
+            if (item->m_type == TokenType::STR)
             {
                 dbg << item.asString();
             }
@@ -51,7 +51,7 @@ namespace cparse::builtin_functions
         // Get the arguments:
         TokenList list = scope["args"].asList();
 
-        if (list.list().size() == 1 && list.list().front()->type == TokenType::LIST)
+        if (list.list().size() == 1 && list.list().front()->m_type == TokenType::LIST)
         {
             list = list.list().front().asList();
         }
@@ -77,7 +77,7 @@ namespace cparse::builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type & TokenType::NUM)
+        if (tok->m_type & TokenType::NUM)
         {
             return PackToken(tok.asDouble());
         }
@@ -104,7 +104,7 @@ namespace cparse::builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type & TokenType::NUM)
+        if (tok->m_type & TokenType::NUM)
         {
             return PackToken(tok.asInt());
         }
@@ -132,7 +132,7 @@ namespace cparse::builtin_functions
         // Return its string representation:
         PackToken tok = scope["value"];
 
-        if (tok->type == TokenType::STR)
+        if (tok->m_type == TokenType::STR)
         {
             return tok;
         }
@@ -145,7 +145,7 @@ namespace cparse::builtin_functions
         PackToken tok = scope["value"];
         PackToken * p_type;
 
-        switch (tok->type)
+        switch (tok->m_type)
         {
             case TokenType::NONE:
                 return PackToken("none");
@@ -183,7 +183,7 @@ namespace cparse::builtin_functions
             case TokenType::MAP:
                 p_type = tok.asMap().find("__type__");
 
-                if (p_type && (*p_type)->type == TokenType::STR)
+                if (p_type && (*p_type)->m_type == TokenType::STR)
                 {
                     return *p_type;
                 }
@@ -265,7 +265,7 @@ namespace cparse::builtin_functions
         TokenList list = scope["args"].asList();
 
         // If the only argument is iterable:
-        if (list.list().size() == 1 && list.list()[0]->type & TokenType::IT)
+        if (list.list().size() == 1 && list.list()[0]->m_type & TokenType::IT)
         {
             TokenList new_list;
             Iterator * it = static_cast<Iterable *>(list.list()[0].token())->getIterator();
@@ -298,7 +298,7 @@ namespace cparse::builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type == TokenType::MAP)
+        if (tok->m_type == TokenType::MAP)
         {
             return tok.asMap().getChild();
         }
@@ -317,19 +317,19 @@ namespace cparse::builtin_functions
         // for the type of the base token:
         const TokenMap * typeFuncs;
 
-        if (base->type == TokenType::MAP)
+        if (base->m_type == TokenType::MAP)
         {
             typeFuncs = static_cast<const TokenMap *>(base);
         }
         else
         {
-            typeFuncs = &Calculator::type_attribute_map()[base->type];
+            typeFuncs = &Calculator::type_attribute_map()[base->m_type];
         }
 
         // Check if this type has a custom stringify function:
         const PackToken * p_func = typeFuncs->find("__str__");
 
-        if (p_func && (*p_func)->type == TokenType::FUNC)
+        if (p_func && (*p_func)->m_type == TokenType::FUNC)
         {
             // Return the result of this function passing the
             // nesting level as first (and only) argument:

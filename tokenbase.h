@@ -3,51 +3,56 @@
 
 #include "tokentype.h"
 
-#include <QtGlobal>
-
 #include <queue>
 
 namespace cparse
 {
-    using opID_t = quint64;
-
-    struct TokenBase
+    class TokenBase
     {
-        TokenType type = TokenType::ANY_TYPE;
+        public:
 
-        virtual ~TokenBase() {}
-        TokenBase() {}
-        TokenBase(TokenType type) : type(type) {}
+            TokenBase() {}
+            TokenBase(TokenType type) : m_type(type) {}
+            virtual ~TokenBase() {}
 
-        virtual TokenBase * clone() const = 0;
+            virtual TokenBase * clone() const = 0;
+
+            TokenType m_type = TokenType::ANY_TYPE;
     };
 
     template<class T> class Token : public TokenBase
     {
         public:
-            T val;
-            Token(T t, TokenType type) : TokenBase(type), val(t) {}
+
+            Token(T t, TokenType type) : TokenBase(type), m_val(t) {}
             TokenBase * clone() const override;
+
+            T m_val;
     };
 
-    struct TokenNone : public TokenBase
+    class TokenNone : public TokenBase
     {
-        TokenNone() : TokenBase(NONE) {}
-        TokenBase * clone() const override
-        {
-            return new TokenNone(*this);
-        }
+        public:
+
+            TokenNone() : TokenBase(NONE) {}
+            TokenBase * clone() const override
+            {
+                return new TokenNone(*this);
+            }
     };
 
-    struct TokenUnary : public TokenBase
+    class TokenUnary : public TokenBase
     {
-        TokenUnary() : TokenBase(UNARY) {}
-        TokenBase * clone() const override
-        {
-            return new TokenUnary(*this);
-        }
+        public:
+
+            TokenUnary() : TokenBase(UNARY) {}
+            TokenBase * clone() const override
+            {
+                return new TokenUnary(*this);
+            }
     };
-    using TokenQueue_t = std::queue<TokenBase *>;
+
+    using TokenQueue = std::queue<TokenBase *>;
 }
 
 #endif // CPARSE_TOKENBASE_H

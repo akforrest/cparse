@@ -54,12 +54,12 @@ PackToken & PackToken::operator=(const PackToken & t)
 
 bool PackToken::operator==(const PackToken & token) const
 {
-    if (NUM & token.base->type & base->type)
+    if (NUM & token.base->m_type & base->m_type)
     {
         return token.asDouble() == asDouble();
     }
 
-    if (token.base->type != base->type)
+    if (token.base->m_type != base->m_type)
     {
         return false;
     }
@@ -90,7 +90,7 @@ std::ostream & operator<<(std::ostream & os, const PackToken & t)
 
 PackToken & PackToken::operator[](const QString & key)
 {
-    if (base->type != MAP)
+    if (base->m_type != MAP)
     {
         throw bad_cast(
             "The Token is not a map!");
@@ -110,7 +110,7 @@ const TokenBase * PackToken::token() const
 }
 const PackToken & PackToken::operator[](const QString & key) const
 {
-    if (base->type != MAP)
+    if (base->m_type != MAP)
     {
         throw bad_cast(
             "The Token is not a map!");
@@ -120,7 +120,7 @@ const PackToken & PackToken::operator[](const QString & key) const
 }
 PackToken & PackToken::operator[](const char * key)
 {
-    if (base->type != MAP)
+    if (base->m_type != MAP)
     {
         throw bad_cast(
             "The Token is not a map!");
@@ -130,7 +130,7 @@ PackToken & PackToken::operator[](const char * key)
 }
 const PackToken & PackToken::operator[](const char * key) const
 {
-    if (base->type != MAP)
+    if (base->m_type != MAP)
     {
         throw bad_cast(
             "The Token is not a map!");
@@ -141,19 +141,19 @@ const PackToken & PackToken::operator[](const char * key) const
 
 bool PackToken::asBool() const
 {
-    switch (base->type)
+    switch (base->m_type)
     {
         case REAL:
-            return static_cast<Token<double>*>(base)->val != 0;
+            return static_cast<Token<double>*>(base)->m_val != 0;
 
         case INT:
-            return static_cast<Token<int64_t>*>(base)->val != 0;
+            return static_cast<Token<int64_t>*>(base)->m_val != 0;
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->val != 0;
+            return static_cast<Token<uint8_t>*>(base)->m_val != 0;
 
         case STR:
-            return !static_cast<Token<std::string>*>(base)->val.empty();
+            return !static_cast<Token<std::string>*>(base)->m_val.empty();
 
         case MAP:
         case FUNC:
@@ -173,19 +173,19 @@ bool PackToken::asBool() const
 
 double PackToken::asDouble() const
 {
-    switch (base->type)
+    switch (base->m_type)
     {
         case REAL:
-            return static_cast<Token<double>*>(base)->val;
+            return static_cast<Token<double>*>(base)->m_val;
 
         case INT:
-            return static_cast<double>(static_cast<Token<int64_t>*>(base)->val);
+            return static_cast<double>(static_cast<Token<int64_t>*>(base)->m_val);
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->val;
+            return static_cast<Token<uint8_t>*>(base)->m_val;
 
         default:
-            if (!(base->type & NUM))
+            if (!(base->m_type & NUM))
             {
                 throw bad_cast(
                     "The Token is not a number!");
@@ -200,19 +200,19 @@ double PackToken::asDouble() const
 
 int64_t PackToken::asInt() const
 {
-    switch (base->type)
+    switch (base->m_type)
     {
         case REAL:
-            return static_cast<int64_t>(static_cast<Token<double>*>(base)->val);
+            return static_cast<int64_t>(static_cast<Token<double>*>(base)->m_val);
 
         case INT:
-            return static_cast<Token<int64_t>*>(base)->val;
+            return static_cast<Token<int64_t>*>(base)->m_val;
 
         case BOOL:
-            return static_cast<Token<uint8_t>*>(base)->val;
+            return static_cast<Token<uint8_t>*>(base)->m_val;
 
         default:
-            if (!(base->type & NUM))
+            if (!(base->m_type & NUM))
             {
                 throw bad_cast(
                     "The Token is not a number!");
@@ -227,18 +227,18 @@ int64_t PackToken::asInt() const
 
 QString PackToken::asString() const
 {
-    if (base->type != STR && base->type != VAR && base->type != OP)
+    if (base->m_type != STR && base->m_type != VAR && base->m_type != OP)
     {
         throw bad_cast(
             "The Token is not a string!");
     }
 
-    return static_cast<Token<QString>*>(base)->val;
+    return static_cast<Token<QString>*>(base)->m_val;
 }
 
 TokenMap & PackToken::asMap() const
 {
-    if (base->type != MAP)
+    if (base->m_type != MAP)
     {
         throw bad_cast(
             "The Token is not a map!");
@@ -249,7 +249,7 @@ TokenMap & PackToken::asMap() const
 
 TokenList & PackToken::asList() const
 {
-    if (base->type != LIST)
+    if (base->m_type != LIST)
     {
         throw bad_cast(
             "The Token is not a list!");
@@ -260,7 +260,7 @@ TokenList & PackToken::asList() const
 
 Tuple & PackToken::asTuple() const
 {
-    if (base->type != TUPLE)
+    if (base->m_type != TUPLE)
     {
         throw bad_cast(
             "The Token is not a tuple!");
@@ -271,7 +271,7 @@ Tuple & PackToken::asTuple() const
 
 STuple & PackToken::asSTuple() const
 {
-    if (base->type != STUPLE)
+    if (base->m_type != STUPLE)
     {
         throw bad_cast(
             "The Token is not an special tuple!");
@@ -282,7 +282,7 @@ STuple & PackToken::asSTuple() const
 
 Function * PackToken::asFunc() const
 {
-    if (base->type != FUNC)
+    if (base->m_type != FUNC)
     {
         throw bad_cast(
             "The Token is not a function!");
@@ -313,7 +313,7 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
         return "undefined";
     }
 
-    if (base->type & REF)
+    if (base->m_type & REF)
     {
         base = static_cast<const RefToken *>(base)->resolve();
         name = static_cast<const RefToken *>(base)->key.str();
@@ -333,7 +333,7 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
 
     /* * * * * Stringify the token: * * * * */
 
-    switch (base->type)
+    switch (base->m_type)
     {
         case NONE:
             return "None";
@@ -342,25 +342,25 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
             return "UnaryToken";
 
         case OP:
-            return static_cast<const Token<QString>*>(base)->val;
+            return static_cast<const Token<QString>*>(base)->m_val;
 
         case VAR:
-            return static_cast<const Token<QString>*>(base)->val;
+            return static_cast<const Token<QString>*>(base)->m_val;
 
         case REAL:
-            ss += QString::number(static_cast<const Token<double>*>(base)->val);
+            ss += QString::number(static_cast<const Token<double>*>(base)->m_val);
             return ss;
 
         case INT:
-            ss += QString::number(static_cast<const Token<int64_t>*>(base)->val);
+            ss += QString::number(static_cast<const Token<int64_t>*>(base)->m_val);
             return ss;
 
         case BOOL:
-            boolval = static_cast<const Token<uint8_t>*>(base)->val;
+            boolval = static_cast<const Token<uint8_t>*>(base)->m_val;
             return boolval ? "true" : "false";
 
         case STR:
-            return "\"" + static_cast<const Token<QString>*>(base)->val + "\"";
+            return "\"" + static_cast<const Token<QString>*>(base)->m_val + "\"";
 
         case FUNC:
             func = static_cast<const Function *>(base);
@@ -463,7 +463,7 @@ QString PackToken::str(const TokenBase * base, uint32_t nest)
             return ss;
 
         default:
-            if (base->type & IT)
+            if (base->m_type & IT)
             {
                 return "[Iterator]";
             }

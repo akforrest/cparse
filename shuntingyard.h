@@ -54,7 +54,7 @@ namespace cparse
     {
         public:
 
-            TokenQueue_t rpn;
+            TokenQueue rpn;
             std::stack<QString> opStack;
             uint8_t lastTokenWasOp = true;
             bool lastTokenWasUnary = false;
@@ -68,7 +68,7 @@ namespace cparse
 
             rpnBuilder(const TokenMap & scope, const OppMap_t & opp) : scope(scope), opp(opp) {}
 
-            static void cleanRPN(TokenQueue_t * rpn);
+            static void cleanRPN(TokenQueue * rpn);
 
         public:
             void handle_op(const QString & op);

@@ -24,7 +24,7 @@ using cparse::RefToken;
 using cparse::Operation;
 using cparse::opID_t;
 using cparse::Config_t;
-using cparse::TokenQueue_t;
+using cparse::TokenQueue;
 using cparse::evaluationData;
 using cparse::rpnBuilder;
 using cparse::REF;
@@ -44,7 +44,7 @@ void cparse::initialize()
 
 TokenBase * cparse::resolve_reference(TokenBase * b, TokenMap * scope)
 {
-    if (b->type & REF)
+    if (b->m_type & REF)
     {
         // Resolve the reference:
         auto * ref = static_cast<RefToken *>(b);
@@ -101,7 +101,7 @@ PackToken Operation::exec(const PackToken & left, const PackToken & right, evalu
 
 /* * * * * rpnBuilder Class: * * * * */
 
-void rpnBuilder::cleanRPN(TokenQueue_t * rpn)
+void rpnBuilder::cleanRPN(TokenQueue * rpn)
 {
     while (!rpn->empty())
     {
@@ -383,7 +383,7 @@ bool cparse::OppMap_t::exists(const QString & op) const
     return pr_map.count(op);
 }
 
-evaluationData::evaluationData(TokenQueue_t rpn, const TokenMap & scope, const opMap_t & opMap)
+evaluationData::evaluationData(TokenQueue rpn, const TokenMap & scope, const opMap_t & opMap)
     : rpn(std::move(rpn)), scope(scope), opMap(opMap) {}
 
 void cparse::parserMap_t::add(const QString & word, rWordParser_t * parser)
@@ -421,10 +421,10 @@ cparse::rWordParser_t * cparse::parserMap_t::find(char c)
 }
 
 RefToken::RefToken(PackToken k, TokenBase * v, PackToken m) :
-    TokenBase(TokenType(v->type | TokenType::REF)), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+    TokenBase(TokenType(v->m_type | TokenType::REF)), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
 RefToken::RefToken(PackToken k, PackToken v, PackToken m) :
-    TokenBase(TokenType(v->type | TokenType::REF)), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+    TokenBase(TokenType(v->m_type | TokenType::REF)), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
 TokenBase * RefToken::resolve(TokenMap * localScope) const
 {
@@ -432,7 +432,7 @@ TokenBase * RefToken::resolve(TokenMap * localScope) const
 
     // Local variables have no origin == NONE,
     // thus, require a localScope to be resolved:
-    if (origin->type == NONE && localScope)
+    if (origin->m_type == NONE && localScope)
     {
         // Get the most recent value from the local scope:
         PackToken * r_value = localScope->find(key.asString());

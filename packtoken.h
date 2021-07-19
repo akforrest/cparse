@@ -10,8 +10,8 @@ namespace cparse
 {
     struct TokenMap;
     class TokenList;
-    struct TokenBase;
-    struct TokenNone;
+    class TokenBase;
+    class TokenNone;
     class Tuple;
     class STuple;
     class Function;
