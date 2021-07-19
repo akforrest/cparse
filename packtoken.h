@@ -4,10 +4,18 @@
 #include <QString>
 #include <QDebug>
 
+#include "tokenbase.h"
+
 namespace cparse
 {
+    struct TokenMap;
+    class TokenList;
     struct TokenBase;
     struct TokenNone;
+    class Tuple;
+    class STuple;
+    class Function;
+
     using tokType_t = uint8_t;
 
     // Encapsulate TokenBase* into a friendlier interface
@@ -84,7 +92,7 @@ namespace cparse
         public:
             // Used to recover the original pointer.
             // The intance whose pointer was removed must be an rvalue.
-            TokenBase * release() &&;
+            TokenBase * release() && ;
     };
 
     // To allow cout to print it:

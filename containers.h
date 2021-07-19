@@ -10,9 +10,11 @@
 
 #include <QString>
 
+#include "tokenbase.h"
+#include "packtoken.h"
+
 namespace cparse
 {
-
     template <typename T>
     class Container
     {

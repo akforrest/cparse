@@ -6,6 +6,10 @@
 
 #include <QString>
 
+#include "tokenbase.h"
+#include "packtoken.h"
+#include "containers.h"
+
 namespace cparse
 {
 

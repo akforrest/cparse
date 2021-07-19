@@ -1,7 +1,13 @@
 #include <cmath>
 
+#include "../calculator.h"
+#include "../containers.h"
+#include "../functions.h"
+
 namespace builtin_functions
 {
+    using namespace cparse;
+
     /* * * * * Built-in Functions: * * * * */
 
     PackToken default_print(TokenMap scope)
@@ -24,7 +30,7 @@ namespace builtin_functions
                 dbg << " ";
             }
 
-            if (item->type == STR)
+            if (item->type == tokType::STR)
             {
                 dbg << item.asString();
             }
@@ -42,7 +48,7 @@ namespace builtin_functions
         // Get the arguments:
         TokenList list = scope["args"].asList();
 
-        if (list.list().size() == 1 && list.list().front()->type == LIST)
+        if (list.list().size() == 1 && list.list().front()->type == tokType::LIST)
         {
             list = list.list().front().asList();
         }
@@ -68,7 +74,7 @@ namespace builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type & NUM)
+        if (tok->type & tokType::NUM)
         {
             return PackToken(tok.asDouble());
         }
@@ -95,7 +101,7 @@ namespace builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type & NUM)
+        if (tok->type & tokType::NUM)
         {
             return PackToken(tok.asInt());
         }
@@ -123,7 +129,7 @@ namespace builtin_functions
         // Return its string representation:
         PackToken tok = scope["value"];
 
-        if (tok->type == STR)
+        if (tok->type == tokType::STR)
         {
             return tok;
         }
@@ -138,43 +144,43 @@ namespace builtin_functions
 
         switch (tok->type)
         {
-            case NONE:
+            case tokType::NONE:
                 return PackToken("none");
 
-            case VAR:
+            case tokType::VAR:
                 return PackToken("variable");
 
-            case REAL:
+            case tokType::REAL:
                 return PackToken("real");
 
-            case INT:
+            case tokType::INT:
                 return PackToken("integer");
 
-            case BOOL:
+            case tokType::BOOL:
                 return PackToken("boolean");
 
-            case STR:
+            case tokType::STR:
                 return PackToken("string");
 
-            case FUNC:
+            case tokType::FUNC:
                 return PackToken("function");
 
-            case IT:
+            case tokType::IT:
                 return PackToken("iterable");
 
-            case TUPLE:
+            case tokType::TUPLE:
                 return PackToken("tuple");
 
-            case STUPLE:
+            case tokType::STUPLE:
                 return PackToken("argument tuple");
 
-            case LIST:
+            case tokType::LIST:
                 return PackToken("list");
 
-            case MAP:
+            case tokType::MAP:
                 p_type = tok.asMap().find("__type__");
 
-                if (p_type && (*p_type)->type == STR)
+                if (p_type && (*p_type)->type == tokType::STR)
                 {
                     return *p_type;
                 }
@@ -256,7 +262,7 @@ namespace builtin_functions
         TokenList list = scope["args"].asList();
 
         // If the only argument is iterable:
-        if (list.list().size() == 1 && list.list()[0]->type & IT)
+        if (list.list().size() == 1 && list.list()[0]->type & tokType::IT)
         {
             TokenList new_list;
             Iterator * it = static_cast<Iterable *>(list.list()[0].token())->getIterator();
@@ -289,7 +295,7 @@ namespace builtin_functions
     {
         PackToken tok = scope["value"];
 
-        if (tok->type == MAP)
+        if (tok->type == tokType::MAP)
         {
             return tok.asMap().getChild();
         }
@@ -308,7 +314,7 @@ namespace builtin_functions
         // for the type of the base token:
         const TokenMap * typeFuncs;
 
-        if (base->type == MAP)
+        if (base->type == tokType::MAP)
         {
             typeFuncs = static_cast<const TokenMap *>(base);
         }
@@ -320,7 +326,7 @@ namespace builtin_functions
         // Check if this type has a custom stringify function:
         const PackToken * p_func = typeFuncs->find("__str__");
 
-        if (p_func && (*p_func)->type == FUNC)
+        if (p_func && (*p_func)->type == tokType::FUNC)
         {
             // Return the result of this function passing the
             // nesting level as first (and only) argument:
