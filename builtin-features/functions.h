@@ -268,7 +268,7 @@ namespace cparse::builtin_functions
         if (list.list().size() == 1 && list.list()[0]->m_type & TokenType::IT)
         {
             TokenList new_list;
-            Iterator * it = static_cast<Iterable *>(list.list()[0].token())->getIterator();
+            TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
 
             PackToken * next = it->next();
 

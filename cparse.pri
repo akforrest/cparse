@@ -11,6 +11,7 @@ SOURCES += \
 INCLUDEPATH += CPARSE_DIR
 HEADERS += \
     $$PWD/config.h \
+    $$PWD/cparse-test.h \
     $$PWD/cparse.h \
     $$PWD/operation.h \
     $$PWD/packtoken.h \
@@ -28,3 +29,12 @@ HEADERS += \
     $$PWD/token.h \
     $$PWD/tokenhelpers.h \
     $$PWD/tokentype.h
+
+## TEST BITS
+CONFIG += cparseUnitTests
+cparseUnitTests {
+    CONFIG += no_testcase_installs
+    QT += testlib
+    SOURCES += $$PWD/cparse-test.cpp
+    HEADERS += $$PWD/cparse-test.h
+}

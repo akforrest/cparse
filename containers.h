@@ -17,67 +17,71 @@ namespace cparse
     template <typename T>
     class Container
     {
-        protected:
-            std::shared_ptr<T> ref;
+        public:
+
+            Container(): m_ref(std::make_shared<T>()) {}
+            Container(const T & t): m_ref(std::make_shared<T>(t)) {}
 
         public:
-            Container() : ref(std::make_shared<T>()) {}
-            Container(const T & t) : ref(std::make_shared<T>(t)) {}
 
-        public:
             operator T * () const
             {
-                return ref.get();
+                return m_ref.get();
             }
+
             friend bool operator==(Container<T> first, Container<T> second)
             {
-                return first.ref == second.ref;
+                return first.m_ref == second.m_ref;
             }
+
+        protected:
+
+            std::shared_ptr<T> m_ref;
     };
 
-    class Iterator;
+    class TokenIterator;
 
-    class Iterable : public Token
+    class IterableToken : public Token
     {
         public:
-            virtual ~Iterable() {}
-            Iterable() {}
-            Iterable(TokenType type) : Token(type) {}
+            IterableToken() {}
+            IterableToken(TokenType type) : Token(type) {}
+            ~IterableToken() override {}
 
-            virtual Iterator * getIterator() const = 0;
+            virtual TokenIterator * getIterator() const = 0;
     };
 
     // Iterator super class.
-    class Iterator : public Iterable
+    class TokenIterator : public IterableToken
     {
         public:
-            Iterator() : Iterable(IT) {}
-            virtual ~Iterator() {}
+            TokenIterator() : IterableToken(IT) {}
+            ~TokenIterator() override {}
+
             // Return the next position of the iterator.
             // When it reaches the end it should return NULL
             // and reset the iterator automatically.
             virtual PackToken * next() = 0;
             virtual void reset() = 0;
 
-            Iterator * getIterator() const;
+            TokenIterator * getIterator() const override;
     };
 
     struct TokenMap;
-    typedef std::map<QString, PackToken> TokenMap_t;
-
-    struct MapData_t
+    struct TokenMapData
     {
-        TokenMap_t map;
+        using MapType = std::map<QString, PackToken>;
+        MapType map;
         TokenMap * parent = nullptr;
-        MapData_t();
-        MapData_t(TokenMap * p);
-        MapData_t(const MapData_t & other);
-        ~MapData_t();
+        TokenMapData();
+        TokenMapData(TokenMap * p);
+        TokenMapData(const TokenMapData & other);
+        ~TokenMapData();
 
-        MapData_t & operator=(const MapData_t & other);
+        TokenMapData & operator=(const TokenMapData & other);
     };
 
-    struct TokenMap : public Container<MapData_t>, public Iterable
+    struct TokenMap : public Container<TokenMapData>, public IterableToken
     {
             // Static factories:
             static TokenMap empty;
@@ -86,62 +90,60 @@ namespace cparse
             static PackToken default_constructor(TokenMap scope);
 
         public:
-            // Attribute getters for the `MapData_t` content:
-            TokenMap_t & map() const
+
+            TokenMap(TokenMap * parent = &TokenMap::base_map())
+                : Container(parent), IterableToken(MAP)
             {
-                return ref->map;
+                // For the Token super class
+                this->m_type = MAP;
+            }
+
+            TokenMap(const TokenMap & other) : Container(other), IterableToken(other)
+            {
+                this->m_type = MAP;
+            }
+
+            ~TokenMap() override {}
+
+            // Attribute getters for the `MapData_t` content:
+            TokenMapData::MapType & map() const
+            {
+                return m_ref->map;
             }
             TokenMap * parent() const
             {
-                return ref->parent;
+                return m_ref->parent;
             }
 
-        public:
             // Implement the Iterable Interface:
-            struct MapIterator : public Iterator
+            struct MapIterator : public TokenIterator
             {
-                const TokenMap_t & map;
-                TokenMap_t::const_iterator it = map.begin();
+                const TokenMapData::MapType & map;
+                TokenMapData::MapType::const_iterator it = map.begin();
                 PackToken last;
 
-                MapIterator(const TokenMap_t & map) : map(map) {}
+                MapIterator(const TokenMapData::MapType & map) : map(map) {}
 
-                PackToken * next();
-                void reset();
+                PackToken * next() override;
+                void reset() override;
 
-                Token * clone() const
+                Token * clone() const override
                 {
                     return new MapIterator(*this);
                 }
             };
 
-            Iterator * getIterator() const
+            TokenIterator * getIterator() const override
             {
                 return new MapIterator(map());
             }
 
-        public:
-            TokenMap(TokenMap * parent = &TokenMap::base_map())
-                : Container(parent), Iterable(MAP)
-            {
-                // For the Token super class
-                this->m_type = MAP;
-            }
-            TokenMap(const TokenMap & other) : Container(other)
-            {
-                this->m_type = MAP;
-            }
-
-            virtual ~TokenMap() {}
-
-        public:
             // Implement the Token abstract class
-            Token * clone() const
+            Token * clone() const override
             {
                 return new TokenMap(*this);
             }
 
-        public:
             PackToken * find(const QString & key);
             const PackToken * find(const QString & key) const;
             TokenMap * findMap(const QString & key);
@@ -161,47 +163,46 @@ namespace cparse
         GlobalScope() : TokenMap(&TokenMap::default_global()) {}
     };
 
-    typedef std::vector<PackToken> TokenList_t;
-
-    class TokenList : public Container<TokenList_t>, public Iterable
+    class TokenList : public Container<std::vector<PackToken>>, public IterableToken
     {
 
         public:
+
+            using ListType = std::vector<PackToken>;
+
+            TokenList()
+            {
+                this->m_type = LIST;
+            }
+            ~TokenList() override {}
+
             static PackToken default_constructor(TokenMap scope);
             // Attribute getter for the `TokenList_t` content:
-            TokenList_t & list() const
+            ListType & list() const
             {
-                return *ref;
+                return *m_ref;
             }
 
-        public:
-            struct ListIterator : public Iterator
+            struct ListIterator : public TokenIterator
             {
-                TokenList_t * list;
+                ListType * list;
                 uint64_t i = 0;
 
-                ListIterator(TokenList_t * list) : list(list) {}
+                ListIterator(ListType * list) : list(list) {}
 
-                PackToken * next();
-                void reset();
+                PackToken * next() override;
+                void reset() override;
 
-                Token * clone() const
+                Token * clone() const override
                 {
                     return new ListIterator(*this);
                 }
             };
 
-            Iterator * getIterator() const
+            TokenIterator * getIterator() const override
             {
                 return new ListIterator(&list());
             }
-
-        public:
-            TokenList()
-            {
-                this->m_type = LIST;
-            }
-            virtual ~TokenList() {}
 
             PackToken & operator[](const uint64_t idx) const
             {
@@ -213,7 +214,7 @@ namespace cparse
                 return list()[idx];
             }
 
-            void push(PackToken val) const
+            void push(const PackToken & val) const
             {
                 list().push_back(val);
             }
@@ -224,9 +225,8 @@ namespace cparse
                 return back;
             }
 
-        public:
             // Implement the Token abstract class
-            Token * clone() const
+            Token * clone() const override
             {
                 return new TokenList(*this);
             }
@@ -244,7 +244,7 @@ namespace cparse
                 this->m_type = TUPLE;
                 list().push_back(PackToken(first->clone()));
             }
-            Tuple(const PackToken first) : Tuple(first.token()) {}
+            Tuple(const PackToken & first) : Tuple(first.token()) {}
 
             Tuple(const Token * first, const Token * second)
             {
@@ -252,12 +252,11 @@ namespace cparse
                 list().push_back(PackToken(first->clone()));
                 list().push_back(PackToken(second->clone()));
             }
-            Tuple(const PackToken first, const PackToken second)
+            Tuple(const PackToken & first, const PackToken & second)
                 : Tuple(first.token(), second.token()) {}
 
-        public:
             // Implement the Token abstract class
-            Token * clone() const
+            Token * clone() const override
             {
                 return new Tuple(*this);
             }
@@ -284,7 +283,7 @@ namespace cparse
                 this->m_type = STUPLE;
                 list().push_back(PackToken(first->clone()));
             }
-            STuple(const PackToken first) : STuple(first.token()) {}
+            STuple(const PackToken & first) : STuple(first.token()) {}
 
             STuple(const Token * first, const Token * second)
             {
@@ -292,12 +291,11 @@ namespace cparse
                 list().push_back(PackToken(first->clone()));
                 list().push_back(PackToken(second->clone()));
             }
-            STuple(const PackToken first, const PackToken second)
+            STuple(const PackToken & first, const PackToken & second)
                 : STuple(first.token(), second.token()) {}
 
-        public:
             // Implement the Token abstract class
-            Token * clone() const
+            Token * clone() const override
             {
                 return new STuple(*this);
             }

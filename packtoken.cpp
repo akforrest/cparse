@@ -299,11 +299,11 @@ QString PackToken::str(uint32_t nest) const
 QString PackToken::str(const Token * base, uint32_t nest)
 {
     QString ss;
-    TokenMap_t * tmap;
-    TokenMap_t::iterator m_it;
+    TokenMapData::MapType * tmap;
+    TokenMapData::MapType::iterator m_it;
 
-    TokenList_t * tlist;
-    TokenList_t::iterator l_it;
+    TokenList::ListType * tlist;
+    TokenList::ListType::iterator l_it;
     const Function * func;
     bool first, boolval;
     QString name;

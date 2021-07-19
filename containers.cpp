@@ -7,9 +7,9 @@
 
 using cparse::TokenMap;
 using cparse::PackToken;
-using cparse::Iterator;
+using cparse::TokenIterator;
 using cparse::TokenList;
-using cparse::MapData_t;
+using cparse::TokenMapData;
 
 /* * * * * Initialize TokenMap * * * * */
 
@@ -41,9 +41,9 @@ TokenMap TokenMap::empty = TokenMap(&default_global());
 
 /* * * * * Iterator functions * * * * */
 
-Iterator * Iterator::getIterator() const
+TokenIterator * TokenIterator::getIterator() const
 {
-    return static_cast<Iterator *>(this->clone());
+    return static_cast<TokenIterator *>(this->clone());
 }
 
 /* * * * * TokenMap iterator implemented functions * * * * */
@@ -77,7 +77,7 @@ PackToken TokenList::default_constructor(TokenMap scope)
     if (list.list().size() == 1 && list.list()[0]->m_type & IT)
     {
         TokenList new_list;
-        Iterator * it = static_cast<Iterable *>(list.list()[0].token())->getIterator();
+        TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
 
         PackToken * next = it->next();
 
@@ -113,9 +113,9 @@ void TokenList::ListIterator::reset()
 }
 
 /* * * * * MapData_t struct: * * * * */
-MapData_t::MapData_t() {}
-MapData_t::MapData_t(TokenMap * p) : parent(p ? new TokenMap(*p) : nullptr) {}
-MapData_t::MapData_t(const MapData_t & other)
+TokenMapData::TokenMapData() {}
+TokenMapData::TokenMapData(TokenMap * p) : parent(p ? new TokenMap(*p) : nullptr) {}
+TokenMapData::TokenMapData(const TokenMapData & other)
 {
     map = other.map;
 
@@ -129,12 +129,12 @@ MapData_t::MapData_t(const MapData_t & other)
     }
 }
 
-MapData_t::~MapData_t()
+TokenMapData::~TokenMapData()
 {
     delete parent;
 }
 
-MapData_t & MapData_t::operator=(const MapData_t & other)
+TokenMapData & TokenMapData::operator=(const TokenMapData & other)
 {
     if (this != &other)
     {
@@ -168,7 +168,7 @@ PackToken * TokenMap::find(const QString & key)
 
 const PackToken * TokenMap::find(const QString & key) const
 {
-    TokenMap_t::const_iterator it = map().find(key);
+    TokenMapData::MapType::const_iterator it = map().find(key);
 
     if (it != map().end())
     {
