@@ -78,7 +78,7 @@ Token * PackToken::operator->() const
     return base;
 }
 
-QDebug & operator<<(QDebug & os, const PackToken & t)
+QDebug operator <<(QDebug os, const PackToken & t)
 {
     return os << t.str();
 }

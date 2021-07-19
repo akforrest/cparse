@@ -94,10 +94,9 @@ namespace cparse
     };
 
     // To allow cout to print it:
-
 }  // namespace cparse
 
-QDebug & operator<<(QDebug & os, const cparse::PackToken & t);
+QDebug operator<<(QDebug os, const cparse::PackToken & t);
 std::ostream & operator<<(std::ostream & os, const cparse::PackToken & t);
 
 #endif  // CPARSE_PACKTOKEN_H_

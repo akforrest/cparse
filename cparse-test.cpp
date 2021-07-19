@@ -894,23 +894,28 @@ void scope_management()
 //TEST_CASE("Parsing as slave parser")
 void parsing_as_slave_parser()
 {
-    const char * original_code = "a=1; b=2\n c=a+b }";
-    const char * code = original_code;
+    QString original_code = "a=1; b=2\n c=a+b }";
+    QString code = original_code;
+    int parsedTo = 0;
     TokenMap vars;
     Calculator c1, c2, c3;
 
     // With static function:
-    REQUIRE_NOTHROW(Calculator::calculate(code, vars, ";}\n", &code));
-    REQUIRE(code == &(original_code[3]));
+    REQUIRE_NOTHROW(Calculator::calculate(code, vars, ";}\n", &parsedTo));
+    REQUIRE(parsedTo == 3);
     REQUIRE(vars["a"].asDouble() == 1);
 
+    code = code.mid(parsedTo);
+
     // With constructor:
-    REQUIRE_NOTHROW((c2 = Calculator(++code, vars, ";}\n", &code)));
-    REQUIRE(code == &(original_code[8]));
+    REQUIRE_NOTHROW((c2 = Calculator(code, vars, ";}\n", &parsedTo)));
+    REQUIRE(parsedTo == 5);
+
+    code = code.mid(parsedTo);
 
     // With compile method:
-    REQUIRE_NOTHROW(c3.compile(++code, vars, ";}\n", &code));
-    REQUIRE(code == &(original_code[16]));
+    REQUIRE_NOTHROW(c3.compile(code, vars, ";}\n", &parsedTo));
+    REQUIRE(parsedTo == original_code.length() - 1);
 
     REQUIRE_NOTHROW(c2.eval(vars));
     REQUIRE(vars["b"] == 2);
@@ -919,19 +924,19 @@ void parsing_as_slave_parser()
     REQUIRE(vars["c"] == 3);
 
     // Testing with delimiter between brackets of the expression:
-    const char * if_code = "if ( a+(b*c) == 3 ) { ... }";
-    const char * multiline = "a = (\n  1,\n  2,\n  3\n)\n print(a);";
+    QString if_code = "if ( a+(b*c) == 3 ) { ... }";
+    QString multiline = "a = (\n  1,\n  2,\n  3\n)\n print(a);";
 
     code = if_code;
-    REQUIRE_NOTHROW(Calculator::calculate(if_code + 4, vars, ")", &code));
-    REQUIRE(code == &(if_code[18]));
+    REQUIRE_NOTHROW(Calculator::calculate(if_code + 4, vars, ")", &parsedTo));
+    REQUIRE(code.at(parsedTo) == if_code[18]);
 
     code = multiline;
-    REQUIRE_NOTHROW(Calculator::calculate(multiline, vars, "\n;", &code));
-    REQUIRE(code == &(multiline[21]));
+    REQUIRE_NOTHROW(Calculator::calculate(multiline, vars, "\n;", &parsedTo));
+    REQUIRE(code.at(parsedTo) == multiline[21]);
 
-    const char * error_test = "a = (;  1,;  2,; 3;)\n print(a);";
-    REQUIRE_THROWS(Calculator::calculate(error_test, vars, "\n;", &code));
+    QString error_test = "a = (;  1,;  2,; 3;)\n print(a);";
+    REQUIRE_THROWS(Calculator::calculate(error_test, vars, "\n;", &parsedTo));
 }
 
 // This function is for internal use only:
@@ -955,7 +960,7 @@ struct myCalc : public Calculator
         return conf;
     }
 
-    const Config config() const override
+    const Config & config() const override
     {
         return my_config();
     }
@@ -1325,12 +1330,12 @@ void adhoc_operator_parser()
     REQUIRE_THROWS(Calculator::calculate("1 + 1 /* Never ending comment"));
 
     TokenMap vars;
-    const char * expr = "#12345\n - 10";
-    REQUIRE_NOTHROW(Calculator::calculate(expr, vars, "\n", &expr));
-    REQUIRE(*expr == '\n');
+    QString expr = "#12345\n - 10";
+    int parsedTo = 0;
+    REQUIRE_NOTHROW(Calculator::calculate(expr, vars, "\n", &parsedTo));
+    REQUIRE(parsedTo == 5);
 
-    ++expr;
-    REQUIRE(Calculator::calculate(expr).asInt() == -10);
+    REQUIRE(Calculator::calculate(expr.mid(5)).asInt() == -10);
 }
 
 //TEST_CASE("Exception management")

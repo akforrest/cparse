@@ -13,7 +13,7 @@ using cparse::RefToken;
 using cparse::Operation;
 using cparse::opID_t;
 using cparse::Config;
-using cparse::typeMap_t;
+using cparse::TokenTypeMap;
 using cparse::TokenQueue;
 using cparse::evaluationData;
 using cparse::RpnBuilder;
@@ -63,9 +63,9 @@ Config & Calculator::defaultConfig()
     return conf;
 }
 
-typeMap_t & Calculator::type_attribute_map()
+TokenTypeMap & Calculator::typeAttributeMap()
 {
-    static typeMap_t type_map;
+    static TokenTypeMap type_map;
     return type_map;
 }
 /* * * * * RAII_TokenQueue_t struct  * * * * */
@@ -75,31 +75,31 @@ typeMap_t & Calculator::type_attribute_map()
 //
 // Note: This is needed because C++ does not
 // allow a try-finally block.
-struct Calculator::RAII_TokenQueue_t : TokenQueue
+struct RaiiTokenQueue : TokenQueue
 {
-    RAII_TokenQueue_t() {}
-    RAII_TokenQueue_t(const TokenQueue & rpn) : TokenQueue(rpn) {}
-    ~RAII_TokenQueue_t()
+    RaiiTokenQueue() {}
+    RaiiTokenQueue(const TokenQueue & rpn) : TokenQueue(rpn) {}
+    ~RaiiTokenQueue()
     {
         RpnBuilder::cleanRPN(this);
     }
 
-    RAII_TokenQueue_t(const RAII_TokenQueue_t & rpn)
+    RaiiTokenQueue(const RaiiTokenQueue & rpn)
         : TokenQueue(rpn)
     {
         throw std::runtime_error("You should not copy this class!");
     }
-    RAII_TokenQueue_t & operator=(const RAII_TokenQueue_t &)
+    RaiiTokenQueue & operator=(const RaiiTokenQueue &)
     {
         throw std::runtime_error("You should not copy this class!");
     }
 };
 
-PackToken Calculator::calculate(const char * expr, const TokenMap & vars,
-                                const char * delim, const char ** rest)
+PackToken Calculator::calculate(const QString & expr, const TokenMap & vars,
+                                const QString & delim, int * rest)
 {
     // Convert to RPN with Dijkstra's Shunting-yard algorithm.
-    RAII_TokenQueue_t rpn = Calculator::toRPN(expr, vars, delim, rest);
+    RaiiTokenQueue rpn = Calculator::toRPN(expr, vars, delim, rest);
 
     Token * ret = Calculator::calculate(rpn, vars);
 
@@ -283,17 +283,17 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
 
 Calculator::~Calculator()
 {
-    RpnBuilder::cleanRPN(&this->RPN);
+    RpnBuilder::cleanRPN(&this->m_rpn);
 }
 
 Calculator::Calculator()
 {
-    this->RPN.push(new TokenNone());
+    this->m_rpn.push(new TokenNone());
 }
 
 Calculator::Calculator(const Calculator & calc)
 {
-    TokenQueue _rpn = calc.RPN;
+    TokenQueue _rpn = calc.m_rpn;
 
     // Deep copy the token list, so everything can be
     // safely deallocated:
@@ -301,31 +301,30 @@ Calculator::Calculator(const Calculator & calc)
     {
         Token * base = _rpn.front();
         _rpn.pop();
-        this->RPN.push(base->clone());
+        this->m_rpn.push(base->clone());
     }
 }
 
 // Work as a sub-parser:
 // - Stops at delim or '\0'
 // - Returns the rest of the string as char* rest
-Calculator::Calculator(const char * expr, const TokenMap & vars, const char * delim,
-                       const char ** rest, const Config & config)
+Calculator::Calculator(const QString & expr, const TokenMap & vars,
+                       const QString & delim, int * rest, const Config & config)
 {
-    this->RPN = Calculator::toRPN(expr, vars, delim, rest, config);
+    this->m_rpn = Calculator::toRPN(expr, vars, delim, rest, config);
 }
 
-void Calculator::compile(const char * expr, const TokenMap & vars, const char * delim,
-                         const char ** rest)
+void Calculator::compile(const QString & expr, const TokenMap & vars,
+                         const QString & delim, int * rest)
 {
     // Make sure it is empty:
-    RpnBuilder::cleanRPN(&this->RPN);
-
-    this->RPN = Calculator::toRPN(expr, vars, delim, rest, config());
+    RpnBuilder::cleanRPN(&this->m_rpn);
+    this->m_rpn = Calculator::toRPN(expr, vars, delim, rest, config());
 }
 
 PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 {
-    Token * value = calculate(this->RPN, vars, config());
+    Token * value = calculate(this->m_rpn, vars, config());
     PackToken p = PackToken(value->clone());
 
     if (keep_refs)
@@ -339,27 +338,32 @@ PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 Calculator & Calculator::operator=(const Calculator & calc)
 {
     // Make sure the RPN is empty:
-    RpnBuilder::cleanRPN(&this->RPN);
+    RpnBuilder::cleanRPN(&this->m_rpn);
 
     // Deep copy the token list, so everything can be
     // safely deallocated:
-    TokenQueue _rpn = calc.RPN;
+    TokenQueue _rpn = calc.m_rpn;
 
     while (!_rpn.empty())
     {
         Token * base = _rpn.front();
         _rpn.pop();
-        this->RPN.push(base->clone());
+        this->m_rpn.push(base->clone());
     }
 
     return *this;
+}
+
+const Config & Calculator::config() const
+{
+    return defaultConfig();
 }
 
 /* * * * * For Debug Only * * * * */
 
 QString Calculator::str() const
 {
-    return str(this->RPN);
+    return str(this->m_rpn);
 }
 
 QString Calculator::str(TokenQueue rpn)
@@ -383,12 +387,17 @@ QString Calculator::str(TokenQueue rpn)
 
 /* * * * * Calculator class * * * * */
 
-TokenQueue Calculator::toRPN(const char * expr,
-                             TokenMap vars, const char * delim,
-                             const char ** rest, Config config)
+TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
+                             const QString & delimStr, int * rest, Config config)
 {
     RpnBuilder data(vars, config.opPrecedence);
     char * nextChar = nullptr;
+
+    std::string exprStd = exprStr.toStdString();
+    std::string delimStd = delimStr.toStdString();
+
+    const char * expr = exprStd.c_str();
+    const char * delim = delimStd.c_str();
 
     static char c = '\0';
 
@@ -699,8 +708,13 @@ TokenQueue Calculator::toRPN(const char * expr,
 
     if (rest)
     {
-        *rest = expr;
+        *rest = expr - exprStd.c_str();
     }
 
     return data.rpn;
+}
+
+QDebug & operator<<(QDebug & os, const cparse::Calculator & t)
+{
+    return os << t.str();
 }

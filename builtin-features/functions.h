@@ -323,7 +323,7 @@ namespace cparse::builtin_functions
         }
         else
         {
-            typeFuncs = &Calculator::type_attribute_map()[base->m_type];
+            typeFuncs = &Calculator::typeAttributeMap()[base->m_type];
         }
 
         // Check if this type has a custom stringify function:

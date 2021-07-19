@@ -1,4 +1,4 @@
-#ifndef CPARSE_CALCULATOR_H
+﻿#ifndef CPARSE_CALCULATOR_H
 #define CPARSE_CALCULATOR_H
 
 #include <QString>
@@ -9,7 +9,7 @@
 
 namespace cparse
 {
-    using typeMap_t = std::map<cparse::TokenType, TokenMap>;
+    using TokenTypeMap = std::map<cparse::TokenType, TokenMap>;
 
     class Calculator
     {
@@ -17,27 +17,28 @@ namespace cparse
 
             Calculator();
             Calculator(const Calculator & calc);
-            Calculator(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                       const char * delim = 0, const char ** rest = nullptr,
+            Calculator(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+                       const QString & delim = QString(), int * rest = nullptr,
                        const Config & config = defaultConfig());
             virtual ~Calculator();
 
-            void compile(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                         const char * delim = 0, const char ** rest = nullptr);
-            PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
+            void compile(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+                         const QString & delim = QString(), int * rest = nullptr);
 
-            static Config & defaultConfig();
-
-            static typeMap_t & type_attribute_map();
-
-            static PackToken calculate(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                                       const char * delim = nullptr, const char ** rest = nullptr);
+            static PackToken calculate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+                                       const QString & delim = QString(), int * rest = nullptr);
 
             static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
                                      const Config & config = defaultConfig());
-            static TokenQueue toRPN(const char * expr, TokenMap vars,
-                                    const char * delim = nullptr, const char ** rest = nullptr,
+
+            PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
+
+            static TokenQueue toRPN(const QString & expr, TokenMap vars,
+                                    const QString & delim = QString(), int * rest = nullptr,
                                     Config config = defaultConfig());
+
+            static Config & defaultConfig();
+            static TokenTypeMap & typeAttributeMap();
 
             // Serialization:
             QString str() const;
@@ -48,17 +49,15 @@ namespace cparse
 
         protected:
 
-            virtual const Config config() const
-            {
-                return defaultConfig();
-            }
+            virtual const Config & config() const;
 
         private:
 
-            // Used to dealloc a TokenQueue_t safely.
-            struct RAII_TokenQueue_t;
-            TokenQueue RPN;
+            TokenQueue m_rpn;
     };
+
+    QDebug & operator<<(QDebug & os, const cparse::Calculator & t);
 }
+
 
 #endif // CPARSE_CALCULATOR_H

@@ -152,7 +152,7 @@ namespace cparse::builtin_operations
             throw Operation::Reject();
         }
 
-        TokenMap & attr_map = Calculator::type_attribute_map()[p_left->m_type];
+        TokenMap & attr_map = Calculator::typeAttributeMap()[p_left->m_type];
         QString key = p_right.asString();
 
         PackToken * attr = attr_map.find(key);
