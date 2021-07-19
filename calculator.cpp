@@ -1,7 +1,7 @@
 #include "calculator.h"
 
-#include "shuntingyard.h"
-#include "shuntingyardexceptions.h"
+#include "rpnbuilder.h"
+#include "exceptions.h"
 #include "tokenhelpers.h"
 #include "packtoken.h"
 #include "reftoken.h"

@@ -31,6 +31,8 @@ namespace cparse
     {
         public:
 
+            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : scope(scope), opp(opp) {}
+
             TokenQueue rpn;
             std::stack<QString> opStack;
             uint8_t lastTokenWasOp = true;
@@ -43,11 +45,8 @@ namespace cparse
             // found a delimiter like '\n' or ')'
             uint32_t bracketLevel = 0;
 
-            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : scope(scope), opp(opp) {}
-
             static void cleanRPN(TokenQueue * rpn);
 
-        public:
             void handle_op(const QString & op);
             void handle_token(Token * token);
             void open_bracket(const QString & bracket);

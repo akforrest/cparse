@@ -2,10 +2,10 @@
 #include <string>
 #include <iostream>
 
-#include "shuntingyard.h"
+#include "rpnbuilder.h"
 #include "packtoken.h"
 #include "reftoken.h"
-#include "shuntingyardexceptions.h"
+#include "exceptions.h"
 
 using cparse::PackToken;
 using cparse::Token;

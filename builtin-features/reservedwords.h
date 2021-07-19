@@ -4,8 +4,8 @@
 #include "../calculator.h"
 #include "../containers.h"
 #include "../functions.h"
-#include "../shuntingyard.h"
-#include "../shuntingyardexceptions.h"
+#include "../rpnbuilder.h"
+#include "../exceptions.h"
 
 namespace cparse::builtin_reservedWords
 {

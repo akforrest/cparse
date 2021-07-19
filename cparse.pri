@@ -7,21 +7,21 @@ SOURCES += \
     $$PWD/containers.cpp \
     $$PWD/calculator.cpp \
     $$PWD/reftoken.cpp \
-    $$PWD/shuntingyard.cpp
+    $$PWD/rpnbuilder.cpp
 
 INCLUDEPATH += CPARSE_DIR
 HEADERS += \
     $$PWD/config.h \
     $$PWD/cparse-test.h \
     $$PWD/cparse.h \
+    $$PWD/exceptions.h \
     $$PWD/operation.h \
     $$PWD/packtoken.h \
     $$PWD/functions.h \
     $$PWD/containers.h \
     $$PWD/calculator.h \
     $$PWD/reftoken.h \
-    $$PWD/shuntingyard.h \
-    $$PWD/shuntingyardexceptions.h \
+    $$PWD/rpnbuilder.h \
     #$$PWD/shunting-yard-exceptions.h \
     #$$PWD/builtin-features.inc \
     $$PWD/builtin-features\functions.h \

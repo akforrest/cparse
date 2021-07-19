@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "cparse-test.h"
-#include "shuntingyard.h"
+#include "rpnbuilder.h"
 #include "calculator.h"
 #include "reftoken.h"
 

@@ -1,6 +1,6 @@
 #include <string>
 
-#include "./shuntingyard.h"
+#include "./rpnbuilder.h"
 
 #include "./containers.h"
 #include "./functions.h"
