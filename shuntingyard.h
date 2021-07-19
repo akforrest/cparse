@@ -19,32 +19,9 @@
 #include "token.h"
 #include "tokentype.h"
 #include "config.h"
-
-namespace cparse
-{
-    class PackToken;
-
-}  // namespace cparse
-
-namespace cparse
-{
-
-    struct TokenMap;
-    class TokenList;
-    class Tuple;
-    class STuple;
-    class Function;
-
-}
-
-#include "./packtoken.h"
-
-// Define the Tuple, TokenMap and TokenList classes:
-#include "./containers.h"
-
-// Define the `Function` class
-// as well as some built-in functions:
-#include "./functions.h"
+#include "packtoken.h"
+#include "containers.h"
+#include "functions.h"
 
 namespace cparse
 {
@@ -79,7 +56,7 @@ namespace cparse
             // * * * * * Static parsing helpers: * * * * * //
 
             // Check if a character is the first character of a variable:
-            static bool isvarchar(const char c);
+            static bool isvarchar(char c);
 
             static QString parseVar(const char * expr, const char ** rest = nullptr);
 
@@ -90,34 +67,25 @@ namespace cparse
             void handle_right_unary(const QString & op);
     };
 
-    class RefToken;
-    class OpMap;
-
-
-    // The RefToken keeps information about the context
-    // in which a variable was originally evaluated
-    // and allow a final value to be correctly resolved
-    // afterwards.
+    // The RefToken keeps information about the context in which a variable was
+    // originally evaluated and allow a final value to be correctly resolved afterwards.
     class RefToken : public Token
     {
-            PackToken original_value;
-
         public:
-            PackToken key;
-            PackToken origin;
+
             RefToken(PackToken k, Token * v, PackToken m = PackToken::None());
             RefToken(PackToken k = PackToken::None(), PackToken v = PackToken::None(), PackToken m = PackToken::None());
 
             Token * resolve(TokenMap * localScope = nullptr) const;
-
             Token * clone() const override;
-    };
 
-    template<class T>
-    Token * TokenTyped<T>::clone() const
-    {
-        return new TokenTyped(*this);
-    }
+            PackToken m_key;
+            PackToken m_origin;
+
+        private:
+
+            PackToken m_originalValue;
+    };
 
 }  // namespace cparse
 

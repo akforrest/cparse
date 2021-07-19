@@ -1013,7 +1013,7 @@ PackToken not_right_unary_op(const PackToken & left, const PackToken &,
 PackToken lazy_increment(const PackToken &, const PackToken &,
                          evaluationData * data)
 {
-    auto var_name = data->left->key.asString();
+    auto var_name = data->left->m_key.asString();
 
     TokenMap * map_p = data->scope.findMap(var_name);
 
@@ -1030,7 +1030,7 @@ PackToken lazy_increment(const PackToken &, const PackToken &,
 PackToken eager_increment(const PackToken &, const PackToken &,
                           evaluationData * data)
 {
-    auto var_name = data->right->key.asString();
+    auto var_name = data->right->m_key.asString();
 
     TokenMap * map_p = data->scope.findMap(var_name);
 
@@ -1045,7 +1045,7 @@ PackToken eager_increment(const PackToken &, const PackToken &,
 PackToken assign_right(const PackToken & left, const PackToken &,
                        evaluationData * data)
 {
-    auto var_name = data->right->key.asString();
+    auto var_name = data->right->m_key.asString();
 
     TokenMap * map_p = data->scope.findMap(var_name);
 
@@ -1060,7 +1060,7 @@ PackToken assign_right(const PackToken & left, const PackToken &,
 PackToken assign_left(const PackToken &, const PackToken & right,
                       evaluationData * data)
 {
-    auto var_name = data->left->key.asString();
+    auto var_name = data->left->m_key.asString();
 
     TokenMap * map_p = data->scope.findMap(var_name);
 

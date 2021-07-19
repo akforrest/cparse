@@ -52,6 +52,12 @@ namespace cparse
             }
     };
 
+    template<class T>
+    Token * TokenTyped<T>::clone() const
+    {
+        return new TokenTyped(*this);
+    }
+
     using TokenQueue = std::queue<Token *>;
 }
 

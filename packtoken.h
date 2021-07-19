@@ -8,7 +8,7 @@
 
 namespace cparse
 {
-    struct TokenMap;
+    class TokenMap;
     class TokenList;
     class Token;
     class TokenNone;
@@ -24,7 +24,7 @@ namespace cparse
         public:
             static const PackToken & None();
 
-            typedef QString(*strFunc_t)(const Token *, uint32_t);
+            using strFunc_t = QString(*)(const Token *, uint32_t);
             static strFunc_t & str_custom();
 
         public:
@@ -93,10 +93,10 @@ namespace cparse
             Token * release() && ;
     };
 
-    // To allow cout to print it:
+    QDebug operator<<(QDebug os, const cparse::PackToken & t);
+    std::ostream & operator<<(std::ostream & os, const cparse::PackToken & t);
+
 }  // namespace cparse
 
-QDebug operator<<(QDebug os, const cparse::PackToken & t);
-std::ostream & operator<<(std::ostream & os, const cparse::PackToken & t);
 
 #endif  // CPARSE_PACKTOKEN_H_

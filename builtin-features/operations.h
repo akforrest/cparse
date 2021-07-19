@@ -15,8 +15,8 @@ namespace cparse::builtin_operations
     // Assignment operator "="
     PackToken Assign(const PackToken &, const PackToken & right, evaluationData * data)
     {
-        PackToken & key = data->left->key;
-        PackToken & origin = data->left->origin;
+        PackToken & key = data->left->m_key;
+        PackToken & origin = data->left->m_origin;
 
         // If the left operand has a name:
         if (key->m_type == TokenType::STR)

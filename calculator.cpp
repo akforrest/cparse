@@ -190,9 +190,9 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
 
                 PackToken _this;
 
-                if (data.left->origin->m_type != NONE)
+                if (data.left->m_origin->m_type != NONE)
                 {
-                    _this = data.left->origin;
+                    _this = data.left->m_origin;
                 }
                 else
                 {

@@ -78,12 +78,12 @@ Token * PackToken::operator->() const
     return base;
 }
 
-QDebug operator <<(QDebug os, const PackToken & t)
+QDebug cparse::operator<<(QDebug os, const PackToken & t)
 {
     return os << t.str();
 }
 
-std::ostream & operator<<(std::ostream & os, const PackToken & t)
+std::ostream & cparse::operator<<(std::ostream & os, const PackToken & t)
 {
     return os << t.str().toStdString().c_str();
 }
@@ -316,7 +316,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
     if (base->m_type & REF)
     {
         base = static_cast<const RefToken *>(base)->resolve();
-        name = static_cast<const RefToken *>(base)->key.str();
+        name = static_cast<const RefToken *>(base)->m_key.str();
     }
 
     /* * * * * Check for a user defined functions: * * * * */

@@ -67,7 +67,7 @@ namespace cparse
             TokenIterator * getIterator() const override;
     };
 
-    struct TokenMap;
+    class TokenMap;
     struct TokenMapData
     {
         using MapType = std::map<QString, PackToken>;
@@ -81,15 +81,15 @@ namespace cparse
         TokenMapData & operator=(const TokenMapData & other);
     };
 
-    struct TokenMap : public Container<TokenMapData>, public IterableToken
+    class TokenMap : public Container<TokenMapData>, public IterableToken
     {
+        public:
+
             // Static factories:
             static TokenMap empty;
             static TokenMap & base_map();
             static TokenMap & default_global();
             static PackToken default_constructor(TokenMap scope);
-
-        public:
 
             TokenMap(TokenMap * parent = &TokenMap::base_map())
                 : Container(parent), IterableToken(MAP)
