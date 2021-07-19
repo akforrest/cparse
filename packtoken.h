@@ -16,8 +16,6 @@ namespace cparse
     class STuple;
     class Function;
 
-    using tokType_t = uint8_t;
-
     // Encapsulate TokenBase* into a friendlier interface
     class PackToken
     {

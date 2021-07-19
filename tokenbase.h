@@ -9,16 +9,15 @@
 
 namespace cparse
 {
-    using tokType_t = quint8;
     using opID_t = quint64;
 
     struct TokenBase
     {
-        tokType_t type{};
+        TokenType type = TokenType::ANY_TYPE;
 
         virtual ~TokenBase() {}
         TokenBase() {}
-        TokenBase(tokType_t type) : type(type) {}
+        TokenBase(TokenType type) : type(type) {}
 
         virtual TokenBase * clone() const = 0;
     };
@@ -27,7 +26,7 @@ namespace cparse
     {
         public:
             T val;
-            Token(T t, tokType_t type) : TokenBase(type), val(t) {}
+            Token(T t, TokenType type) : TokenBase(type), val(t) {}
             TokenBase * clone() const override;
     };
 
@@ -50,4 +49,5 @@ namespace cparse
     };
     using TokenQueue_t = std::queue<TokenBase *>;
 }
+
 #endif // CPARSE_TOKENBASE_H

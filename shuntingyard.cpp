@@ -69,7 +69,7 @@ void cparse::cleanStack(std::stack<TokenBase *> st)
 /* * * * * Operation class: * * * * */
 
 // Convert a type into an unique mask for bit wise operations:
-uint32_t Operation::mask(tokType_t type)
+uint32_t Operation::mask(TokenType type)
 {
     if (type == ANY_TYPE)
     {
@@ -80,7 +80,7 @@ uint32_t Operation::mask(tokType_t type)
 }
 
 // Build a mask for each pair of operands
-opID_t Operation::build_mask(tokType_t left, tokType_t right)
+opID_t Operation::build_mask(TokenType left, TokenType right)
 {
     opID_t result = mask(left);
     return (result << 32) | mask(right);
@@ -421,10 +421,10 @@ cparse::rWordParser_t * cparse::parserMap_t::find(char c)
 }
 
 RefToken::RefToken(PackToken k, TokenBase * v, PackToken m) :
-    TokenBase(v->type | REF), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+    TokenBase(TokenType(v->type | TokenType::REF)), original_value(v), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
 RefToken::RefToken(PackToken k, PackToken v, PackToken m) :
-    TokenBase(v->type | REF), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
+    TokenBase(TokenType(v->type | TokenType::REF)), original_value(std::forward<PackToken>(v)), key(std::forward<PackToken>(k)), origin(std::forward<PackToken>(m)) {}
 
 TokenBase * RefToken::resolve(TokenMap * localScope) const
 {
@@ -452,7 +452,7 @@ TokenBase * RefToken::clone() const
     return new RefToken(*this);
 }
 
-cparse::opSignature_t::opSignature_t(const tokType_t L, const QString & op, const tokType_t R)
+cparse::opSignature_t::opSignature_t(const TokenType L, const QString & op, const TokenType R)
     : left(L), op(op), right(R) {}
 
 void cparse::opMap_t::add(const opSignature_t & sig, Operation::opFunc_t func)

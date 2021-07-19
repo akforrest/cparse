@@ -9,7 +9,7 @@
 
 namespace cparse
 {
-    using typeMap_t = std::map<cparse::tokType_t, TokenMap>;
+    using typeMap_t = std::map<cparse::TokenType, TokenMap>;
 
     class Calculator
     {

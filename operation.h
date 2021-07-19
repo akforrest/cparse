@@ -10,10 +10,10 @@ namespace cparse
 
     struct opSignature_t
     {
-        tokType_t left;
+        TokenType left;
         QString op;
-        tokType_t right;
-        opSignature_t(tokType_t L, const QString & op, tokType_t R);
+        TokenType right;
+        opSignature_t(TokenType L, const QString & op, TokenType R);
     };
 
     class opMap_t;
@@ -43,8 +43,8 @@ namespace cparse
             struct Reject : public std::exception {};
 
         public:
-            static inline uint32_t mask(tokType_t type);
-            static opID_t build_mask(tokType_t left, tokType_t right);
+            static inline uint32_t mask(TokenType type);
+            static opID_t build_mask(TokenType left, TokenType right);
 
         private:
             opID_t _mask;

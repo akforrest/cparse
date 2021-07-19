@@ -42,7 +42,7 @@ namespace cparse
         public:
             virtual ~Iterable() {}
             Iterable() {}
-            Iterable(tokType_t type) : TokenBase(type) {}
+            Iterable(TokenType type) : TokenBase(type) {}
 
             virtual Iterator * getIterator() const = 0;
     };
