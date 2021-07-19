@@ -14,7 +14,19 @@ namespace cparse
     class Calculator
     {
         public:
-            static Config_t & Default();
+
+            Calculator();
+            Calculator(const Calculator & calc);
+            Calculator(const char * expr, const TokenMap & vars = &TokenMap::empty,
+                       const char * delim = 0, const char ** rest = nullptr,
+                       const Config & config = defaultConfig());
+            virtual ~Calculator();
+
+            void compile(const char * expr, const TokenMap & vars = &TokenMap::empty,
+                         const char * delim = 0, const char ** rest = nullptr);
+            PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
+
+            static Config & defaultConfig();
 
             static typeMap_t & type_attribute_map();
 
@@ -22,20 +34,10 @@ namespace cparse
                                        const char * delim = nullptr, const char ** rest = nullptr);
 
             static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
-                                         const Config_t & config = Default());
+                                     const Config & config = defaultConfig());
             static TokenQueue toRPN(const char * expr, TokenMap vars,
-                                      const char * delim = nullptr, const char ** rest = nullptr,
-                                      Config_t config = Default());
-
-            virtual ~Calculator();
-            Calculator();
-            Calculator(const Calculator & calc);
-            Calculator(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                       const char * delim = 0, const char ** rest = nullptr,
-                       const Config_t & config = Default());
-            void compile(const char * expr, const TokenMap & vars = &TokenMap::empty,
-                         const char * delim = 0, const char ** rest = nullptr);
-            PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
+                                    const char * delim = nullptr, const char ** rest = nullptr,
+                                    Config config = defaultConfig());
 
             // Serialization:
             QString str() const;
@@ -46,9 +48,9 @@ namespace cparse
 
         protected:
 
-            virtual const Config_t Config() const
+            virtual const Config config() const
             {
-                return Default();
+                return defaultConfig();
             }
 
         private:

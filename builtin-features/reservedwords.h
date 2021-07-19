@@ -15,22 +15,22 @@ namespace cparse::builtin_reservedWords
     PackToken falseToken = PackToken(false);
     PackToken noneToken = PackToken::None();
 
-    void True(const char *, const char **, rpnBuilder * data)
+    void True(const char *, const char **, RpnBuilder * data)
     {
         data->handle_token(trueToken->clone());
     }
 
-    void False(const char *, const char **, rpnBuilder * data)
+    void False(const char *, const char **, RpnBuilder * data)
     {
         data->handle_token(falseToken->clone());
     }
 
-    void None(const char *, const char **, rpnBuilder * data)
+    void None(const char *, const char **, RpnBuilder * data)
     {
         data->handle_token(noneToken->clone());
     }
 
-    void LineComment(const char * expr, const char ** rest, rpnBuilder *)
+    void LineComment(const char * expr, const char ** rest, RpnBuilder *)
     {
         while (*expr && *expr != '\n')
         {
@@ -40,7 +40,7 @@ namespace cparse::builtin_reservedWords
         *rest = expr;
     }
 
-    void SlashStarComment(const char * expr, const char ** rest, rpnBuilder *)
+    void SlashStarComment(const char * expr, const char ** rest, RpnBuilder *)
     {
         while (*expr && !(expr[0] == '*' && expr[1] == '/'))
         {
@@ -57,7 +57,7 @@ namespace cparse::builtin_reservedWords
         *rest = expr;
     }
 
-    void KeywordOperator(const char *, const char **, rpnBuilder * data)
+    void KeywordOperator(const char *, const char **, RpnBuilder * data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
         if (data->rpn.back()->m_type == VAR)
@@ -68,7 +68,7 @@ namespace cparse::builtin_reservedWords
         data->handle_op(":");
     }
 
-    void DotOperator(const char * expr, const char ** rest, rpnBuilder * data)
+    void DotOperator(const char * expr, const char ** rest, RpnBuilder * data)
     {
         data->handle_op(".");
 
@@ -78,13 +78,13 @@ namespace cparse::builtin_reservedWords
         }
 
         // If it did not find a valid variable name after it:
-        if (!rpnBuilder::isvarchar(*expr))
+        if (!RpnBuilder::isvarchar(*expr))
         {
             throw syntax_error("Expected variable name after '.' operator");
         }
 
         // Parse the variable name and save it as a string:
-        auto key = rpnBuilder::parseVar(expr, rest);
+        auto key = RpnBuilder::parseVar(expr, rest);
         data->handle_token(new TokenTyped<QString>(key, STR));
     }
 
@@ -92,7 +92,7 @@ namespace cparse::builtin_reservedWords
     {
         Startup()
         {
-            parserMap_t & parser = Calculator::Default().parserMap;
+            ParserMap & parser = Calculator::defaultConfig().parserMap;
             parser.add("True", &True);
             parser.add("False", &False);
             parser.add("None", &None);

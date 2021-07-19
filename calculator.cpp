@@ -12,11 +12,11 @@ using cparse::TokenMap;
 using cparse::RefToken;
 using cparse::Operation;
 using cparse::opID_t;
-using cparse::Config_t;
+using cparse::Config;
 using cparse::typeMap_t;
 using cparse::TokenQueue;
 using cparse::evaluationData;
-using cparse::rpnBuilder;
+using cparse::RpnBuilder;
 using cparse::REF;
 
 bool match_op_id(opID_t id, opID_t mask)
@@ -57,9 +57,9 @@ Token * exec_operation(const PackToken & left, const PackToken & right,
 /* * * * * Static containers: * * * * */
 
 // Build configurations once only:
-Config_t & Calculator::Default()
+Config & Calculator::defaultConfig()
 {
-    static Config_t conf;
+    static Config conf;
     return conf;
 }
 
@@ -81,7 +81,7 @@ struct Calculator::RAII_TokenQueue_t : TokenQueue
     RAII_TokenQueue_t(const TokenQueue & rpn) : TokenQueue(rpn) {}
     ~RAII_TokenQueue_t()
     {
-        rpnBuilder::cleanRPN(this);
+        RpnBuilder::cleanRPN(this);
     }
 
     RAII_TokenQueue_t(const RAII_TokenQueue_t & rpn)
@@ -107,7 +107,7 @@ PackToken Calculator::calculate(const char * expr, const TokenMap & vars,
 }
 
 Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
-                              const Config_t & config)
+                              const Config & config)
 {
     evaluationData data(rpn, scope, config.opMap);
 
@@ -283,7 +283,7 @@ Token * Calculator::calculate(const TokenQueue & rpn, const TokenMap & scope,
 
 Calculator::~Calculator()
 {
-    rpnBuilder::cleanRPN(&this->RPN);
+    RpnBuilder::cleanRPN(&this->RPN);
 }
 
 Calculator::Calculator()
@@ -309,7 +309,7 @@ Calculator::Calculator(const Calculator & calc)
 // - Stops at delim or '\0'
 // - Returns the rest of the string as char* rest
 Calculator::Calculator(const char * expr, const TokenMap & vars, const char * delim,
-                       const char ** rest, const Config_t & config)
+                       const char ** rest, const Config & config)
 {
     this->RPN = Calculator::toRPN(expr, vars, delim, rest, config);
 }
@@ -318,14 +318,14 @@ void Calculator::compile(const char * expr, const TokenMap & vars, const char * 
                          const char ** rest)
 {
     // Make sure it is empty:
-    rpnBuilder::cleanRPN(&this->RPN);
+    RpnBuilder::cleanRPN(&this->RPN);
 
-    this->RPN = Calculator::toRPN(expr, vars, delim, rest, Config());
+    this->RPN = Calculator::toRPN(expr, vars, delim, rest, config());
 }
 
 PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 {
-    Token * value = calculate(this->RPN, vars, Config());
+    Token * value = calculate(this->RPN, vars, config());
     PackToken p = PackToken(value->clone());
 
     if (keep_refs)
@@ -339,7 +339,7 @@ PackToken Calculator::eval(const TokenMap & vars, bool keep_refs) const
 Calculator & Calculator::operator=(const Calculator & calc)
 {
     // Make sure the RPN is empty:
-    rpnBuilder::cleanRPN(&this->RPN);
+    RpnBuilder::cleanRPN(&this->RPN);
 
     // Deep copy the token list, so everything can be
     // safely deallocated:
@@ -385,9 +385,9 @@ QString Calculator::str(TokenQueue rpn)
 
 TokenQueue Calculator::toRPN(const char * expr,
                              TokenMap vars, const char * delim,
-                             const char ** rest, Config_t config)
+                             const char ** rest, Config config)
 {
-    rpnBuilder data(vars, config.opPrecedence);
+    RpnBuilder data(vars, config.opPrecedence);
     char * nextChar = nullptr;
 
     static char c = '\0';
@@ -448,13 +448,13 @@ TokenQueue Calculator::toRPN(const char * expr,
 
             expr = nextChar;
         }
-        else if (rpnBuilder::isvarchar(*expr))
+        else if (RpnBuilder::isvarchar(*expr))
         {
-            rWordParser_t * parser;
+            WordParserFunc * parser;
 
             // If the token is a variable, resolve it and
             // add the parsed number to the output queue.
-            QString key = rpnBuilder::parseVar(expr, &expr);
+            QString key = RpnBuilder::parseVar(expr, &expr);
 
             if ((parser = config.parserMap.find(key)))
             {
@@ -465,7 +465,7 @@ TokenQueue Calculator::toRPN(const char * expr,
                 }
                 catch (...)
                 {
-                    rpnBuilder::cleanRPN(&data.rpn);
+                    RpnBuilder::cleanRPN(&data.rpn);
                     throw;
                 }
             }
@@ -531,7 +531,7 @@ TokenQueue Calculator::toRPN(const char * expr,
             if (*expr != quote)
             {
                 QString squote = (quote == '"' ? "\"" : "'");
-                rpnBuilder::cleanRPN(&data.rpn);
+                RpnBuilder::cleanRPN(&data.rpn);
                 throw syntax_error("Expected quote (" + squote + ") at end of string declaration: " + squote + ss + ".");
             }
 
@@ -621,7 +621,7 @@ TokenQueue Calculator::toRPN(const char * expr,
                     QString op = ss;
 
                     // Check if the word parser applies:
-                    rWordParser_t * parser = config.parserMap.find(op);
+                    auto * parser = config.parserMap.find(op);
 
                     // Evaluate the meaning of this operator in the following order:
                     // 1. Is there a word parser for it?
@@ -636,7 +636,7 @@ TokenQueue Calculator::toRPN(const char * expr,
                         }
                         catch (...)
                         {
-                            rpnBuilder::cleanRPN(&data.rpn);
+                            RpnBuilder::cleanRPN(&data.rpn);
                             throw;
                         }
                     }
@@ -654,13 +654,13 @@ TokenQueue Calculator::toRPN(const char * expr,
                         }
                         catch (...)
                         {
-                            rpnBuilder::cleanRPN(&data.rpn);
+                            RpnBuilder::cleanRPN(&data.rpn);
                             throw;
                         }
                     }
                     else
                     {
-                        rpnBuilder::cleanRPN(&data.rpn);
+                        RpnBuilder::cleanRPN(&data.rpn);
                         throw syntax_error("Invalid operator: " + op);
                     }
                 }
@@ -678,7 +678,7 @@ TokenQueue Calculator::toRPN(const char * expr,
     // Check for syntax errors (excess of operators i.e. 10 + + -1):
     if (data.lastTokenWasUnary)
     {
-        rpnBuilder::cleanRPN(&data.rpn);
+        RpnBuilder::cleanRPN(&data.rpn);
         throw syntax_error("Expected operand after unary operator `" + data.opStack.top() + "`");
     }
 

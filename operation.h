@@ -18,12 +18,12 @@ namespace cparse
 
     using opID_t = quint64;
 
-    class opMap_t;
+    class OpMap;
     struct evaluationData
     {
         TokenQueue rpn;
         TokenMap scope;
-        const opMap_t & opMap;
+        const OpMap & opMap;
 
         std::unique_ptr<RefToken> left;
         std::unique_ptr<RefToken> right;
@@ -31,7 +31,7 @@ namespace cparse
         QString op;
         opID_t opID{};
 
-        evaluationData(TokenQueue rpn, const TokenMap & scope, const opMap_t & opMap);
+        evaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap);
     };
 
     class Operation

@@ -50,7 +50,7 @@ namespace cparse
 {
     // This struct was created to expose internal toRPN() variables
     // to custom parsers, in special to the rWordParser_t functions.
-    class rpnBuilder
+    class RpnBuilder
     {
         public:
 
@@ -59,14 +59,14 @@ namespace cparse
             uint8_t lastTokenWasOp = true;
             bool lastTokenWasUnary = false;
             TokenMap scope;
-            const OppMap_t & opp;
+            const OpPrecedenceMap & opp;
 
             // Used to make sure the expression won't
             // end inside a bracket evaluation just because
             // found a delimiter like '\n' or ')'
             uint32_t bracketLevel = 0;
 
-            rpnBuilder(const TokenMap & scope, const OppMap_t & opp) : scope(scope), opp(opp) {}
+            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : scope(scope), opp(opp) {}
 
             static void cleanRPN(TokenQueue * rpn);
 
@@ -91,7 +91,7 @@ namespace cparse
     };
 
     class RefToken;
-    class opMap_t;
+    class OpMap;
 
 
     // The RefToken keeps information about the context

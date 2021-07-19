@@ -23,10 +23,10 @@ using cparse::TokenMap;
 using cparse::RefToken;
 using cparse::Operation;
 using cparse::opID_t;
-using cparse::Config_t;
+using cparse::Config;
 using cparse::TokenQueue;
 using cparse::evaluationData;
-using cparse::rpnBuilder;
+using cparse::RpnBuilder;
 using cparse::REF;
 
 #include "./builtin-features/functions.h"
@@ -101,7 +101,7 @@ PackToken Operation::exec(const PackToken & left, const PackToken & right, evalu
 
 /* * * * * rpnBuilder Class: * * * * */
 
-void rpnBuilder::cleanRPN(TokenQueue * rpn)
+void RpnBuilder::cleanRPN(TokenQueue * rpn)
 {
     while (!rpn->empty())
     {
@@ -126,7 +126,7 @@ void rpnBuilder::cleanRPN(TokenQueue * rpn)
  *     pop o2 off the stack onto the output queue.
  *   Push o1 on the stack.
  */
-void rpnBuilder::handle_opStack(const QString & op)
+void RpnBuilder::handle_opStack(const QString & op)
 {
     QString cur_op;
 
@@ -153,7 +153,7 @@ void rpnBuilder::handle_opStack(const QString & op)
     }
 }
 
-void rpnBuilder::handle_binary(const QString & op)
+void RpnBuilder::handle_binary(const QString & op)
 {
     // Handle OP precedence
     handle_opStack(op);
@@ -162,7 +162,7 @@ void rpnBuilder::handle_binary(const QString & op)
 }
 
 // Convert left unary operators to binary and handle them:
-void rpnBuilder::handle_left_unary(const QString & unary_op)
+void RpnBuilder::handle_left_unary(const QString & unary_op)
 {
     this->rpn.push(new TokenUnary());
     // Only put it on the stack and wait to check op precedence:
@@ -170,7 +170,7 @@ void rpnBuilder::handle_left_unary(const QString & unary_op)
 }
 
 // Convert right unary operators to binary and handle them:
-void rpnBuilder::handle_right_unary(const QString & unary_op)
+void RpnBuilder::handle_right_unary(const QString & unary_op)
 {
     // Handle OP precedence:
     handle_opStack(unary_op);
@@ -181,7 +181,7 @@ void rpnBuilder::handle_right_unary(const QString & unary_op)
 }
 
 // Find out if op is a binary or unary operator and handle it:
-void rpnBuilder::handle_op(const QString & op)
+void RpnBuilder::handle_op(const QString & op)
 {
     // If it's a left unary operator:
     if (this->lastTokenWasOp)
@@ -228,7 +228,7 @@ void rpnBuilder::handle_op(const QString & op)
     }
 }
 
-void rpnBuilder::handle_token(Token * token)
+void RpnBuilder::handle_token(Token * token)
 {
     if (!lastTokenWasOp)
     {
@@ -240,7 +240,7 @@ void rpnBuilder::handle_token(Token * token)
     lastTokenWasUnary = false;
 }
 
-void rpnBuilder::open_bracket(const QString & bracket)
+void RpnBuilder::open_bracket(const QString & bracket)
 {
     opStack.push(bracket);
     lastTokenWasOp = bracket[0].unicode();
@@ -248,7 +248,7 @@ void rpnBuilder::open_bracket(const QString & bracket)
     ++bracketLevel;
 }
 
-void rpnBuilder::close_bracket(const QString & bracket)
+void RpnBuilder::close_bracket(const QString & bracket)
 {
     if (char(lastTokenWasOp) == bracket[0])
     {
@@ -266,7 +266,7 @@ void rpnBuilder::close_bracket(const QString & bracket)
 
     if (opStack.empty())
     {
-        rpnBuilder::cleanRPN(&rpn);
+        RpnBuilder::cleanRPN(&rpn);
         throw syntax_error("Extra '" + bracket + "' on the expression!");
     }
 
@@ -276,18 +276,18 @@ void rpnBuilder::close_bracket(const QString & bracket)
     --bracketLevel;
 }
 
-bool rpnBuilder::isvarchar(const char c)
+bool RpnBuilder::isvarchar(const char c)
 {
     return isalpha(c) || c == '_';
 }
 
-QString rpnBuilder::parseVar(const char * expr, const char ** rest)
+QString RpnBuilder::parseVar(const char * expr, const char ** rest)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (rpnBuilder::isvarchar(*expr) || isdigit(*expr))
+    while (RpnBuilder::isvarchar(*expr) || isdigit(*expr))
     {
         ss += *expr;
         ++expr;
@@ -310,7 +310,7 @@ void cleanStack(std::stack<Token *> st)
     }
 }
 
-cparse::OppMap_t::OppMap_t()
+cparse::OpPrecedenceMap::OpPrecedenceMap()
 {
     // These operations are hard-coded inside the Calculator,
     // thus their precedence should always be defined:
@@ -322,7 +322,7 @@ cparse::OppMap_t::OppMap_t()
     RtoL.insert("=");
 }
 
-void cparse::OppMap_t::add(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::add(const QString & op, int precedence)
 {
     if (precedence < 0)
     {
@@ -333,7 +333,7 @@ void cparse::OppMap_t::add(const QString & op, int precedence)
     pr_map[op] = precedence;
 }
 
-void cparse::OppMap_t::addUnary(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::addUnary(const QString & op, int precedence)
 {
     add("L" + op, precedence);
 
@@ -346,7 +346,7 @@ void cparse::OppMap_t::addUnary(const QString & op, int precedence)
     }
 }
 
-void cparse::OppMap_t::addRightUnary(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::addRightUnary(const QString & op, int precedence)
 {
     add("R" + op, precedence);
 
@@ -368,37 +368,37 @@ void cparse::OppMap_t::addRightUnary(const QString & op, int precedence)
     }
 }
 
-int cparse::OppMap_t::prec(const QString & op) const
+int cparse::OpPrecedenceMap::prec(const QString & op) const
 {
     return pr_map.at(op);
 }
 
-bool cparse::OppMap_t::assoc(const QString & op) const
+bool cparse::OpPrecedenceMap::assoc(const QString & op) const
 {
     return RtoL.count(op);
 }
 
-bool cparse::OppMap_t::exists(const QString & op) const
+bool cparse::OpPrecedenceMap::exists(const QString & op) const
 {
     return pr_map.count(op);
 }
 
-evaluationData::evaluationData(TokenQueue rpn, const TokenMap & scope, const opMap_t & opMap)
+evaluationData::evaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
     : rpn(std::move(rpn)), scope(scope), opMap(opMap) {}
 
-void cparse::parserMap_t::add(const QString & word, rWordParser_t * parser)
+void cparse::ParserMap::add(const QString & word, WordParserFunc * parser)
 {
     wmap[word] = parser;
 }
 
-void cparse::parserMap_t::add(char c, rWordParser_t * parser)
+void cparse::ParserMap::add(char c, WordParserFunc * parser)
 {
     cmap[c] = parser;
 }
 
-cparse::rWordParser_t * cparse::parserMap_t::find(const QString & text)
+cparse::WordParserFunc * cparse::ParserMap::find(const QString & text)
 {
-    rWordMap_t::iterator w_it;
+    WordParserFuncMap::iterator w_it;
 
     if ((w_it = wmap.find(text)) != wmap.end())
     {
@@ -408,9 +408,9 @@ cparse::rWordParser_t * cparse::parserMap_t::find(const QString & text)
     return nullptr;
 }
 
-cparse::rWordParser_t * cparse::parserMap_t::find(char c)
+cparse::WordParserFunc * cparse::ParserMap::find(char c)
 {
-    rCharMap_t::iterator c_it;
+    CharParserFuncMap::iterator c_it;
 
     if ((c_it = cmap.find(c)) != cmap.end())
     {
@@ -455,12 +455,12 @@ Token * RefToken::clone() const
 cparse::opSignature_t::opSignature_t(const TokenType L, const QString & op, const TokenType R)
     : left(L), op(op), right(R) {}
 
-void cparse::opMap_t::add(const opSignature_t & sig, Operation::opFunc_t func)
+void cparse::OpMap::add(const opSignature_t & sig, Operation::opFunc_t func)
 {
     (*this)[sig.op].push_back(Operation(sig, func));
 }
 
-QString cparse::opMap_t::str() const
+QString cparse::OpMap::str() const
 {
     if (this->empty())
     {
@@ -478,5 +478,5 @@ QString cparse::opMap_t::str() const
     return result + " }";
 }
 
-Config_t::Config_t(parserMap_t p, OppMap_t opp, opMap_t opMap)
+Config::Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap)
     : parserMap(std::move(p)), opPrecedence(std::move(opp)), opMap(std::move(opMap)) {}

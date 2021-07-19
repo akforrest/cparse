@@ -11,39 +11,34 @@
 
 namespace cparse
 {
-    class rpnBuilder;
+    class RpnBuilder;
 
     // The reservedWordParser_t is the function type called when
     // a reserved word or character is found at parsing time.
-    using rWordParser_t = void (const char *, const char **, rpnBuilder *);
-    using rWordMap_t = std::map<QString, rWordParser_t *>;
-    using rCharMap_t = std::map<char, rWordParser_t *>;
+    using WordParserFunc = void (const char *, const char **, RpnBuilder *);
+    using WordParserFuncMap = std::map<QString, WordParserFunc *>;
+    using CharParserFuncMap = std::map<char, WordParserFunc *>;
 
-    struct parserMap_t
+    struct ParserMap
     {
-        rWordMap_t wmap;
-        rCharMap_t cmap;
+        WordParserFuncMap wmap;
+        CharParserFuncMap cmap;
 
         // Add reserved word:
-        void add(const QString & word,  rWordParser_t * parser);
+        void add(const QString & word, WordParserFunc * parser);
 
         // Add reserved character:
-        void add(char c,  rWordParser_t * parser);
+        void add(char c,  WordParserFunc * parser);
 
-        rWordParser_t * find(const QString & text);
-
-        rWordParser_t * find(char c);
+        WordParserFunc * find(const QString & text);
+        WordParserFunc * find(char c);
     };
 
-    class OppMap_t
+    class OpPrecedenceMap
     {
-            // Set of operators that should be evaluated from right to left:
-            std::set<QString> RtoL;
-            // Map of operators precedence:
-            std::map<QString, int> pr_map;
-
         public:
-            OppMap_t();
+
+            OpPrecedenceMap();
 
             void add(const QString & op, int precedence);
 
@@ -54,25 +49,31 @@ namespace cparse
             int prec(const QString & op) const;
             bool assoc(const QString & op) const;
             bool exists(const QString & op) const;
+
+        private:
+
+            // Set of operators that should be evaluated from right to left:
+            std::set<QString> RtoL;
+            // Map of operators precedence:
+            std::map<QString, int> pr_map;
     };
 
-    using opList_t = std::vector<Operation>;
-    class opMap_t : public std::map<QString, opList_t>
+    class OpMap : public std::map<QString, std::vector<Operation>>
     {
         public:
-            void add(const opSignature_t & sig, Operation::opFunc_t func);
 
+            void add(const opSignature_t & sig, Operation::opFunc_t func);
             QString str() const;
     };
 
-    struct Config_t
+    struct Config
     {
-        parserMap_t parserMap;
-        OppMap_t opPrecedence;
-        opMap_t opMap;
+        Config() {}
+        Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap);
 
-        Config_t() {}
-        Config_t(parserMap_t p, OppMap_t opp, opMap_t opMap);
+        ParserMap parserMap;
+        OpPrecedenceMap opPrecedence;
+        OpMap opMap;
     };
 }
 #endif // CPARSE_CONFIG_H

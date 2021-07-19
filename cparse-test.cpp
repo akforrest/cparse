@@ -949,13 +949,13 @@ void operation_id_function()
 
 struct myCalc : public Calculator
 {
-    static Config_t & my_config()
+    static Config & my_config()
     {
-        static Config_t conf;
+        static Config conf;
         return conf;
     }
 
-    const Config_t Config() const override
+    const Config config() const override
     {
         return my_config();
     }
@@ -966,13 +966,13 @@ struct myCalc : public Calculator
 PackToken op1(const PackToken & left, const PackToken & right,
               evaluationData * data)
 {
-    return Calculator::Default().opMap["%"][0].exec(left, right, data);
+    return Calculator::defaultConfig().opMap["%"][0].exec(left, right, data);
 }
 
 PackToken op2(const PackToken & left, const PackToken & right,
               evaluationData * data)
 {
-    return Calculator::Default().opMap[","][0].exec(left, right, data);
+    return Calculator::defaultConfig().opMap[","][0].exec(left, right, data);
 }
 
 PackToken op3(const PackToken & left, const PackToken & right,
@@ -1067,7 +1067,7 @@ PackToken assign_left(const PackToken &, const PackToken & right,
     return (*map_p)[var_name] = right;
 }
 
-void slash(const char * expr, const char ** rest, rpnBuilder * data)
+void slash(const char * expr, const char ** rest, RpnBuilder * data)
 {
     data->handle_op("*");
 
@@ -1075,7 +1075,7 @@ void slash(const char * expr, const char ** rest, rpnBuilder * data)
     *rest = ++expr;
 }
 
-void slash_slash(const char *, const char **, rpnBuilder * data)
+void slash_slash(const char *, const char **, RpnBuilder * data)
 {
     data->handle_op("-");
 }
@@ -1084,7 +1084,7 @@ struct myCalcStartup
 {
     myCalcStartup()
     {
-        OppMap_t & opp = myCalc::my_config().opPrecedence;
+        OpPrecedenceMap & opp = myCalc::my_config().opPrecedence;
         opp.add(".", 1);
         opp.add("+", 2);
         opp.add("*", 2);
@@ -1102,7 +1102,7 @@ struct myCalcStartup
         opp.addRightUnary("$$", 2);
         opp.addRightUnary("~", 4);
 
-        opMap_t & opMap = myCalc::my_config().opMap;
+        OpMap & opMap = myCalc::my_config().opMap;
         opMap.add({STR, "+", TUPLE}, &op1);
         opMap.add({ANY_TYPE, ".", ANY_TYPE}, &op2);
         opMap.add({NUM, "-", NUM}, &op3);
@@ -1116,7 +1116,7 @@ struct myCalcStartup
         opMap.add({ANY_TYPE, "=>", REF}, &assign_right);
         opMap.add({REF, "<=", ANY_TYPE}, &assign_left);
 
-        parserMap_t & parser = myCalc::my_config().parserMap;
+        ParserMap & parser = myCalc::my_config().parserMap;
         parser.add('/', &slash);
         parser.add("//", &slash_slash);
     }
