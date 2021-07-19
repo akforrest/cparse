@@ -435,8 +435,8 @@ TokenQueue Calculator::toRPN(const QString & exprStr, TokenMap vars,
             }
             else
             {
-                double digit = strtod(expr, &nextChar);
-                data.handleToken(new TokenTyped<double>(digit, REAL));
+                qreal digit = strtod(expr, &nextChar);
+                data.handleToken(new TokenTyped<qreal>(digit, REAL));
             }
 
             expr = nextChar;

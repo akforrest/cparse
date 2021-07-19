@@ -56,11 +56,11 @@ namespace cparse::builtin_functions
             list = list.list().front().asList();
         }
 
-        double sum = 0;
+        qreal sum = 0;
 
         for (PackToken num : list.list())
         {
-            sum += num.asDouble();
+            sum += num.asReal();
         }
 
         return PackToken(sum);
@@ -79,14 +79,13 @@ namespace cparse::builtin_functions
 
         if (tok->m_type & TokenType::NUM)
         {
-            return PackToken(tok.asDouble());
+            return PackToken(tok.asReal());
         }
 
-        // Convert it to double:
         char * rest;
         const QString & str = tok.asString();
         errno = 0;
-        double ret = strtod(str.toStdString().c_str(), &rest);
+        qreal ret = strtod(str.toStdString().c_str(), &rest);
 
         if (str == rest)
         {
@@ -109,7 +108,6 @@ namespace cparse::builtin_functions
             return PackToken(tok.asInt());
         }
 
-        // Convert it to double:
         char * rest;
         const QString & str = tok.asString();
         errno = 0;
@@ -200,31 +198,31 @@ namespace cparse::builtin_functions
     PackToken default_sqrt(TokenMap scope)
     {
         // Get a single argument:
-        double number = scope["num"].asDouble();
+        auto number = scope["num"].asReal();
         return PackToken(sqrt(number));
     }
     PackToken default_sin(TokenMap scope)
     {
         // Get a single argument:
-        double number = scope["num"].asDouble();
+        auto number = scope["num"].asReal();
         return PackToken(sin(number));
     }
     PackToken default_cos(TokenMap scope)
     {
         // Get a single argument:
-        double number = scope["num"].asDouble();
+        auto number = scope["num"].asReal();
         return PackToken(cos(number));
     }
     PackToken default_tan(TokenMap scope)
     {
         // Get a single argument:
-        double number = scope["num"].asDouble();
+        auto number = scope["num"].asReal();
         return PackToken(tan(number));
     }
     PackToken default_abs(TokenMap scope)
     {
         // Get a single argument:
-        double number = scope["num"].asDouble();
+        auto number = scope["num"].asReal();
         return PackToken(std::abs(number));
     }
 
@@ -232,8 +230,8 @@ namespace cparse::builtin_functions
     PackToken default_pow(TokenMap scope)
     {
         // Get two arguments:
-        double number = scope["number"].asDouble();
-        double exp = scope["exp"].asDouble();
+        auto number = scope["number"].asReal();
+        auto exp = scope["exp"].asReal();
 
         return PackToken(pow(number, exp));
     }
@@ -242,8 +240,8 @@ namespace cparse::builtin_functions
     PackToken default_max(TokenMap scope)
     {
         // Get two arguments:
-        double left = scope["left"].asDouble();
-        double right = scope["right"].asDouble();
+        auto left = scope["left"].asReal();
+        auto right = scope["right"].asReal();
 
         return PackToken(std::max(left, right));
     }
@@ -251,8 +249,8 @@ namespace cparse::builtin_functions
     PackToken default_min(TokenMap scope)
     {
         // Get two arguments:
-        double left = scope["left"].asDouble();
-        double right = scope["right"].asDouble();
+        auto left = scope["left"].asReal();
+        auto right = scope["right"].asReal();
 
         return PackToken(std::min(left, right));
     }

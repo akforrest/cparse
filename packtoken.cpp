@@ -57,7 +57,7 @@ bool PackToken::operator==(const PackToken & token) const
 {
     if (NUM & token.m_base->m_type & m_base->m_type)
     {
-        return token.asDouble() == asDouble();
+        return token.asReal() == asReal();
     }
 
     if (token.m_base->m_type != m_base->m_type)
@@ -145,7 +145,7 @@ bool PackToken::asBool() const
     switch (m_base->m_type)
     {
         case REAL:
-            return static_cast<TokenTyped<double>*>(m_base)->m_val != 0;
+            return static_cast<TokenTyped<qreal>*>(m_base)->m_val != 0;
 
         case INT:
             return static_cast<TokenTyped<int64_t>*>(m_base)->m_val != 0;
@@ -172,15 +172,15 @@ bool PackToken::asBool() const
     }
 }
 
-double PackToken::asDouble() const
+qreal PackToken::asReal() const
 {
     switch (m_base->m_type)
     {
         case REAL:
-            return static_cast<TokenTyped<double>*>(m_base)->m_val;
+            return static_cast<TokenTyped<qreal>*>(m_base)->m_val;
 
         case INT:
-            return static_cast<double>(static_cast<TokenTyped<int64_t>*>(m_base)->m_val);
+            return static_cast<qreal>(static_cast<TokenTyped<int64_t>*>(m_base)->m_val);
 
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
@@ -194,7 +194,7 @@ double PackToken::asDouble() const
             else
             {
                 throw bad_cast(
-                    "Unknown numerical type, can't convert it to double!");
+                    "Unknown numerical type, can't convert it to qreal!");
             }
     }
 }
@@ -204,7 +204,7 @@ int64_t PackToken::asInt() const
     switch (m_base->m_type)
     {
         case REAL:
-            return static_cast<int64_t>(static_cast<TokenTyped<double>*>(m_base)->m_val);
+            return static_cast<int64_t>(static_cast<TokenTyped<qreal>*>(m_base)->m_val);
 
         case INT:
             return static_cast<TokenTyped<int64_t>*>(m_base)->m_val;
@@ -349,7 +349,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
             return static_cast<const TokenTyped<QString>*>(base)->m_val;
 
         case REAL:
-            ss += QString::number(static_cast<const TokenTyped<double>*>(base)->m_val);
+            ss += QString::number(static_cast<const TokenTyped<qreal>*>(base)->m_val);
             return ss;
 
         case INT:

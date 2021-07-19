@@ -141,12 +141,12 @@ class Approx
 //TEST_CASE("Static calculate::calculate()", "[calculate]")
 void static_calculate_calculate()
 {
-    REQUIRE(Calculator::calculate("-pi + 1", vars).asDouble() == Approx(-2.14));
-    REQUIRE(Calculator::calculate("-pi + 1 * b1", vars).asDouble() == Approx(-3.14));
-    REQUIRE(Calculator::calculate("(20+10)*3/2-3", vars).asDouble() == Approx(42.0));
-    REQUIRE(Calculator::calculate("1 << 4", vars).asDouble() == Approx(16.0));
-    REQUIRE(Calculator::calculate("1+(-2*3)", vars).asDouble() == Approx(-5));
-    REQUIRE(Calculator::calculate("1+_b+(-2*3)", vars).asDouble() == Approx(-5));
+    REQUIRE(Calculator::calculate("-pi + 1", vars).asReal() == Approx(-2.14));
+    REQUIRE(Calculator::calculate("-pi + 1 * b1", vars).asReal() == Approx(-3.14));
+    REQUIRE(Calculator::calculate("(20+10)*3/2-3", vars).asReal() == Approx(42.0));
+    REQUIRE(Calculator::calculate("1 << 4", vars).asReal() == Approx(16.0));
+    REQUIRE(Calculator::calculate("1+(-2*3)", vars).asReal() == Approx(-5));
+    REQUIRE(Calculator::calculate("1+_b+(-2*3)", vars).asReal() == Approx(-5));
     REQUIRE(Calculator::calculate("4 * -3", vars).asInt() == -12);
 
     REQUIRE_THROWS(Calculator("5x"));
@@ -158,14 +158,14 @@ void calculate_compile()
 {
     Calculator c1;
     c1.compile("-pi+1", vars);
-    REQUIRE(c1.eval().asDouble() == Approx(-2.14));
+    REQUIRE(c1.eval().asReal() == Approx(-2.14));
 
     Calculator c2("pi+4", vars);
-    REQUIRE(c2.eval().asDouble() == Approx(7.14));
-    REQUIRE(c2.eval().asDouble() == Approx(7.14));
+    REQUIRE(c2.eval().asReal() == Approx(7.14));
+    REQUIRE(c2.eval().asReal() == Approx(7.14));
 
     Calculator c3("pi+b1+b2", vars);
-    REQUIRE(c3.eval(vars).asDouble() == Approx(4.0));
+    REQUIRE(c3.eval(vars).asReal() == Approx(4.0));
 }
 
 //TEST_CASE("Numerical expressions")
@@ -177,13 +177,13 @@ void numerical_expressions()
     REQUIRE(Calculator::calculate("0").asInt() == 0);
     REQUIRE(Calculator::calculate("-0").asInt() == 0);
 
-    REQUIRE(Calculator::calculate("0.5").asDouble() == Approx(0.5));
-    REQUIRE(Calculator::calculate("1.5").asDouble() == Approx(1.50));
-    REQUIRE(Calculator::calculate("2e2").asDouble() == Approx(200));
-    REQUIRE(Calculator::calculate("2E2").asDouble() == Approx(200));
+    REQUIRE(Calculator::calculate("0.5").asReal() == Approx(0.5));
+    REQUIRE(Calculator::calculate("1.5").asReal() == Approx(1.50));
+    REQUIRE(Calculator::calculate("2e2").asReal() == Approx(200));
+    REQUIRE(Calculator::calculate("2E2").asReal() == Approx(200));
 
-    REQUIRE(Calculator::calculate("2.5e2").asDouble() == Approx(250));
-    REQUIRE(Calculator::calculate("2.5E2").asDouble() == Approx(250));
+    REQUIRE(Calculator::calculate("2.5e2").asReal() == Approx(250));
+    REQUIRE(Calculator::calculate("2.5E2").asReal() == Approx(250));
 
     REQUIRE_THROWS(Calculator::calculate("0x22.5"));
 }
@@ -418,14 +418,14 @@ void prototypical_inheritance()
     child["c"] = 31;
     grand_child["c"] = 32;
 
-    REQUIRE(Calculator::calculate("grand_child.a - 10", vars).asDouble() == 0);
-    REQUIRE(Calculator::calculate("grand_child.b - 20", vars).asDouble() == 1);
-    REQUIRE(Calculator::calculate("grand_child.c - 30", vars).asDouble() == 2);
+    REQUIRE(Calculator::calculate("grand_child.a - 10", vars).asReal() == 0);
+    REQUIRE(Calculator::calculate("grand_child.b - 20", vars).asReal() == 1);
+    REQUIRE(Calculator::calculate("grand_child.c - 30", vars).asReal() == 2);
 
     REQUIRE_NOTHROW(Calculator::calculate("grand_child.a = 12", vars));
-    REQUIRE(Calculator::calculate("parent.a", vars).asDouble() == 10);
-    REQUIRE(Calculator::calculate("child.a", vars).asDouble() == 10);
-    REQUIRE(Calculator::calculate("grand_child.a", vars).asDouble() == 12);
+    REQUIRE(Calculator::calculate("parent.a", vars).asReal() == 10);
+    REQUIRE(Calculator::calculate("child.a", vars).asReal() == 10);
+    REQUIRE(Calculator::calculate("grand_child.a", vars).asReal() == 12);
 }
 
 //TEST_CASE("Map usage expressions", "[map][map-usage]")
@@ -443,7 +443,7 @@ void map_usage_expressions()
     REQUIRE_NOTHROW(Calculator::calculate("my_map.pop('b')", vars));
 
     REQUIRE(vars["my_map"].str() == "{ \"a\": 1, \"c\": 3 }");
-    REQUIRE(Calculator::calculate("my_map.len()", vars).asDouble() == 2);
+    REQUIRE(Calculator::calculate("my_map.len()", vars).asReal() == 2);
 
     REQUIRE_NOTHROW(Calculator::calculate("default = my_map.pop('b', 3)", vars));
     REQUIRE(vars["default"].asInt() == 3);
@@ -465,11 +465,11 @@ void list_usage_expressions()
     REQUIRE_NOTHROW(Calculator::calculate("my_list.pop(1)", vars));
 
     REQUIRE(vars["my_list"].str() == "[ 1, 3 ]");
-    REQUIRE(Calculator::calculate("my_list.len()", vars).asDouble() == 2);
+    REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 2);
 
     REQUIRE_NOTHROW(Calculator::calculate("my_list.pop()", vars));
     REQUIRE(vars["my_list"].str() == "[ 1 ]");
-    REQUIRE(Calculator::calculate("my_list.len()", vars).asDouble() == 1);
+    REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 1);
 
     vars["list"] = TokenList();
     REQUIRE_NOTHROW(Calculator::calculate("list.push(4).push(5).push(6)", vars));
@@ -479,7 +479,7 @@ void list_usage_expressions()
 
     REQUIRE_NOTHROW(Calculator::calculate("concat = my_list + list", vars));
     REQUIRE(vars["concat"].str() == "[ 1, 2, 3, 4, 5, 6 ]");
-    REQUIRE(Calculator::calculate("concat.len()", vars).asDouble() == 6);
+    REQUIRE(Calculator::calculate("concat.len()", vars).asReal() == 6);
 
     // Reverse index like python:
     REQUIRE_NOTHROW(Calculator::calculate("concat[-2] = 10", vars));
@@ -542,7 +542,7 @@ void list_map_constructor_usage()
 
     REQUIRE(vars["my_map"]->m_type == MAP);
     REQUIRE(vars["my_list"]->m_type == LIST);
-    REQUIRE(Calculator::calculate("my_list.len()", vars).asDouble() == 0);
+    REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 0);
 
     REQUIRE_NOTHROW(Calculator::calculate("my_list = list(1,'2',None,map(),list('sub_list'))", vars));
     REQUIRE(vars["my_list"].str() == "[ 1, \"2\", None, {}, [ \"sub_list\" ] ]");
@@ -584,15 +584,15 @@ void test_list_iterable_behavior()
     PackToken * next;
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
-    REQUIRE(next->asDouble() == 1);
+    REQUIRE(next->asReal() == 1);
 
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
-    REQUIRE(next->asDouble() == 2);
+    REQUIRE(next->asReal() == 2);
 
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
-    REQUIRE(next->asDouble() == 3);
+    REQUIRE(next->asReal() == 3);
 
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next == nullptr);
@@ -637,21 +637,21 @@ void function_usage_expression()
     vars["pi"] = 3.141592653589793;
     vars["a"] = -4;
 
-    REQUIRE(Calculator::calculate("sqrt(4)", vars).asDouble() == 2);
-    REQUIRE(Calculator::calculate("sin(pi)", vars).asDouble() == Approx(0));
-    REQUIRE(Calculator::calculate("cos(pi/2)", vars).asDouble() == Approx(0));
-    REQUIRE(Calculator::calculate("tan(pi)", vars).asDouble() == Approx(0));
+    REQUIRE(Calculator::calculate("sqrt(4)", vars).asReal() == 2);
+    REQUIRE(Calculator::calculate("sin(pi)", vars).asReal() == Approx(0));
+    REQUIRE(Calculator::calculate("cos(pi/2)", vars).asReal() == Approx(0));
+    REQUIRE(Calculator::calculate("tan(pi)", vars).asReal() == Approx(0));
     Calculator c("a + sqrt(4) * 2");
-    REQUIRE(c.eval(vars).asDouble() == 0);
-    REQUIRE(Calculator::calculate("sqrt(4-a*3) * 2", vars).asDouble() == 8);
-    REQUIRE(Calculator::calculate("abs(42)", vars).asDouble() == 42);
-    REQUIRE(Calculator::calculate("abs(-42)", vars).asDouble() == 42);
+    REQUIRE(c.eval(vars).asReal() == 0);
+    REQUIRE(Calculator::calculate("sqrt(4-a*3) * 2", vars).asReal() == 8);
+    REQUIRE(Calculator::calculate("abs(42)", vars).asReal() == 42);
+    REQUIRE(Calculator::calculate("abs(-42)", vars).asReal() == 42);
 
     // With more than one argument:
-    REQUIRE(Calculator::calculate("pow(2,2)", vars).asDouble() == 4);
-    REQUIRE(Calculator::calculate("pow(2,3)", vars).asDouble() == 8);
-    REQUIRE(Calculator::calculate("pow(2,a)", vars).asDouble() == Approx(1. / 16));
-    REQUIRE(Calculator::calculate("pow(2,a+4)", vars).asDouble() == 1);
+    REQUIRE(Calculator::calculate("pow(2,2)", vars).asReal() == 4);
+    REQUIRE(Calculator::calculate("pow(2,3)", vars).asReal() == 8);
+    REQUIRE(Calculator::calculate("pow(2,a)", vars).asReal() == Approx(1. / 16));
+    REQUIRE(Calculator::calculate("pow(2,a+4)", vars).asReal() == 1);
 
     REQUIRE_THROWS(Calculator::calculate("foo(10)"));
     REQUIRE_THROWS(Calculator::calculate("foo(10),"));
@@ -660,11 +660,11 @@ void function_usage_expression()
     REQUIRE(TokenMap::default_global()["abs"].str() == "[Function: abs]");
     REQUIRE(Calculator::calculate("1,2,3,4,5").str() == "(1, 2, 3, 4, 5)");
 
-    REQUIRE(Calculator::calculate(" float('0.1') ").asDouble() == 0.1);
-    REQUIRE(Calculator::calculate("float(10)").asDouble() == 10);
+    REQUIRE(Calculator::calculate(" float('0.1') ").asReal() == 0.1);
+    REQUIRE(Calculator::calculate("float(10)").asReal() == 10);
 
     vars["a"] = 0;
-    REQUIRE(Calculator::calculate(" eval('a = 3') ", vars).asDouble() == 3);
+    REQUIRE(Calculator::calculate(" eval('a = 3') ", vars).asReal() == 3);
     REQUIRE(vars["a"] == 3);
 
     vars["m"] = TokenMap();
@@ -677,8 +677,8 @@ void function_usage_expression()
     vars["base"] = 2;
     c.compile("pow(base,2)", vars);
     vars["base"] = 3;
-    REQUIRE(c.eval().asDouble() == 4);
-    REQUIRE(c.eval(vars).asDouble() == 9);
+    REQUIRE(c.eval().asReal() == 4);
+    REQUIRE(c.eval(vars).asReal() == 9);
 }
 
 //TEST_CASE("Built-in extend() function")
@@ -689,10 +689,10 @@ void built_in_extend_function()
     REQUIRE_NOTHROW(Calculator::calculate("a = map()", vars));
     REQUIRE_NOTHROW(Calculator::calculate("b = extend(a)", vars));
     REQUIRE_NOTHROW(Calculator::calculate("a.a = 10", vars));
-    REQUIRE(Calculator::calculate("b.a", vars).asDouble() == 10);
+    REQUIRE(Calculator::calculate("b.a", vars).asReal() == 10);
     REQUIRE_NOTHROW(Calculator::calculate("b.a = 20", vars));
-    REQUIRE(Calculator::calculate("a.a", vars).asDouble() == 10);
-    REQUIRE(Calculator::calculate("b.a", vars).asDouble() == 20);
+    REQUIRE(Calculator::calculate("a.a", vars).asReal() == 10);
+    REQUIRE(Calculator::calculate("b.a", vars).asReal() == 20);
 
     REQUIRE_NOTHROW(Calculator::calculate("c = extend(b)", vars));
     REQUIRE(Calculator::calculate("a.instanceof(b)", vars).asBool() == false);
@@ -735,7 +735,7 @@ void multiple_argument_functions()
 {
     GlobalScope vars;
     REQUIRE_NOTHROW(Calculator::calculate("total = sum(1,2,3,4)", vars));
-    REQUIRE(vars["total"].asDouble() == 10);
+    REQUIRE(vars["total"].asReal() == 10);
 }
 
 //TEST_CASE("Passing keyword arguments to functions", "[function][kwargs]")
@@ -752,15 +752,15 @@ void passing_keyword_arguments_to_functions()
     REQUIRE(map["a"].asInt() == 1);
     REQUIRE(map["b"].asInt() == 2);
 
-    double result;
+    qreal result;
     REQUIRE_NOTHROW(c1.compile("result = pow(2, 'exp': 3)"));
     REQUIRE_NOTHROW(c1.eval(vars));
-    REQUIRE_NOTHROW(result = vars["result"].asDouble());
+    REQUIRE_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 
     REQUIRE_NOTHROW(c1.compile("result = pow('exp': 3, 'number': 2)"));
     REQUIRE_NOTHROW(c1.eval(vars));
-    REQUIRE_NOTHROW(result = vars["result"].asDouble());
+    REQUIRE_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 }
 
@@ -789,7 +789,7 @@ void type_specific_functions()
     vars["s1"] = "String";
     vars["s2"] = " a b ";
 
-    REQUIRE(Calculator::calculate("s1.len()", vars).asDouble() == 6);
+    REQUIRE(Calculator::calculate("s1.len()", vars).asReal() == 6);
     REQUIRE(Calculator::calculate("s1.lower()", vars).asString() == "string");
     REQUIRE(Calculator::calculate("s1.upper()", vars).asString() == "STRING");
     REQUIRE(Calculator::calculate("s2.strip()", vars).asString() == "a b");
@@ -808,11 +808,11 @@ void assignment_expressions()
     Calculator::calculate("assignment = 10", vars);
 
     // Assigning to an unexistent variable works.
-    REQUIRE(Calculator::calculate("assignment", vars).asDouble() == 10);
+    REQUIRE(Calculator::calculate("assignment", vars).asReal() == 10);
 
     // Assigning to existent variables should work as well.
     REQUIRE_NOTHROW(Calculator::calculate("assignment = 20", vars));
-    REQUIRE(Calculator::calculate("assignment", vars).asDouble() == 20);
+    REQUIRE(Calculator::calculate("assignment", vars).asReal() == 20);
 
     // Chain assigning should work with a right-to-left order:
     REQUIRE_NOTHROW(Calculator::calculate("a = b = 20", vars));
@@ -843,11 +843,11 @@ void assignment_expressions_on_maps()
     Calculator::calculate("m['asn'] = 10", vars);
 
     // Assigning to an unexistent variable works.
-    REQUIRE(Calculator::calculate("m['asn']", vars).asDouble() == 10);
+    REQUIRE(Calculator::calculate("m['asn']", vars).asReal() == 10);
 
     // Assigning to existent variables should work as well.
     REQUIRE_NOTHROW(Calculator::calculate("m['asn'] = 20", vars));
-    REQUIRE(Calculator::calculate("m['asn']", vars).asDouble() == 20);
+    REQUIRE(Calculator::calculate("m['asn']", vars).asReal() == 20);
 
     // Chain assigning should work with a right-to-left order:
     REQUIRE_NOTHROW(Calculator::calculate("m.a = m.b = 20", vars));
@@ -873,20 +873,20 @@ void scope_management()
     TokenMap child = parent.getChild();
 
     // Check scope extension:
-    REQUIRE(c.eval(child).asDouble() == Approx(4));
+    REQUIRE(c.eval(child).asReal() == Approx(4));
 
     child["b2"] = 1.0;
-    REQUIRE(c.eval(child).asDouble() == Approx(4.14));
+    REQUIRE(c.eval(child).asReal() == Approx(4.14));
 
     // Testing with 3 namespaces:
     TokenMap vmap = child.getChild();
     vmap["b1"] = -1.14;
-    REQUIRE(c.eval(vmap).asDouble() == Approx(3.0));
+    REQUIRE(c.eval(vmap).asReal() == Approx(3.0));
 
     TokenMap copy = vmap;
     Calculator c2("pi+b1+b2", copy);
-    REQUIRE(c2.eval().asDouble() == Approx(3.0));
-    REQUIRE(Calculator::calculate("pi+b1+b2", copy).asDouble() == Approx(3.0));
+    REQUIRE(c2.eval().asReal() == Approx(3.0));
+    REQUIRE(Calculator::calculate("pi+b1+b2", copy).asReal() == Approx(3.0));
 }
 
 // Working as a slave parser implies it will return
@@ -904,7 +904,7 @@ void parsing_as_slave_parser()
     // With static function:
     REQUIRE_NOTHROW(Calculator::calculate(code, vars, ";}\n", &parsedTo));
     REQUIRE(parsedTo == 3);
-    REQUIRE(vars["a"].asDouble() == 1);
+    REQUIRE(vars["a"].asReal() == 1);
 
     code = code.mid(parsedTo);
 
@@ -984,19 +984,19 @@ PackToken op2(const PackToken & left, const PackToken & right,
 PackToken op3(const PackToken & left, const PackToken & right,
               EvaluationData *)
 {
-    return left.asDouble() - right.asDouble();
+    return left.asReal() - right.asReal();
 }
 
 PackToken op4(const PackToken & left, const PackToken & right,
               EvaluationData *)
 {
-    return left.asDouble() * right.asDouble();
+    return left.asReal() * right.asReal();
 }
 
 PackToken slash_op(const PackToken & left, const PackToken & right,
                    EvaluationData *)
 {
-    return left.asDouble() / right.asDouble();
+    return left.asReal() / right.asReal();
 }
 
 PackToken not_unary_op(const PackToken &, const PackToken & right,

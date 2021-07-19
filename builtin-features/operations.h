@@ -181,7 +181,7 @@ namespace cparse::builtin_operations
         }
         else if (op == "-")
         {
-            return -right.asDouble();
+            return -right.asReal();
         }
         else
         {
@@ -191,14 +191,14 @@ namespace cparse::builtin_operations
 
     PackToken NumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
     {
-        double left_d, right_d;
+        qreal left_d, right_d;
         int64_t left_i, right_i;
 
         // Extract integer and real values of the operators:
-        left_d = left.asDouble();
+        left_d = left.asReal();
         left_i = left.asInt();
 
-        right_d = right.asDouble();
+        right_d = right.asReal();
         right_i = right.asInt();
 
         const QString & op = data->op;
@@ -375,7 +375,7 @@ namespace cparse::builtin_operations
 
         if (op == "+")
         {
-            ss << left.toStdString() << p_right.asDouble();
+            ss << left.toStdString() << p_right.asReal();
             return QString::fromStdString(ss.str());
         }
         else if (op == "[]")
@@ -404,8 +404,8 @@ namespace cparse::builtin_operations
 
     PackToken NumberOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
     {
-        double left = p_left.asDouble();
-        const QString & right = p_right.asString();
+        auto left = p_left.asReal();
+        auto right = p_right.asString();
 
         std::stringstream ss;
 
