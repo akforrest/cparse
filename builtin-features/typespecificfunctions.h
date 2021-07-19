@@ -13,7 +13,7 @@ namespace cparse::builtin_typeSpecificFunctions
 
     /* * * * * MAP Type built-in functions * * * * */
 
-    const args_t map_pop_args = {"key", "default"};
+    const FunctionArgs map_pop_args = {"key", "default"};
     PackToken map_pop(TokenMap scope)
     {
         TokenMap map = scope["this"].asMap();
@@ -68,7 +68,7 @@ namespace cparse::builtin_typeSpecificFunctions
 
     /* * * * * LIST Type built-in functions * * * * */
 
-    const args_t push_args = {"item"};
+    const FunctionArgs push_args = {"item"};
     PackToken list_push(TokenMap scope)
     {
         PackToken * list = scope.find("this");
@@ -80,7 +80,7 @@ namespace cparse::builtin_typeSpecificFunctions
         return *list;
     }
 
-    const args_t list_pop_args = {"pos"};
+    const FunctionArgs list_pop_args = {"pos"};
     PackToken list_pop(TokenMap scope)
     {
         TokenList list = scope.find("this")->asList();

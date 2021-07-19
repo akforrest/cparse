@@ -22,7 +22,7 @@ namespace cparse::builtin_functions
 
         auto dbg = qInfo();
 
-        for (PackToken item : list.list())
+        for (const PackToken & item : list.list())
         {
             if (first)
             {
@@ -73,7 +73,7 @@ namespace cparse::builtin_functions
         return Calculator::calculate(code.toStdString().c_str(), scope);
     }
 
-    PackToken default_float(TokenMap scope)
+    PackToken default_real(TokenMap scope)
     {
         PackToken tok = scope["value"];
 
@@ -226,7 +226,7 @@ namespace cparse::builtin_functions
         return PackToken(std::abs(number));
     }
 
-    const args_t pow_args = {"number", "exp"};
+    const FunctionArgs pow_args = {"number", "exp"};
     PackToken default_pow(TokenMap scope)
     {
         // Get two arguments:
@@ -236,7 +236,7 @@ namespace cparse::builtin_functions
         return PackToken(pow(number, exp));
     }
 
-    const args_t min_max_args = {"left", "right"};
+    const FunctionArgs min_max_args = {"left", "right"};
     PackToken default_max(TokenMap scope)
     {
         // Get two arguments:
@@ -279,10 +279,8 @@ namespace cparse::builtin_functions
             delete it;
             return new_list;
         }
-        else
-        {
-            return list;
-        }
+
+        return list;
     }
 
     PackToken default_map(TokenMap scope)
@@ -300,10 +298,8 @@ namespace cparse::builtin_functions
         {
             return tok.asMap().getChild();
         }
-        else
-        {
-            throw std::runtime_error(tok.str().toStdString() + " is not extensible!");
-        }
+
+        throw std::runtime_error(tok.str().toStdString() + " is not extensible!");
     }
 
     // Example of replacement function for PackToken::str():
@@ -359,8 +355,9 @@ namespace cparse::builtin_functions
             global["pow"] = CppFunction(&default_pow, pow_args, "pow");
             global["min"] = CppFunction(&default_min, min_max_args, "min");
             global["max"] = CppFunction(&default_max, min_max_args, "max");
-            global["float"] = CppFunction(&default_float, {"value"}, "float");
-            global["real"] = CppFunction(&default_float, {"value"}, "real");
+            global["float"] = CppFunction(&default_real, {"value"}, "float");
+            global["real"] = CppFunction(&default_real, {"value"}, "real");
+            global["double"] = CppFunction(&default_real, {"value"}, "double");
             global["int"] = CppFunction(&default_int, {"value"}, "int");
             global["str"] = CppFunction(&default_str, {"value"}, "str");
             global["eval"] = CppFunction(&default_eval, {"value"}, "eval");

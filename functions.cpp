@@ -19,10 +19,10 @@ PackToken Function::call(const PackToken & _this, const Function * func,
     TokenMap kwargs;
     TokenMap local = scope.getChild();
 
-    args_t arg_names = func->args();
+    FunctionArgs arg_names = func->args();
 
     auto args_it = args->list().begin();
-    args_t::const_iterator names_it = arg_names.begin();
+    FunctionArgs::const_iterator names_it = arg_names.begin();
 
     /* * * * * Parse positional arguments: * * * * */
 
@@ -116,77 +116,77 @@ PackToken Function::call(const PackToken & _this, const Function * func,
 /* * * * * class CppFunction * * * * */
 CppFunction::CppFunction()
 {
-    this->_name = "";
-    this->isStdFunc = false;
-    this->func = nullptr;
+    this->m_name = "";
+    this->m_isStdFunc = false;
+    this->m_func = nullptr;
 }
 
-CppFunction::CppFunction(PackToken(*func)(TokenMap), const args_t & args,
+CppFunction::CppFunction(PackToken(*func)(TokenMap), const FunctionArgs & args,
                          QString name)
-    : func(func), _args(args)
+    : m_func(func), m_args(args)
 {
-    this->_name = std::move(name);
-    this->isStdFunc = false;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = false;
 }
 
 CppFunction::CppFunction(PackToken(*func)(TokenMap), unsigned int nargs,
                          const char ** args, QString name)
-    : func(func)
+    : m_func(func)
 {
-    this->_name = std::move(name);
-    this->isStdFunc = false;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = false;
 
     // Add all strings to args list:
     for (uint32_t i = 0; i < nargs; ++i)
     {
-        this->_args.push_back(args[i]);
+        this->m_args.push_back(args[i]);
     }
 }
 
 // Build a function with no named args:
 CppFunction::CppFunction(PackToken(*func)(TokenMap), QString name)
-    : func(func)
+    : m_func(func)
 {
-    this->_name = std::move(name);
-    this->isStdFunc = false;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = false;
 }
 
 
-CppFunction::CppFunction(std::function<PackToken(TokenMap)> func, const args_t & args,
+CppFunction::CppFunction(std::function<PackToken(TokenMap)> func, const FunctionArgs & args,
                          QString name)
-    : stdFunc(std::move(func)), _args(args)
+    : m_stdFunc(std::move(func)), m_args(args)
 {
-    this->_name = std::move(name);
-    this->isStdFunc = true;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = true;
 }
 
-CppFunction::CppFunction(const args_t & args, std::function<PackToken(TokenMap)> func,
+CppFunction::CppFunction(const FunctionArgs & args, std::function<PackToken(TokenMap)> func,
                          QString name)
-    : stdFunc(std::move(func)), _args(args)
+    : m_stdFunc(std::move(func)), m_args(args)
 {
-    this->_name = std::move(name);
-    this->isStdFunc = true;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = true;
 }
 
 CppFunction::CppFunction(std::function<PackToken(TokenMap)> func, unsigned int nargs,
                          const char ** args, QString name)
-    : stdFunc(std::move(func))
+    : m_stdFunc(std::move(func))
 {
-    this->_name = std::move(name);
-    this->isStdFunc = true;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = true;
 
     // Add all strings to args list:
     for (uint32_t i = 0; i < nargs; ++i)
     {
-        this->_args.push_back(args[i]);
+        this->m_args.push_back(args[i]);
     }
 }
 
 // Build a function with no named args:
 CppFunction::CppFunction(std::function<PackToken(TokenMap)> func, QString name)
-    : stdFunc(std::move(func))
+    : m_stdFunc(std::move(func))
 {
-    this->_name = std::move(name);
-    this->isStdFunc = true;
+    this->m_name = std::move(name);
+    this->m_isStdFunc = true;
 }
 
