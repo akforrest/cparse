@@ -6,11 +6,7 @@
 #include "containers.h"
 #include "functions.h"
 
-using cparse::TokenMap;
-using cparse::PackToken;
-using cparse::TokenIterator;
-using cparse::TokenList;
-using cparse::TokenMapData;
+using namespace cparse;
 
 /* * * * * Initialize TokenMap * * * * */
 
@@ -98,14 +94,14 @@ void TokenList::ListIterator::reset()
     i = 0;
 }
 
-TokenMapData::TokenMapData() = default;
+TokenMap::TokenMapData::TokenMapData() = default;
 
-TokenMapData::TokenMapData(TokenMap * p)
+TokenMap::TokenMapData::TokenMapData(TokenMap * p)
     : m_tokenMap(p ? new TokenMap(*p) : nullptr)
 {
 }
 
-TokenMapData::TokenMapData(const TokenMapData & other)
+TokenMap::TokenMapData::TokenMapData(const TokenMapData & other)
 {
     m_map = other.m_map;
 
@@ -119,11 +115,11 @@ TokenMapData::TokenMapData(const TokenMapData & other)
     }
 }
 
-TokenMapData::~TokenMapData()
+TokenMap::TokenMapData::~TokenMapData()
 {
 }
 
-TokenMapData & TokenMapData::operator=(const TokenMapData & other)
+TokenMap::TokenMapData & TokenMap::TokenMapData::operator=(const TokenMapData & other)
 {
     if (this != &other)
     {

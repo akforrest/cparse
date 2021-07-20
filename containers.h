@@ -42,27 +42,11 @@ namespace cparse
             TokenIterator * getIterator() const override;
     };
 
-    class TokenMap;
-    struct TokenMapData
-    {
-        using MapType = std::map<QString, PackToken>;
-
-        TokenMapData();
-        TokenMapData(TokenMap * p);
-        TokenMapData(const TokenMapData & other);
-        ~TokenMapData();
-
-        TokenMapData & operator=(const TokenMapData & other);
-
-        MapType m_map;
-        std::unique_ptr<TokenMap> m_tokenMap;
-    };
-
     class TokenMap : public IterableToken
     {
         public:
 
-            using MapType = TokenMapData::MapType;
+            using MapType = std::map<QString, PackToken>;
 
             // Static factories:
             static TokenMap empty;
@@ -117,6 +101,21 @@ namespace cparse
             void erase(const QString & key);
 
         private:
+
+            struct TokenMapData
+            {
+                using MapType = TokenMap::MapType;
+
+                TokenMapData();
+                TokenMapData(TokenMap * p);
+                TokenMapData(const TokenMapData & other);
+                ~TokenMapData();
+
+                TokenMapData & operator=(const TokenMapData & other);
+
+                MapType m_map;
+                std::unique_ptr<TokenMap> m_tokenMap;
+            };
 
             std::shared_ptr<TokenMapData> m_ref;
     };
