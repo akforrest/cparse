@@ -3,7 +3,7 @@
 [license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license]: LICENSE.mit
 
-This is a fork of https://github.com/cparse/cparse, with a Qt interface.
+This is a fork of https://github.com/cparse/cparse, with a Qt interface. CParse is an extendable expression parser based on Dijkstra's Shunting-yard algorithm.
 
 A lot of has changed. In no particular order, and by no means an exhaustive list, the following has changed:
 
