@@ -42,7 +42,7 @@ namespace cparse
 
             // Check if a character is the first character of a variable:
             static bool isVariableNameChar(char c);
-            static QString parseVariableName(const char * expr, const char ** rest = nullptr);
+            static QString parseVariableName(const char * expr, const char ** rest, bool allowDigits);
 
             bool handleOp(const QString & op);
             bool handleToken(Token * token);

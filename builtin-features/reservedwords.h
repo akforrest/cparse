@@ -88,7 +88,7 @@ namespace cparse::builtin_reservedWords
         }
 
         // Parse the variable name and save it as a string:
-        auto key = RpnBuilder::parseVariableName(expr, rest);
+        auto key = RpnBuilder::parseVariableName(expr, rest, true);
         return data->handleToken(new TokenTyped<QString>(key, STR));
     }
 

@@ -339,7 +339,8 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
 
             // If the token is a variable, resolve it and
             // add the parsed number to the output queue.
-            QString key = RpnBuilder::parseVariableName(expr, &expr);
+            const char * expr2 = expr;
+            QString key = RpnBuilder::parseVariableName(expr, &expr, true);
 
             if ((parser = config.parserMap.find(key)))
             {
@@ -372,9 +373,40 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
                 else
                 {
                     // Save the variable name:
-                    if (!data.handleToken(new TokenTyped<QString>(key, VAR)))
+                    if (!data.m_lastTokenWasOp || !data.handleToken(new TokenTyped<QString>(key, VAR)))
                     {
-                        return {};
+                        expr = expr2;
+                        key = RpnBuilder::parseVariableName(expr, &expr, false);
+                        // Check if the word parser applies:
+                        auto * parser = config.parserMap.find(key);
+
+                        // Evaluate the meaning of this operator in the following order:
+                        // 1. Is there a word parser for it?
+                        // 2. Is it a valid operator?
+                        // 3. Is there a character parser for its first character?
+                        if (parser)
+                        {
+                            // Parse reserved operators:
+
+                            if (!parser(expr, &expr, &data))
+                            {
+                                data.clear();
+                                return {};
+                            }
+                        }
+                        else if (data.opExists(key))
+                        {
+                            if (!data.handleOp(key))
+                            {
+                                return {};
+                            }
+                        }
+                        else
+                        {
+                            data.clear();
+                            qWarning(cparseLog) << "Invalid variable name or operator: " + key;
+                            return {};
+                        }
                     }
                 }
             }
@@ -963,13 +995,13 @@ bool RpnBuilder::isVariableNameChar(const char c)
     return isalpha(c) || c == '_';
 }
 
-QString RpnBuilder::parseVariableName(const char * expr, const char ** rest)
+QString RpnBuilder::parseVariableName(const char * expr, const char ** rest, bool allowDigits)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (RpnBuilder::isVariableNameChar(*expr) || isdigit(*expr))
+    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigits && isdigit(*expr)))
     {
         ss += *expr;
         ++expr;
