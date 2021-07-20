@@ -63,9 +63,9 @@ namespace cparse::builtin_reservedWords
     bool KeywordOperator(const char *, const char **, RpnBuilder * data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
-        if (data->backType() == VAR)
+        if (data->lastTokenType() == VAR)
         {
-            data->setBackType(STR);
+            data->setLastTokenType(STR);
         }
 
         return data->handleOp(":");
@@ -81,14 +81,14 @@ namespace cparse::builtin_reservedWords
         }
 
         // If it did not find a valid variable name after it:
-        if (!RpnBuilder::isvarchar(*expr))
+        if (!RpnBuilder::isVariableNameChar(*expr))
         {
             qWarning(cparseLog) << "Expected variable name after '.' operator";
             return false;
         }
 
         // Parse the variable name and save it as a string:
-        auto key = RpnBuilder::parseVar(expr, rest);
+        auto key = RpnBuilder::parseVariableName(expr, rest);
         return data->handleToken(new TokenTyped<QString>(key, STR));
     }
 

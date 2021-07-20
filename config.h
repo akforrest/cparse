@@ -30,8 +30,8 @@ namespace cparse
             // Add reserved character:
             void add(char c,  WordParserFunc * parser);
 
-            WordParserFunc * find(const QString & text);
-            WordParserFunc * find(char c);
+            WordParserFunc * find(const QString & text) const;
+            WordParserFunc * find(char c) const;
 
         private:
 

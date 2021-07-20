@@ -39,10 +39,6 @@ namespace cparse
 
             PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
 
-            static TokenQueue toRPN(const QString & expr, TokenMap vars,
-                                    const QString & delim = QString(), int * rest = nullptr,
-                                    Config config = defaultConfig());
-
             static Config & defaultConfig();
             static TokenTypeMap & typeAttributeMap();
 

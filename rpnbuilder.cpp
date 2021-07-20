@@ -178,7 +178,363 @@ void RpnBuilder::handleRightUnary(const QString & unary_op)
     m_rpn.push(new TokenTyped<QString>(normalize_op(unary_op), OP));
 }
 
-// Find out if op is a binary or unary operator and handle it:
+// Work as a sub-parser:
+// - Stops at delim or '\0'
+// - Returns the rest of the string as char* rest
+TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
+                             const QString & delimStr, int * rest,
+                             const Config & config)
+{
+    RpnBuilder data(vars, config.opPrecedence);
+    char * nextChar = nullptr;
+
+    std::string exprStd = exprStr.toStdString();
+    std::string delimStd = delimStr.toStdString();
+
+    const char * expr = exprStd.c_str();
+    const char * delim = delimStd.c_str();
+
+    static char c = '\0';
+
+    if (!delim)
+    {
+        delim = &c;
+    }
+
+    while (*expr && isspace(*expr) && !strchr(delim, *expr))
+    {
+        ++expr;
+    }
+
+    if (*expr == '\0' || strchr(delim, *expr))
+    {
+        qWarning(cparseLog) << "Cannot build a Calculator from an empty expression!";
+        return {};
+    }
+
+    // In one pass, ignore whitespace and parse the expression into RPN
+    // using Dijkstra's Shunting-yard algorithm.
+    while (*expr && (data.bracketLevel() || !strchr(delim, *expr)))
+    {
+        if (isdigit(*expr))
+        {
+            int base = 10;
+
+            // Parse the prefix notation for octal and hex numbers:
+            if (expr[0] == '0')
+            {
+                if (expr[1] == 'x')
+                {
+                    // 0x1 == 1 in hex notation
+                    base = 16;
+                    expr += 2;
+                }
+                else if (isdigit(expr[1]))
+                {
+                    // 01 == 1 in octal notation
+                    base = 8;
+                    expr++;
+                }
+            }
+
+            // If the token is a number, add it to the output queue.
+            qint64 _int = strtoll(expr, &nextChar, base);
+
+            // If the number was not a float:
+            if (base != 10 || !strchr(".eE", *nextChar))
+            {
+                if (!data.handleToken(new TokenTyped<qint64>(_int, INT)))
+                {
+                    return {};
+                }
+            }
+            else
+            {
+                qreal digit = strtod(expr, &nextChar);
+
+                if (!data.handleToken(new TokenTyped<qreal>(digit, REAL)))
+                {
+                    return {};
+                }
+            }
+
+            expr = nextChar;
+        }
+        else if (RpnBuilder::isVariableNameChar(*expr))
+        {
+            WordParserFunc * parser;
+
+            // If the token is a variable, resolve it and
+            // add the parsed number to the output queue.
+            QString key = RpnBuilder::parseVariableName(expr, &expr);
+
+            if ((parser = config.parserMap.find(key)))
+            {
+                // Parse reserved words:
+                if (!parser(expr, &expr, &data))
+                {
+                    data.clear();
+                    return {};
+                }
+            }
+            else
+            {
+                PackToken * value = vars.find(key);
+
+                if (value)
+                {
+                    // Save a reference token:
+                    Token * copy = (*value)->clone();
+
+                    if (!data.handleToken(new RefToken(PackToken(key), copy)))
+                    {
+                        return {};
+                    }
+                }
+                else
+                {
+                    // Save the variable name:
+                    if (!data.handleToken(new TokenTyped<QString>(key, VAR)))
+                    {
+                        return {};
+                    }
+                }
+            }
+        }
+        else if (*expr == '\'' || *expr == '"')
+        {
+            // If it is a string literal, parse it and
+            // add to the output queue.
+            char quote = *expr;
+
+            ++expr;
+            QString ss;
+
+            while (*expr && *expr != quote && *expr != '\n')
+            {
+                if (*expr == '\\')
+                {
+                    switch (expr[1])
+                    {
+                        case 'n':
+                            expr += 2;
+                            ss += '\n';
+                            break;
+
+                        case 't':
+                            expr += 2;
+                            ss += '\t';
+                            break;
+
+                        default:
+                            if (strchr("\"'\n", expr[1]))
+                            {
+                                ++expr;
+                            }
+
+                            ss += *expr;
+                            ++expr;
+                    }
+                }
+                else
+                {
+                    ss += *expr;
+                    ++expr;
+                }
+            }
+
+            if (*expr != quote)
+            {
+                QString squote = (quote == '"' ? "\"" : "'");
+                data.clear();
+                qWarning(cparseLog) << "Expected quote (" + squote + ") at end of string declaration: " + squote + ss + ".";
+                return {};
+            }
+
+            ++expr;
+
+            if (!data.handleToken(new TokenTyped<QString>(ss, STR)))
+            {
+                return {};
+            }
+        }
+        else
+        {
+            // Otherwise, the variable is an operator or paranthesis.
+            switch (*expr)
+            {
+                case '(':
+
+                    // If it is a function call:
+                    if (!data.lastTokenWasOp())
+                    {
+                        // This counts as a bracket and as an operator:
+                        if (!data.handleOp("()"))
+                        {
+                            return {};
+                        }
+
+                        // Add it as a bracket to the op stack:
+                    }
+
+                    data.openBracket("(");
+                    ++expr;
+                    break;
+
+                case '[':
+                    if (!data.lastTokenWasOp())
+                    {
+                        // If it is an operator:
+                        if (!data.handleOp("[]"))
+                        {
+                            return {};
+                        }
+                    }
+                    else
+                    {
+                        // If it is the list constructor:
+                        // Add the list constructor to the rpn:
+                        if (!data.handleToken(new CppFunction(&TokenList::default_constructor, "list")))
+                        {
+                            return {};
+                        }
+
+                        // We make the program see it as a normal function call:
+                        if (!data.handleOp("()"))
+                        {
+                            return {};
+                        }
+                    }
+
+                    // Add it as a bracket to the op stack:
+                    data.openBracket("[");
+                    ++expr;
+                    break;
+
+                case '{':
+
+                    // Add a map constructor call to the rpn:
+                    if (!data.handleToken(new CppFunction(&TokenMap::default_constructor, "map")))
+                    {
+                        return {};
+                    }
+
+                    // We make the program see it as a normal function call:
+                    if (!data.handleOp("()"))
+                    {
+                        return {};
+                    }
+
+                    if (!data.openBracket("{"))
+                    {
+                        return {};
+                    }
+
+                    ++expr;
+                    break;
+
+                case ')':
+                    data.closeBracket("(");
+                    ++expr;
+                    break;
+
+                case ']':
+                    data.closeBracket("[");
+                    ++expr;
+                    break;
+
+                case '}':
+                    data.closeBracket("{");
+                    ++expr;
+                    break;
+
+                default:
+                {
+                    // Then the token is an operator
+
+                    const char * start = expr;
+                    QString ss;
+                    ss += *expr;
+                    ++expr;
+
+                    while (*expr && ispunct(*expr) && !strchr("+-'\"()[]{}_", *expr))
+                    {
+                        ss += *expr;
+                        ++expr;
+                    }
+
+                    QString op = ss;
+
+                    // Check if the word parser applies:
+                    auto * parser = config.parserMap.find(op);
+
+                    // Evaluate the meaning of this operator in the following order:
+                    // 1. Is there a word parser for it?
+                    // 2. Is it a valid operator?
+                    // 3. Is there a character parser for its first character?
+                    if (parser)
+                    {
+                        // Parse reserved operators:
+
+                        if (!parser(expr, &expr, &data))
+                        {
+                            data.clear();
+                            return {};
+                        }
+                    }
+                    else if (data.opExists(op))
+                    {
+                        if (!data.handleOp(op))
+                        {
+                            return {};
+                        }
+                    }
+                    else if ((parser = config.parserMap.find(QString(op[0]))))
+                    {
+                        expr = start + 1;
+
+                        if (!parser(expr, &expr, &data))
+                        {
+                            data.clear();
+                            return {};
+                        }
+                    }
+                    else
+                    {
+                        data.clear();
+                        qWarning(cparseLog) << "Invalid operator: " + op;
+                        return {};
+                    }
+                }
+            }
+        }
+
+        // Ignore spaces but stop on delimiter if not inside brackets.
+        while (*expr && isspace(*expr)
+               && (data.bracketLevel() || !strchr(delim, *expr)))
+        {
+            ++expr;
+        }
+    }
+
+    // Check for syntax errors (excess of operators i.e. 10 + + -1):
+    if (data.lastTokenWasUnary())
+    {
+        data.clear();
+        qWarning(cparseLog) << "Expected operand after unary operator `" << data.topOp() << "`";
+        return {};
+    }
+
+    data.processOpStack();
+
+    if (rest)
+    {
+        *rest = expr - exprStd.c_str();
+    }
+
+    return data.rpn();
+}
+
 void RpnBuilder::processOpStack()
 {
     while (!m_opStack.empty())
@@ -195,12 +551,12 @@ void RpnBuilder::processOpStack()
     }
 }
 
-cparse::TokenType RpnBuilder::backType() const
+cparse::TokenType RpnBuilder::lastTokenType() const
 {
     return m_rpn.back()->m_type;
 }
 
-void RpnBuilder::setBackType(TokenType type)
+void RpnBuilder::setLastTokenType(TokenType type)
 {
     m_rpn.back()->m_type = type;
 }
@@ -340,18 +696,18 @@ bool RpnBuilder::closeBracket(const QString & bracket)
     return true;
 }
 
-bool RpnBuilder::isvarchar(const char c)
+bool RpnBuilder::isVariableNameChar(const char c)
 {
     return isalpha(c) || c == '_';
 }
 
-QString RpnBuilder::parseVar(const char * expr, const char ** rest)
+QString RpnBuilder::parseVariableName(const char * expr, const char ** rest)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (RpnBuilder::isvarchar(*expr) || isdigit(*expr))
+    while (RpnBuilder::isVariableNameChar(*expr) || isdigit(*expr))
     {
         ss += *expr;
         ++expr;
@@ -460,25 +816,21 @@ void cparse::ParserMap::add(char c, WordParserFunc * parser)
     cmap[c] = parser;
 }
 
-cparse::WordParserFunc * cparse::ParserMap::find(const QString & text)
+cparse::WordParserFunc * cparse::ParserMap::find(const QString & text) const
 {
-    WordParserFuncMap::iterator w_it;
-
-    if ((w_it = wmap.find(text)) != wmap.end())
+    if (auto it = wmap.find(text); it != wmap.end())
     {
-        return w_it->second;
+        return it->second;
     }
 
     return nullptr;
 }
 
-cparse::WordParserFunc * cparse::ParserMap::find(char c)
+cparse::WordParserFunc * cparse::ParserMap::find(char c) const
 {
-    CharParserFuncMap::iterator c_it;
-
-    if ((c_it = cmap.find(c)) != cmap.end())
+    if (auto it = cmap.find(c); it != cmap.end())
     {
-        return c_it->second;
+        return it->second;
     }
 
     return nullptr;

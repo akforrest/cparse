@@ -31,12 +31,29 @@ namespace cparse
     {
         public:
 
+            static TokenQueue toRPN(const QString & expr, TokenMap vars,
+                                    const QString & delim, int * rest,
+                                    const Config & config);
+
+            static void clearRPN(TokenQueue * rpn);
+
+            // Check if a character is the first character of a variable:
+            static bool isVariableNameChar(char c);
+            static QString parseVariableName(const char * expr, const char ** rest = nullptr);
+
+            bool handleOp(const QString & op);
+            bool handleToken(Token * token);
+            bool openBracket(const QString & bracket);
+            bool closeBracket(const QString & bracket);
+
+            TokenType lastTokenType() const;
+            void setLastTokenType(TokenType type);
+
+        private:
+
             RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : m_scope(scope), m_opp(opp) {}
 
             void processOpStack();
-
-            TokenType backType() const;
-            void setBackType(TokenType type);
 
             QString topOp() const;
 
@@ -49,22 +66,7 @@ namespace cparse
 
             bool opExists(const QString & op) const;
 
-            bool handleOp(const QString & op);
-            bool handleToken(Token * token);
-            bool openBracket(const QString & bracket);
-            bool closeBracket(const QString & bracket);
-
             void clear();
-
-            // * * * * * Static parsing helpers: * * * * * //
-            static void clearRPN(TokenQueue * rpn);
-
-            // Check if a character is the first character of a variable:
-            static bool isvarchar(char c);
-
-            static QString parseVar(const char * expr, const char ** rest = nullptr);
-
-        private:
 
             void handleOpStack(const QString & op);
             void handleBinary(const QString & op);
