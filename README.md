@@ -13,9 +13,9 @@ A lot of has changed. In no particular order, and by no means an exhaustive list
 4. Added cparse.h, which has an initialize() function, rather than needing to possibly include a .inc file. This is possibly the only file you need to include to use this entire library now.
 5. Added cparse.pri (in place of Makefile). Sources are compiled in, if you want this as a lib, youll have to write your own!
 6. I got rid of catch for the tests, because it was too much hassle to keep it working with all the other changes. The unit tests still exist, there is a CONFIG option to include them, and then you have to call a function to run them. At some point I may fully convert them over to a proper QtTest.
-7. Calculators can be created with a set config which they will use for any subsequent compilation and evaluation steps.
+7. Calculators can be created with a set config which they will use for any subsequent compilation and evaluation steps. You can optionally supply new runtime variables which will be used instead of the set used at compile time (not as well as or in favour of).
+8. Configs now by default are empty of behavior, the built in options can be added in, with the option to add only (for example) the basic math functions but no complex types or advanced string functions).
 
 TODO: 
-1. I want to be able to create calculator configs that have only a subset of operations defined, by some sort of logical grouping like number operators, boolean operators, set/list/map operators, math functions, dev functions (etc). 
-2. Reorder and create a proper public API and private API (/src/ and /include/) to reduce dependencies and make it a bit clearer and easier to extend with custom types.
-3. Start using smart pointers internally. exceptions were hiding a few memory leaks which I caught already but using unique_ptr et al would be much better.
+1. Reorder and create a proper public API and private API (/src/ and /include/) to reduce dependencies and make it a bit clearer and easier to extend with custom types.
+2. Start using smart pointers internally. exceptions were hiding a few memory leaks which I caught already but using unique_ptr et al would be much better.
