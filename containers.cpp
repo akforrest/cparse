@@ -1,3 +1,4 @@
+#include <memory>
 #include <string>
 
 #include "cparse.h"
@@ -29,11 +30,6 @@ TokenMap & TokenMap::default_global()
 {
     static TokenMap global_map(base_map());
     return global_map;
-}
-
-PackToken TokenMap::default_constructor(TokenMap scope)
-{
-    return scope["kwargs"];
 }
 
 bool TokenMap::operator==(const TokenMap & other) const
@@ -73,32 +69,6 @@ void TokenMap::MapIterator::reset()
 
 /* * * * * TokenList functions: * * * * */
 
-PackToken TokenList::default_constructor(TokenMap scope)
-{
-    // Get the arguments:
-    TokenList list = scope["args"].asList();
-
-    // If the only argument is iterable:
-    if (list.list().size() == 1 && list.list()[0]->m_type & IT)
-    {
-        TokenList new_list;
-        TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
-
-        PackToken * next = it->next();
-
-        while (next)
-        {
-            new_list.list().push_back(*next);
-            next = it->next();
-        }
-
-        delete it;
-        return new_list;
-    }
-
-    return list;
-}
-
 PackToken & TokenList::operator[](const quint64 idx) const
 {
     if (list().size() <= idx)
@@ -128,36 +98,45 @@ void TokenList::ListIterator::reset()
     i = 0;
 }
 
-/* * * * * MapData_t struct: * * * * */
-TokenMapData::TokenMapData() {}
-TokenMapData::TokenMapData(TokenMap * p) : parent(p ? new TokenMap(*p) : nullptr) {}
+TokenMapData::TokenMapData() = default;
+
+TokenMapData::TokenMapData(TokenMap * p)
+    : m_tokenMap(p ? new TokenMap(*p) : nullptr)
+{
+}
+
 TokenMapData::TokenMapData(const TokenMapData & other)
 {
-    map = other.map;
+    m_map = other.m_map;
 
-    if (other.parent)
+    if (other.m_tokenMap)
     {
-        parent = new TokenMap(*(other.parent));
+        m_tokenMap = std::make_unique<TokenMap>(*(other.m_tokenMap));
     }
     else
     {
-        parent = nullptr;
+        m_tokenMap = nullptr;
     }
 }
 
 TokenMapData::~TokenMapData()
 {
-    delete parent;
 }
 
 TokenMapData & TokenMapData::operator=(const TokenMapData & other)
 {
     if (this != &other)
     {
-        delete parent;
+        m_map = other.m_map;
 
-        map = other.map;
-        parent = other.parent;
+        if (other.m_tokenMap)
+        {
+            m_tokenMap = std::make_unique<TokenMap>(*(other.m_tokenMap));
+        }
+        else
+        {
+            m_tokenMap = nullptr;
+        }
     }
 
     return *this;
@@ -184,7 +163,7 @@ PackToken * TokenMap::find(const QString & key)
 
 const PackToken * TokenMap::find(const QString & key) const
 {
-    TokenMapData::MapType::const_iterator it = map().find(key);
+    auto it = map().find(key);
 
     if (it != map().end())
     {
@@ -200,6 +179,23 @@ const PackToken * TokenMap::find(const QString & key) const
 }
 
 TokenMap * TokenMap::findMap(const QString & key)
+{
+    auto it = map().find(key);
+
+    if (it != map().end())
+    {
+        return this;
+    }
+
+    if (parent())
+    {
+        return parent()->findMap(key);
+    }
+
+    return nullptr;
+}
+
+const TokenMap * TokenMap::findMap(const QString & key) const
 {
     auto it = map().find(key);
 
@@ -247,6 +243,11 @@ void TokenMap::insert(const QString & key, Token * value)
 }
 
 PackToken & TokenMap::operator[](const QString & key)
+{
+    return map()[key];
+}
+
+const PackToken & TokenMap::operator[](const QString & key) const
 {
     return map()[key];
 }

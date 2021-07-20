@@ -16,6 +16,12 @@ TokenMap vars, emap, tmap, key3;
 
 #define REQUIRE QVERIFY
 
+// Build a TokenMap which is a child of default_global()
+struct GlobalScope : public TokenMap
+{
+    GlobalScope() : TokenMap(&TokenMap::default_global()) {}
+};
+
 void PREPARE_ENVIRONMENT()
 {
     vars["pi"] = 3.14;
@@ -688,7 +694,7 @@ void built_in_extend_function()
 }
 
 // Used on the test case below:
-PackToken map_str(TokenMap)
+PackToken map_str(const TokenMap &)
 {
     return "custom map str";
 }

@@ -1,5 +1,10 @@
 #include "config.h"
 
+#include "builtin-features/functions.h"
+#include "builtin-features/operations.h"
+#include "builtin-features/reservedwords.h"
+#include "builtin-features/typespecificfunctions.h"
+
 using namespace cparse;
 
 Config & Config::defaultConfig()
@@ -9,7 +14,20 @@ Config & Config::defaultConfig()
 }
 
 Config::Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap)
-    : parserMap(std::move(p)), opPrecedence(std::move(opp)), opMap(std::move(opMap)) {}
+    : parserMap(std::move(p)),
+      opPrecedence(std::move(opp)),
+      opMap(std::move(opMap))
+{
+}
+
+void Config::registerBuiltInDefinitions(BuiltInDefinition def)
+{
+    Config & c = *this;
+    builtin_functions::Register(c, def);
+    builtin_operations::Register(c, def);
+    builtin_reservedWords::Register(c, def);
+    builtin_typeSpecificFunctions::Register(c, def);
+}
 
 void ParserMap::add(const QString & word, WordParserFunc * parser)
 {

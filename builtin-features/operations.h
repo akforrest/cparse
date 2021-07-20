@@ -537,9 +537,9 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    struct Startup
+    struct Register
     {
-        Startup()
+        Register(Config & config, Config::BuiltInDefinition def)
         {
             // Create the operator precedence map based on C++ default
             // precedence order as described on cppreference website:

@@ -92,9 +92,9 @@ namespace cparse::builtin_reservedWords
         return data->handleToken(new TokenTyped<QString>(key, STR));
     }
 
-    struct Startup
+    struct Register
     {
-        Startup()
+        Register(Config & config, Config::BuiltInDefinition def)
         {
             ParserMap & parser = Config::defaultConfig().parserMap;
             parser.add("True", &True);

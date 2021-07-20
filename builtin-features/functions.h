@@ -14,7 +14,7 @@ namespace cparse::builtin_functions
 
     /* * * * * Built-in Functions: * * * * */
 
-    PackToken default_print(TokenMap scope)
+    PackToken default_print(const TokenMap & scope)
     {
         // Get the argument list:
         TokenList list = scope["args"].asList();
@@ -47,7 +47,7 @@ namespace cparse::builtin_functions
         return PackToken::None();
     }
 
-    PackToken default_sum(TokenMap scope)
+    PackToken default_sum(const TokenMap & scope)
     {
         // Get the arguments:
         TokenList list = scope["args"].asList();
@@ -67,14 +67,14 @@ namespace cparse::builtin_functions
         return PackToken(sum);
     }
 
-    PackToken default_eval(TokenMap scope)
+    PackToken default_eval(const TokenMap & scope)
     {
         auto code = scope["value"].asString();
         // Evaluate it as a Calculator expression:
         return Calculator::calculate(code.toStdString().c_str(), scope);
     }
 
-    PackToken default_real(TokenMap scope)
+    PackToken default_real(const TokenMap & scope)
     {
         PackToken tok = scope["value"];
 
@@ -109,7 +109,7 @@ namespace cparse::builtin_functions
         return PackToken(ret);
     }
 
-    PackToken default_int(TokenMap scope)
+    PackToken default_int(const TokenMap & scope)
     {
         PackToken tok = scope["value"];
 
@@ -138,7 +138,7 @@ namespace cparse::builtin_functions
         return PackToken(ret);
     }
 
-    PackToken default_str(TokenMap scope)
+    PackToken default_str(const TokenMap & scope)
     {
         // Return its string representation:
         PackToken tok = scope["value"];
@@ -151,7 +151,7 @@ namespace cparse::builtin_functions
         return PackToken(tok.str());
     }
 
-    PackToken default_type(TokenMap scope)
+    PackToken default_type(const TokenMap & scope)
     {
         PackToken tok = scope["value"];
         PackToken * p_type;
@@ -206,31 +206,31 @@ namespace cparse::builtin_functions
         }
     }
 
-    PackToken default_sqrt(TokenMap scope)
+    PackToken default_sqrt(const TokenMap & scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(sqrt(number));
     }
-    PackToken default_sin(TokenMap scope)
+    PackToken default_sin(const TokenMap & scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(sin(number));
     }
-    PackToken default_cos(TokenMap scope)
+    PackToken default_cos(const TokenMap & scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(cos(number));
     }
-    PackToken default_tan(TokenMap scope)
+    PackToken default_tan(const TokenMap & scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(tan(number));
     }
-    PackToken default_abs(TokenMap scope)
+    PackToken default_abs(const TokenMap & scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
@@ -238,7 +238,7 @@ namespace cparse::builtin_functions
     }
 
     const FunctionArgs pow_args = {"number", "exp"};
-    PackToken default_pow(TokenMap scope)
+    PackToken default_pow(const TokenMap & scope)
     {
         // Get two arguments:
         auto number = scope["number"].asReal();
@@ -248,7 +248,7 @@ namespace cparse::builtin_functions
     }
 
     const FunctionArgs min_max_args = {"left", "right"};
-    PackToken default_max(TokenMap scope)
+    PackToken default_max(const TokenMap & scope)
     {
         // Get two arguments:
         auto left = scope["left"].asReal();
@@ -257,7 +257,7 @@ namespace cparse::builtin_functions
         return PackToken(std::max(left, right));
     }
 
-    PackToken default_min(TokenMap scope)
+    PackToken default_min(const TokenMap & scope)
     {
         // Get two arguments:
         auto left = scope["left"].asReal();
@@ -268,7 +268,7 @@ namespace cparse::builtin_functions
 
     /* * * * * default constructor functions * * * * */
 
-    PackToken default_list(TokenMap scope)
+    PackToken default_list(const TokenMap & scope)
     {
         // Get the arguments:
         TokenList list = scope["args"].asList();
@@ -294,14 +294,14 @@ namespace cparse::builtin_functions
         return list;
     }
 
-    PackToken default_map(TokenMap scope)
+    PackToken default_map(const TokenMap & scope)
     {
         return scope["kwargs"];
     }
 
     /* * * * * Object inheritance tools: * * * * */
 
-    PackToken default_extend(TokenMap scope)
+    PackToken default_extend(const TokenMap & scope)
     {
         PackToken tok = scope["value"];
 
@@ -351,9 +351,9 @@ namespace cparse::builtin_functions
         return "";
     }
 
-    struct Startup
+    struct Register
     {
-        Startup()
+        Register(Config & config, Config::BuiltInDefinition def)
         {
             TokenMap & global = TokenMap::default_global();
 

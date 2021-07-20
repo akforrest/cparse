@@ -21,11 +21,11 @@ namespace cparse
             Function() : Token(FUNC) {}
 
             static PackToken call(const PackToken & _this, const Function * func,
-                                  TokenList * args, TokenMap scope);
+                                  TokenList * args, const TokenMap & scope);
 
             virtual const QString name() const = 0;
             virtual const FunctionArgs args() const = 0;
-            virtual PackToken exec(TokenMap scope) const = 0;
+            virtual PackToken exec(const TokenMap & scope) const = 0;
     };
 
     class CppFunction : public Function
@@ -33,18 +33,18 @@ namespace cparse
         public:
 
             CppFunction();
-            CppFunction(PackToken(*func)(TokenMap), const FunctionArgs & args,
+            CppFunction(PackToken(*func)(const TokenMap &), const FunctionArgs & args,
                         QString name = QString());
-            CppFunction(PackToken(*func)(TokenMap), unsigned int nargs,
+            CppFunction(PackToken(*func)(const TokenMap &), unsigned int nargs,
                         const char ** args, QString name = QString());
-            CppFunction(PackToken(*func)(TokenMap), QString name = QString());
-            CppFunction(std::function<PackToken(TokenMap)> func, const FunctionArgs & args,
+            CppFunction(PackToken(*func)(const TokenMap &), QString name = QString());
+            CppFunction(std::function<PackToken(const TokenMap &)> func, const FunctionArgs & args,
                         QString name = QString());
-            CppFunction(const FunctionArgs & args, std::function<PackToken(TokenMap)> func,
+            CppFunction(const FunctionArgs & args, std::function<PackToken(const TokenMap &)> func,
                         QString name = QString());
-            CppFunction(std::function<PackToken(TokenMap)> func, unsigned int nargs,
+            CppFunction(std::function<PackToken(const TokenMap &)> func, unsigned int nargs,
                         const char ** args, QString name = QString());
-            CppFunction(std::function<PackToken(TokenMap)> func, QString name = QString());
+            CppFunction(std::function<PackToken(const TokenMap &)> func, QString name = QString());
 
             const QString name() const override
             {
@@ -54,7 +54,7 @@ namespace cparse
             {
                 return m_args;
             }
-            PackToken exec(TokenMap scope) const override
+            PackToken exec(const TokenMap & scope) const override
             {
                 return m_isStdFunc ? m_stdFunc(scope) : m_func(scope);
             }
@@ -66,8 +66,8 @@ namespace cparse
 
         private:
 
-            PackToken(*m_func)(TokenMap) {};
-            std::function<PackToken(TokenMap)> m_stdFunc;
+            PackToken(*m_func)(const TokenMap &) {};
+            std::function<PackToken(const TokenMap &)> m_stdFunc;
             FunctionArgs m_args;
             QString m_name;
             bool m_isStdFunc;

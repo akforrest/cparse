@@ -41,16 +41,34 @@ namespace cparse
 
     using TokenTypeMap = std::map<TokenType, TokenMap>;
 
-    struct Config
+    class Config
     {
-        Config() {}
-        Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap);
+        public:
 
-        static Config & defaultConfig();
+            enum BuiltInDefinition
+            {
+                NumberOperators,
+                LogicalOperators,
+                ContainerOperators,
+                MathFunctions,
+                SystemFunctions,
+                AllDefinitions = NumberOperators |
+                                 LogicalOperators |
+                                 ContainerOperators |
+                                 MathFunctions |
+                                 SystemFunctions
+            };
 
-        ParserMap parserMap;
-        OpPrecedenceMap opPrecedence;
-        OpMap opMap;
+            Config() = default;
+            Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap);
+
+            void registerBuiltInDefinitions(BuiltInDefinition def);
+
+            static Config & defaultConfig();
+
+            ParserMap parserMap;
+            OpPrecedenceMap opPrecedence;
+            OpMap opMap;
     };
 
     class ObjectTypeRegistry

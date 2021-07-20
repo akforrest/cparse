@@ -13,7 +13,7 @@ namespace cparse::builtin_typeSpecificFunctions
     /* * * * * MAP Type built-in functions * * * * */
 
     const FunctionArgs map_pop_args = {"key", "default"};
-    PackToken map_pop(TokenMap scope)
+    PackToken map_pop(const TokenMap & scope)
     {
         TokenMap map = scope["this"].asMap();
         QString key = scope["key"].asString();
@@ -27,7 +27,7 @@ namespace cparse::builtin_typeSpecificFunctions
         }
 
         // If not available return the default value or None
-        PackToken * def = scope.find("default");
+        auto def = scope.find("default");
 
         if (def)
         {
@@ -39,13 +39,13 @@ namespace cparse::builtin_typeSpecificFunctions
         }
     }
 
-    PackToken map_len(TokenMap scope)
+    PackToken map_len(const TokenMap & scope)
     {
         TokenMap map = scope.find("this")->asMap();
         return map.map().size();
     }
 
-    PackToken default_instanceof(TokenMap scope)
+    PackToken default_instanceof(const TokenMap & scope)
     {
         TokenMap _super = scope["value"].asMap();
         TokenMap * _this = scope["this"].asMap().parent();
@@ -68,10 +68,10 @@ namespace cparse::builtin_typeSpecificFunctions
     /* * * * * LIST Type built-in functions * * * * */
 
     const FunctionArgs push_args = {"item"};
-    PackToken list_push(TokenMap scope)
+    PackToken list_push(const TokenMap & scope)
     {
-        PackToken * list = scope.find("this");
-        PackToken * token = scope.find("item");
+        auto list = scope.find("this");
+        auto token = scope.find("item");
 
         // If "this" is not a list it will throw here:
         list->asList().list().push_back(*token);
@@ -80,10 +80,10 @@ namespace cparse::builtin_typeSpecificFunctions
     }
 
     const FunctionArgs list_pop_args = {"pos"};
-    PackToken list_pop(TokenMap scope)
+    PackToken list_pop(const TokenMap & scope)
     {
         TokenList list = scope.find("this")->asList();
-        PackToken * token = scope.find("pos");
+        auto token = scope.find("pos");
 
         qint64 pos;
 
@@ -111,13 +111,13 @@ namespace cparse::builtin_typeSpecificFunctions
         return result;
     }
 
-    PackToken list_len(TokenMap scope)
+    PackToken list_len(const TokenMap & scope)
     {
         TokenList list = scope.find("this")->asList();
         return list.list().size();
     }
 
-    PackToken list_join(TokenMap scope)
+    PackToken list_join(const TokenMap & scope)
     {
         TokenList list = scope["this"].asList();
         QString chars = scope["chars"].asString();
@@ -136,31 +136,31 @@ namespace cparse::builtin_typeSpecificFunctions
 
     /* * * * * STR Type built-in functions * * * * */
 
-    PackToken string_len(TokenMap scope)
+    PackToken string_len(const TokenMap & scope)
     {
         QString str = scope["this"].asString();
         return str.length();
     }
 
-    PackToken string_lower(TokenMap scope)
+    PackToken string_lower(const TokenMap & scope)
     {
         QString str = scope["this"].asString();
         return str.toLower();
     }
 
-    PackToken string_upper(TokenMap scope)
+    PackToken string_upper(const TokenMap & scope)
     {
         QString str = scope["this"].asString();
         return str.toUpper();
     }
 
-    PackToken string_strip(TokenMap scope)
+    PackToken string_strip(const TokenMap & scope)
     {
         QString str = scope["this"].asString();
         return str.trimmed();
     }
 
-    PackToken string_split(TokenMap scope)
+    PackToken string_split(const TokenMap & scope)
     {
         TokenList list;
         QString str = scope["this"].asString();
@@ -178,9 +178,9 @@ namespace cparse::builtin_typeSpecificFunctions
 
     /* * * * * Type-Specific Functions Startup: * * * * */
 
-    struct Startup
+    struct Register
     {
-        Startup()
+        Register(Config & config, Config::BuiltInDefinition def)
         {
             TokenMap & base_list = ObjectTypeRegistry::typeMap(LIST);
             base_list["push"] = CppFunction(list_push, push_args, "push");

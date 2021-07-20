@@ -71,14 +71,16 @@ namespace cparse
     struct TokenMapData
     {
         using MapType = std::map<QString, PackToken>;
-        MapType map;
-        TokenMap * parent = nullptr;
+
         TokenMapData();
         TokenMapData(TokenMap * p);
         TokenMapData(const TokenMapData & other);
         ~TokenMapData();
 
         TokenMapData & operator=(const TokenMapData & other);
+
+        MapType m_map;
+        std::unique_ptr<TokenMap> m_tokenMap;
     };
 
     class TokenMap : public Container<TokenMapData>, public IterableToken
@@ -89,33 +91,16 @@ namespace cparse
             static TokenMap empty;
             static TokenMap & base_map();
             static TokenMap & default_global();
-            static PackToken default_constructor(TokenMap scope);
+
+            TokenMap(TokenMap * parent = &TokenMap::base_map());
+            TokenMap(const TokenMap & other);
+            ~TokenMap() override {}
 
             bool operator==(const TokenMap & other) const;
 
-            TokenMap(TokenMap * parent = &TokenMap::base_map())
-                : Container(parent), IterableToken(MAP)
-            {
-                // For the Token super class
-                this->m_type = MAP;
-            }
-
-            TokenMap(const TokenMap & other) : Container(other), IterableToken(other)
-            {
-                this->m_type = MAP;
-            }
-
-            ~TokenMap() override {}
-
             // Attribute getters for the `MapData_t` content:
-            TokenMapData::MapType & map() const
-            {
-                return m_ref->map;
-            }
-            TokenMap * parent() const
-            {
-                return m_ref->parent;
-            }
+            TokenMapData::MapType & map() const;
+            TokenMap * parent() const;
 
             // Implement the Iterable Interface:
             struct MapIterator : public TokenIterator
@@ -135,35 +120,57 @@ namespace cparse
                 }
             };
 
-            TokenIterator * getIterator() const override
-            {
-                return new MapIterator(map());
-            }
+            TokenIterator * getIterator() const override;
 
-            // Implement the Token abstract class
-            Token * clone() const override
-            {
-                return new TokenMap(*this);
-            }
+            Token * clone() const override;
 
             PackToken * find(const QString & key);
             const PackToken * find(const QString & key) const;
             TokenMap * findMap(const QString & key);
+            const TokenMap * findMap(const QString & key) const;
+
             void assign(const QString & key, Token * value);
             void insert(const QString & key, Token * value);
 
             TokenMap getChild();
 
             PackToken & operator[](const QString & str);
+            const PackToken & operator[](const QString & str) const;
 
             void erase(const QString & key);
     };
 
-    // Build a TokenMap which is a child of default_global()
-    struct GlobalScope : public TokenMap
+    inline TokenMap::TokenMap(TokenMap * parent)
+        : Container(parent), IterableToken(MAP)
     {
-        GlobalScope() : TokenMap(&TokenMap::default_global()) {}
-    };
+        // For the Token super class
+        this->m_type = MAP;
+    }
+
+    inline TokenMap::TokenMap(const TokenMap & other) : Container(other), IterableToken(other)
+    {
+        this->m_type = MAP;
+    }
+
+    inline TokenMapData::MapType & TokenMap::map() const
+    {
+        return m_ref->m_map;
+    }
+
+    inline TokenMap * TokenMap::parent() const
+    {
+        return m_ref->m_tokenMap.get();
+    }
+
+    inline TokenIterator * TokenMap::getIterator() const
+    {
+        return new MapIterator(map());
+    }
+
+    inline Token * TokenMap::clone() const
+    {
+        return new TokenMap(*this);
+    }
 
     class TokenList : public Container<std::vector<PackToken>>, public IterableToken
     {
@@ -178,7 +185,6 @@ namespace cparse
             }
             ~TokenList() override {}
 
-            static PackToken default_constructor(TokenMap scope);
             // Attribute getter for the `TokenList_t` content:
             ListType & list() const
             {

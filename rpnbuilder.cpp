@@ -14,11 +14,7 @@
 #include "cparse.h"
 #include "calculator.h"
 #include "tokenhelpers.h"
-
-#include "builtin-features/functions.h"
-#include "builtin-features/operations.h"
-#include "builtin-features/reservedwords.h"
-#include "builtin-features/typespecificfunctions.h"
+#include "reftoken.h"
 
 using namespace cparse;
 
@@ -71,10 +67,7 @@ namespace
 
 void cparse::initialize()
 {
-    builtin_functions::Startup();
-    builtin_operations::Startup();
-    builtin_reservedWords::Startup();
-    builtin_typeSpecificFunctions::Startup();
+    Config::defaultConfig().registerBuiltInDefinitions(Config::BuiltInDefinition::AllDefinitions);
 }
 
 Token * cparse::resolveReferenceToken(Token * b, TokenMap * scope)
@@ -221,6 +214,41 @@ void RpnBuilder::handleRightUnary(const QString & unary_op)
     this->m_rpn.push(new TokenUnary());
     // Then add the current op directly into the rpn:
     m_rpn.push(new TokenTyped<QString>(normalizeOp(unary_op), OP));
+}
+
+namespace
+{
+    using namespace cparse;
+    PackToken defaultMapConstructor(const TokenMap & scope)
+    {
+        return scope["kwargs"];
+    }
+
+    PackToken defaultListConstructor(const TokenMap & scope)
+    {
+        // Get the arguments:
+        TokenList list = scope["args"].asList();
+
+        // If the only argument is iterable:
+        if (list.list().size() == 1 && list.list()[0]->m_type & IT)
+        {
+            TokenList new_list;
+            TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
+
+            PackToken * next = it->next();
+
+            while (next)
+            {
+                new_list.list().push_back(*next);
+                next = it->next();
+            }
+
+            delete it;
+            return new_list;
+        }
+
+        return list;
+    }
 }
 
 // Work as a sub-parser:
@@ -439,7 +467,7 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
                     {
                         // If it is the list constructor:
                         // Add the list constructor to the rpn:
-                        if (!data.handleToken(new CppFunction(&TokenList::default_constructor, "list")))
+                        if (!data.handleToken(new CppFunction(&defaultListConstructor, "list")))
                         {
                             return {};
                         }
@@ -459,7 +487,7 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
                 case '{':
 
                     // Add a map constructor call to the rpn:
-                    if (!data.handleToken(new CppFunction(&TokenMap::default_constructor, "map")))
+                    if (!data.handleToken(new CppFunction(&defaultMapConstructor, "map")))
                     {
                         return {};
                     }
