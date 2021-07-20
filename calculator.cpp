@@ -81,12 +81,6 @@ const Config & Calculator::config() const
     return Config::defaultConfig();
 }
 
-TokenTypeMap & Calculator::typeAttributeMap()
-{
-    static TokenTypeMap type_map;
-    return type_map;
-}
-
 Calculator::Calculator()
 {
     this->m_rpn.push(new TokenNone());

@@ -9,7 +9,6 @@
 
 namespace cparse
 {
-    using TokenTypeMap = std::map<TokenType, TokenMap>;
 
     class Calculator
     {
@@ -38,8 +37,6 @@ namespace cparse
                                      const Config & config = Config::defaultConfig());
 
             PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
-
-            static TokenTypeMap & typeAttributeMap();
 
             QString str() const;
             static QString str(TokenQueue rpn);

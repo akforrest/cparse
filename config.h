@@ -39,6 +39,8 @@ namespace cparse
             CharParserFuncMap cmap;
     };
 
+    using TokenTypeMap = std::map<TokenType, TokenMap>;
+
     struct Config
     {
         Config() {}
@@ -49,6 +51,17 @@ namespace cparse
         ParserMap parserMap;
         OpPrecedenceMap opPrecedence;
         OpMap opMap;
+    };
+
+    class ObjectTypeRegistry
+    {
+        public:
+
+            static TokenMap & typeMap(TokenType type);
+
+        private:
+
+            ObjectTypeRegistry() = default;
     };
 }
 #endif // CPARSE_CONFIG_H

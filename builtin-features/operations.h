@@ -162,7 +162,7 @@ namespace cparse::builtin_operations
             return PackToken::Reject();
         }
 
-        TokenMap & attr_map = Calculator::typeAttributeMap()[p_left->m_type];
+        TokenMap & attr_map = ObjectTypeRegistry::typeMap(p_left->m_type);
         QString key = p_right.asString();
 
         PackToken * attr = attr_map.find(key);

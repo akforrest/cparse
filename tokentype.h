@@ -16,7 +16,7 @@ namespace cparse
         NONE, OP, UNARY, VAR, ERROR, REJECT,
 
         // Base types:
-        // Note: The mask system accepts at most 29 (32-3) different base types.
+        // Note: The mask system accepts at most 26 (32-6) different base types.
         STR, FUNC,
 
         // Numerals:

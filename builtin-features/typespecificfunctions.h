@@ -182,13 +182,13 @@ namespace cparse::builtin_typeSpecificFunctions
     {
         Startup()
         {
-            TokenMap & base_list = Calculator::typeAttributeMap()[LIST];
+            TokenMap & base_list = ObjectTypeRegistry::typeMap(LIST);
             base_list["push"] = CppFunction(list_push, push_args, "push");
             base_list["pop"] = CppFunction(list_pop, list_pop_args, "pop");
             base_list["len"] = CppFunction(list_len, "len");
             base_list["join"] = CppFunction(list_join, {"chars"}, "join");
 
-            TokenMap & base_str = Calculator::typeAttributeMap()[STR];
+            TokenMap & base_str = ObjectTypeRegistry::typeMap(STR);
             base_str["len"] = CppFunction(&string_len, "len");
             base_str["lower"] = CppFunction(&string_lower, "lower");
             base_str["upper"] = CppFunction(&string_upper, "upper");

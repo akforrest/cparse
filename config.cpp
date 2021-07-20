@@ -40,3 +40,9 @@ WordParserFunc * ParserMap::find(char c) const
 
     return nullptr;
 }
+
+TokenMap & ObjectTypeRegistry::typeMap(TokenType type)
+{
+    static TokenTypeMap registry;
+    return registry[type];
+}
