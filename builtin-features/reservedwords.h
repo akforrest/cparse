@@ -96,7 +96,7 @@ namespace cparse::builtin_reservedWords
     {
         Startup()
         {
-            ParserMap & parser = Calculator::defaultConfig().parserMap;
+            ParserMap & parser = Config::defaultConfig().parserMap;
             parser.add("True", &True);
             parser.add("False", &False);
             parser.add("None", &None);

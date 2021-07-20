@@ -20,7 +20,7 @@ namespace cparse
             Calculator(Calculator && calc) noexcept;
             Calculator(const QString & expr, const TokenMap & vars = &TokenMap::empty,
                        const QString & delim = QString(), int * rest = nullptr,
-                       const Config & config = defaultConfig());
+                       const Config & config = Config::defaultConfig());
             virtual ~Calculator();
 
             Calculator & operator=(const Calculator & calc);
@@ -35,11 +35,10 @@ namespace cparse
                                        const QString & delim = QString(), int * rest = nullptr);
 
             static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
-                                     const Config & config = defaultConfig());
+                                     const Config & config = Config::defaultConfig());
 
             PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
 
-            static Config & defaultConfig();
             static TokenTypeMap & typeAttributeMap();
 
             QString str() const;

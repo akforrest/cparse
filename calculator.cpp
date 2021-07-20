@@ -76,15 +76,9 @@ namespace
     };
 }
 
-Config & Calculator::defaultConfig()
-{
-    static Config conf;
-    return conf;
-}
-
 const Config & Calculator::config() const
 {
-    return defaultConfig();
+    return Config::defaultConfig();
 }
 
 TokenTypeMap & Calculator::typeAttributeMap()
@@ -164,7 +158,7 @@ bool Calculator::compiled() const
 PackToken Calculator::calculate(const QString & expr, const TokenMap & vars,
                                 const QString & delim, int * rest)
 {
-    RaiiTokenQueue rpn = RpnBuilder::toRPN(expr, vars, delim, rest, defaultConfig());
+    RaiiTokenQueue rpn = RpnBuilder::toRPN(expr, vars, delim, rest, Config::defaultConfig());
 
     if (rpn.empty())
     {

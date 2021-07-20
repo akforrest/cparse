@@ -957,13 +957,13 @@ struct myCalc : public Calculator
 PackToken op1(const PackToken & left, const PackToken & right,
               EvaluationData * data)
 {
-    return Calculator::defaultConfig().opMap["%"][0].exec(left, right, data);
+    return Config::defaultConfig().opMap["%"][0].exec(left, right, data);
 }
 
 PackToken op2(const PackToken & left, const PackToken & right,
               EvaluationData * data)
 {
-    return Calculator::defaultConfig().opMap[","][0].exec(left, right, data);
+    return Config::defaultConfig().opMap[","][0].exec(left, right, data);
 }
 
 PackToken op3(const PackToken & left, const PackToken & right,

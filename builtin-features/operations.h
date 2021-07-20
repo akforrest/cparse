@@ -544,7 +544,7 @@ namespace cparse::builtin_operations
             // Create the operator precedence map based on C++ default
             // precedence order as described on cppreference website:
             // http://en.cppreference.com/w/cpp/language/operator_precedence
-            OpPrecedenceMap & opp = Calculator::defaultConfig().opPrecedence;
+            OpPrecedenceMap & opp = Config::defaultConfig().opPrecedence;
             opp.add("[]", 2);
             opp.add("()", 2);
             opp.add(".", 2);
@@ -573,7 +573,7 @@ namespace cparse::builtin_operations
             opp.addUnary("-", 3);
 
             // Link operations to respective operators:
-            OpMap & opMap = Calculator::defaultConfig().opMap;
+            OpMap & opMap = Config::defaultConfig().opMap;
             opMap.add({ANY_TYPE, "=", ANY_TYPE}, &Assign);
             opMap.add({ANY_TYPE, ",", ANY_TYPE}, &Comma);
             opMap.add({ANY_TYPE, ":", ANY_TYPE}, &Colon);

@@ -1,5 +1,6 @@
 
 SOURCES += \
+    $$PWD/config.cpp \
     $$PWD/packtoken.cpp \
     $$PWD/functions.cpp \
     $$PWD/containers.cpp \

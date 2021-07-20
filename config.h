@@ -44,6 +44,8 @@ namespace cparse
         Config() {}
         Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap);
 
+        static Config & defaultConfig();
+
         ParserMap parserMap;
         OpPrecedenceMap opPrecedence;
         OpMap opMap;

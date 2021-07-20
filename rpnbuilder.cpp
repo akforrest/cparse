@@ -806,35 +806,6 @@ bool cparse::OpPrecedenceMap::exists(const QString & op) const
 EvaluationData::EvaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
     : rpn(std::move(rpn)), scope(scope), opMap(opMap) {}
 
-void cparse::ParserMap::add(const QString & word, WordParserFunc * parser)
-{
-    wmap[word] = parser;
-}
-
-void cparse::ParserMap::add(char c, WordParserFunc * parser)
-{
-    cmap[c] = parser;
-}
-
-cparse::WordParserFunc * cparse::ParserMap::find(const QString & text) const
-{
-    if (auto it = wmap.find(text); it != wmap.end())
-    {
-        return it->second;
-    }
-
-    return nullptr;
-}
-
-cparse::WordParserFunc * cparse::ParserMap::find(char c) const
-{
-    if (auto it = cmap.find(c); it != cmap.end())
-    {
-        return it->second;
-    }
-
-    return nullptr;
-}
 
 cparse::OpSignature::OpSignature(const TokenType L, const QString & op, const TokenType R)
     : left(L), op(op), right(R) {}
@@ -861,6 +832,3 @@ QString cparse::OpMap::str() const
     result.chop(2);
     return result + " }";
 }
-
-Config::Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap)
-    : parserMap(std::move(p)), opPrecedence(std::move(opp)), opMap(std::move(opMap)) {}
