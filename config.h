@@ -47,25 +47,28 @@ namespace cparse
 
             enum BuiltInDefinition
             {
-                NumberOperators,
-                LogicalOperators,
-                ContainerOperators,
-                MathFunctions,
-                SystemFunctions,
-                AllDefinitions = NumberOperators |
+                NumberConstants  = 1 << 0, // e.g. pi
+                NumberOperators  = 1 << 1, // e.g. +, -
+                LogicalOperators = 1 << 2, // || == etc
+                ObjectOperators  = 1 << 3, // [], {}, join, .
+                MathFunctions    = 1 << 4, // sin, tan, max
+                SystemFunctions  = 1 << 5, // print
+                AllDefinitions = NumberConstants |
+                                 NumberOperators |
                                  LogicalOperators |
-                                 ContainerOperators |
+                                 ObjectOperators |
                                  MathFunctions |
                                  SystemFunctions
             };
 
             Config() = default;
-            Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap);
+            Config(TokenMap scope, ParserMap p, OpPrecedenceMap opp, OpMap opMap);
 
             void registerBuiltInDefinitions(BuiltInDefinition def);
 
             static Config & defaultConfig();
 
+            TokenMap scope;
             ParserMap parserMap;
             OpPrecedenceMap opPrecedence;
             OpMap opMap;
@@ -81,5 +84,7 @@ namespace cparse
 
             ObjectTypeRegistry() = default;
     };
+
+    Config::BuiltInDefinition operator|(Config::BuiltInDefinition l, Config::BuiltInDefinition r);
 }
 #endif // CPARSE_CONFIG_H

@@ -48,20 +48,16 @@ namespace cparse
 
             using MapType = std::map<QString, PackToken>;
 
-            // Static factories:
-            static TokenMap empty;
-            static TokenMap & base_map();
-            static TokenMap & default_global();
-
-            TokenMap(TokenMap * parent = &TokenMap::base_map());
+            TokenMap(TokenMap * parent = nullptr);
             TokenMap(const TokenMap & other);
             ~TokenMap() override {}
 
             bool operator==(const TokenMap & other) const;
 
-            // Attribute getters for the `MapData_t` content:
             MapType & map() const;
+
             TokenMap * parent() const;
+            void setParent(TokenMap * map);
 
             // Implement the Iterable Interface:
             struct MapIterator : public TokenIterator
@@ -84,6 +80,8 @@ namespace cparse
             TokenIterator * getIterator() const override;
 
             Token * clone() const override;
+
+            static TokenMap detachedCopy(const TokenMap & other);
 
             PackToken * find(const QString & key);
             const PackToken * find(const QString & key) const;
@@ -114,7 +112,7 @@ namespace cparse
                 TokenMapData & operator=(const TokenMapData & other);
 
                 MapType m_map;
-                std::unique_ptr<TokenMap> m_tokenMap;
+                std::unique_ptr<TokenMap> m_parentMap;
             };
 
             std::shared_ptr<TokenMapData> m_ref;
@@ -142,7 +140,19 @@ namespace cparse
 
     inline TokenMap * TokenMap::parent() const
     {
-        return m_ref->m_tokenMap.get();
+        return m_ref->m_parentMap.get();
+    }
+
+    inline void TokenMap::setParent(TokenMap * map)
+    {
+        if (map)
+        {
+            m_ref->m_parentMap = std::make_unique<TokenMap>(*(map));
+        }
+        else
+        {
+            m_ref->m_parentMap = nullptr;
+        }
     }
 
     inline TokenIterator * TokenMap::getIterator() const

@@ -21,8 +21,8 @@ namespace cparse::builtin_operations
     // Assignment operator "="
     PackToken Assign(const PackToken &, const PackToken & right, EvaluationData * data)
     {
-        PackToken & key = data->left->m_key;
-        PackToken & origin = data->left->m_origin;
+        const PackToken & key = data->left->m_key;
+        const PackToken & origin = data->left->m_origin;
 
         // If the left operand has a name:
         if (key->m_type == TokenType::STR)
@@ -34,26 +34,13 @@ namespace cparse::builtin_operations
             {
                 TokenMap & map = origin.asMap();
                 map[var_name] = right;
-
-                // If it is a local variable:
             }
             else
             {
-                // Find the parent map where this variable is stored:
-                TokenMap * map = data->scope.findMap(var_name);
-
-                // Note:
-                // It is not possible to assign directly to
-                // the global scope. It would be easy for the user
-                // to do it by accident, thus:
-                if (!map || *map == TokenMap::default_global())
-                {
-                    data->scope[var_name] = right;
-                }
-                else
-                {
-                    (*map)[var_name] = right;
-                }
+                // store the override of this in the local scope map
+                // this will override vars passed in for the evaluation but
+                // not the config level scope
+                data->scope[var_name] = right;
             }
 
             // If the left operand has an index number:
@@ -544,56 +531,107 @@ namespace cparse::builtin_operations
             // Create the operator precedence map based on C++ default
             // precedence order as described on cppreference website:
             // http://en.cppreference.com/w/cpp/language/operator_precedence
-            OpPrecedenceMap & opp = Config::defaultConfig().opPrecedence;
-            opp.add("[]", 2);
-            opp.add("()", 2);
-            opp.add(".", 2);
-            opp.add("**", 3);
-            opp.add("*",  5);
-            opp.add("/", 5);
-            opp.add("%", 5);
-            opp.add("+",  6);
-            opp.add("-", 6);
-            opp.add("<<", 7);
-            opp.add(">>", 7);
-            opp.add("<",  8);
-            opp.add("<=", 8);
-            opp.add(">=", 8);
-            opp.add(">", 8);
-            opp.add("==", 9);
-            opp.add("!=", 9);
-            opp.add("&&", 13);
-            opp.add("||", 14);
-            opp.add("=", 15);
-            opp.add(":", 15);
-            opp.add(",", 16);
+            OpPrecedenceMap & opp = config.opPrecedence;
 
-            // Add unary operators:
-            opp.addUnary("+",  3);
-            opp.addUnary("-", 3);
+            using BiType = Config::BuiltInDefinition;
+
+            if (def & BiType::ObjectOperators)
+            {
+                opp.add("[]", 2);
+                opp.add("()", 2);
+                opp.add(".", 2);
+            }
+
+            if (def & BiType::NumberOperators)
+            {
+                opp.add("**", 3);
+                opp.add("*",  5);
+                opp.add("/", 5);
+                opp.add("%", 5);
+                opp.add("+",  6);
+                opp.add("-", 6);
+                opp.add("<<", 7);
+                opp.add(">>", 7);
+            }
+
+            if (def & BiType::LogicalOperators)
+            {
+                opp.add("<",  8);
+                opp.add("<=", 8);
+                opp.add(">=", 8);
+                opp.add(">", 8);
+                opp.add("==", 9);
+                opp.add("!=", 9);
+                opp.add("&&", 13);
+                opp.add("||", 14);
+            }
+
+            if (def & BiType::ObjectOperators)
+            {
+                opp.add("=", 15);
+                opp.add(":", 15);
+                opp.add(",", 16);
+            }
+
+            if (def & BiType::NumberOperators)
+            {
+                // Add unary operators:
+                opp.addUnary("+",  3);
+                opp.addUnary("-", 3);
+            }
 
             // Link operations to respective operators:
-            OpMap & opMap = Config::defaultConfig().opMap;
-            opMap.add({ANY_TYPE, "=", ANY_TYPE}, &Assign);
-            opMap.add({ANY_TYPE, ",", ANY_TYPE}, &Comma);
-            opMap.add({ANY_TYPE, ":", ANY_TYPE}, &Colon);
-            opMap.add({ANY_TYPE, "==", ANY_TYPE}, &Equal);
-            opMap.add({ANY_TYPE, "!=", ANY_TYPE}, &Different);
-            opMap.add({MAP, "[]", STR}, &MapIndex);
-            opMap.add({ANY_TYPE, ".", STR}, &TypeSpecificFunction);
-            opMap.add({MAP, ".", STR}, &MapIndex);
-            opMap.add({STR, "%", ANY_TYPE}, &FormatOperation);
+            OpMap & opMap = config.opMap;
+
+            if (def & BiType::ObjectOperators)
+            {
+                opMap.add({ANY_TYPE, "=", ANY_TYPE}, &Assign);
+                opMap.add({ANY_TYPE, ",", ANY_TYPE}, &Comma);
+                opMap.add({ANY_TYPE, ":", ANY_TYPE}, &Colon);
+            }
+
+            if (def & BiType::LogicalOperators)
+            {
+                opMap.add({ANY_TYPE, "==", ANY_TYPE}, &Equal);
+                opMap.add({ANY_TYPE, "!=", ANY_TYPE}, &Different);
+            }
+
+            if (def & BiType::ObjectOperators)
+            {
+                opMap.add({MAP, "[]", STR}, &MapIndex);
+                opMap.add({ANY_TYPE, ".", STR}, &TypeSpecificFunction);
+                opMap.add({MAP, ".", STR}, &MapIndex);
+            }
+
+            if (def & BiType::SystemFunctions)
+            {
+                opMap.add({STR, "%", ANY_TYPE}, &FormatOperation);
+            }
 
             auto ANY_OP = "";
 
             // Note: The order is important:
-            opMap.add({NUM, ANY_OP, NUM}, &NumeralOperation);
-            opMap.add({UNARY, ANY_OP, NUM}, &UnaryNumeralOperation);
-            opMap.add({STR, ANY_OP, STR}, &StringOnStringOperation);
-            opMap.add({STR, ANY_OP, NUM}, &StringOnNumberOperation);
-            opMap.add({NUM, ANY_OP, STR}, &NumberOnStringOperation);
-            opMap.add({LIST, ANY_OP, NUM}, &ListOnNumberOperation);
-            opMap.add({LIST, ANY_OP, LIST}, &ListOnListOperation);
+
+            if (def & BiType::NumberOperators)
+            {
+                opMap.add({NUM, ANY_OP, NUM}, &NumeralOperation);
+                opMap.add({UNARY, ANY_OP, NUM}, &UnaryNumeralOperation);
+            }
+
+            if (def & BiType::NumberConstants ||
+                def & BiType::SystemFunctions ||
+                def & BiType::ObjectOperators)
+            {
+                opMap.add({STR, ANY_OP, NUM}, &StringOnNumberOperation);
+                opMap.add({NUM, ANY_OP, STR}, &NumberOnStringOperation);
+                opMap.add({STR, ANY_OP, STR}, &StringOnStringOperation);
+            }
+
+            if (def & BiType::SystemFunctions || def & BiType::ObjectOperators)
+            {
+                opMap.add({LIST, ANY_OP, NUM}, &ListOnNumberOperation);
+                opMap.add({LIST, ANY_OP, LIST}, &ListOnListOperation);
+            }
         }
     };
 

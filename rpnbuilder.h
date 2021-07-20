@@ -31,7 +31,7 @@ namespace cparse
     {
         public:
 
-            static TokenQueue toRPN(const QString & expr, TokenMap vars,
+            static TokenQueue toRPN(const QString & expr, const TokenMap & vars,
                                     const QString & delim, int * rest,
                                     const Config & config);
 
@@ -54,7 +54,7 @@ namespace cparse
 
         private:
 
-            RpnBuilder(const TokenMap & scope, const OpPrecedenceMap & opp) : m_scope(scope), m_opp(opp) {}
+            RpnBuilder(const OpPrecedenceMap & opp) : m_opp(opp) {}
 
             void processOpStack();
 
@@ -80,7 +80,6 @@ namespace cparse
             std::stack<QString> m_opStack;
             uint8_t m_lastTokenWasOp = true;
             bool m_lastTokenWasUnary = false;
-            TokenMap m_scope;
             const OpPrecedenceMap & m_opp;
 
             // Used to make sure the expression won't

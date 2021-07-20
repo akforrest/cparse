@@ -18,7 +18,7 @@ namespace cparse
             Calculator(const Calculator & calc);
             Calculator(Calculator && calc) noexcept;
 
-            Calculator(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+            Calculator(const QString & expr, const TokenMap & vars = {},
                        const QString & delim = QString(), int * rest = nullptr,
                        const Config & config = Config::defaultConfig());
 
@@ -28,14 +28,15 @@ namespace cparse
             Calculator & operator=(Calculator &&) noexcept;
 
             bool compiled() const;
-            bool compile(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+            bool compile(const QString & expr, const TokenMap & vars = {},
                          const QString & delim = QString(), int * rest = nullptr);
 
-            PackToken evaluate(const TokenMap & vars = &TokenMap::empty) const;
-            PackToken evaluate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+            PackToken evaluate() const;
+            PackToken evaluate(const TokenMap & vars) const;
+            PackToken evaluate(const QString & expr, const TokenMap & vars = {},
                                const QString & delim = QString(), int * rest = nullptr);
 
-            static PackToken calculate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+            static PackToken calculate(const QString & expr, const TokenMap & vars = {},
                                        const QString & delim = QString(), int * rest = nullptr,
                                        const Config & config = Config::defaultConfig());
 
@@ -50,6 +51,7 @@ namespace cparse
         private:
 
             Config m_config;
+            TokenMap m_vars;
             TokenQueue m_rpn;
             bool m_compiled = false;
     };

@@ -96,17 +96,30 @@ namespace cparse::builtin_reservedWords
     {
         Register(Config & config, Config::BuiltInDefinition def)
         {
-            ParserMap & parser = Config::defaultConfig().parserMap;
-            parser.add("True", &True);
-            parser.add("False", &False);
-            parser.add("None", &None);
-            parser.add("#", &LineComment);
-            parser.add("//", &LineComment);
-            parser.add("/*", &SlashStarComment);
-            parser.add(":", &KeywordOperator);
-            parser.add(':', &KeywordOperator);
-            parser.add(".", &DotOperator);
-            parser.add('.', &DotOperator);
+            ParserMap & parser = config.parserMap;
+
+            if (def & Config::BuiltInDefinition::LogicalOperators)
+            {
+                parser.add("True", &True);
+                parser.add("False", &False);
+            }
+
+            if (def & Config::BuiltInDefinition::SystemFunctions)
+            {
+                parser.add("None", &None);
+                parser.add("#", &LineComment);
+                parser.add("//", &LineComment);
+                parser.add("/*", &SlashStarComment);
+                parser.add(":", &KeywordOperator);
+                parser.add(':', &KeywordOperator);
+                parser.add(".", &DotOperator);
+                parser.add('.', &DotOperator);
+            }
+
+            if (def & Config::BuiltInDefinition::NumberConstants)
+            {
+                config.scope["pi"] = std::atan(1) * 4;
+            }
         }
     };
 

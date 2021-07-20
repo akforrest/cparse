@@ -8,33 +8,17 @@
 
 using namespace cparse;
 
-/* * * * * Initialize TokenMap * * * * */
-
-// Using the "Construct On First Use Idiom"
-// to avoid the "static initialization order fiasco",
-// for more information read:
-//
-// - https://isocpp.org/wiki/faq/ctors#static-init-order
-//
-TokenMap & TokenMap::base_map()
-{
-    static TokenMap _base_map(nullptr);
-    return _base_map;
-}
-
-TokenMap & TokenMap::default_global()
-{
-    static TokenMap global_map(base_map());
-    return global_map;
-}
-
 bool TokenMap::operator==(const TokenMap & other) const
 {
     return m_ref == other.m_ref && m_type == other.m_type;
 }
 
-TokenMap TokenMap::empty = TokenMap(&default_global());
-
+TokenMap TokenMap::detachedCopy(const TokenMap & other)
+{
+    TokenMap m(other);
+    m.m_ref = std::make_shared<TokenMapData>(*other.m_ref);
+    return m;
+}
 
 /* * * * * Iterator functions * * * * */
 
@@ -97,7 +81,7 @@ void TokenList::ListIterator::reset()
 TokenMap::TokenMapData::TokenMapData() = default;
 
 TokenMap::TokenMapData::TokenMapData(TokenMap * p)
-    : m_tokenMap(p ? new TokenMap(*p) : nullptr)
+    : m_parentMap(p ? new TokenMap(*p) : nullptr)
 {
 }
 
@@ -105,13 +89,13 @@ TokenMap::TokenMapData::TokenMapData(const TokenMapData & other)
 {
     m_map = other.m_map;
 
-    if (other.m_tokenMap)
+    if (other.m_parentMap)
     {
-        m_tokenMap = std::make_unique<TokenMap>(*(other.m_tokenMap));
+        m_parentMap = std::make_unique<TokenMap>(*(other.m_parentMap));
     }
     else
     {
-        m_tokenMap = nullptr;
+        m_parentMap = nullptr;
     }
 }
 
@@ -125,13 +109,13 @@ TokenMap::TokenMapData & TokenMap::TokenMapData::operator=(const TokenMapData & 
     {
         m_map = other.m_map;
 
-        if (other.m_tokenMap)
+        if (other.m_parentMap)
         {
-            m_tokenMap = std::make_unique<TokenMap>(*(other.m_tokenMap));
+            m_parentMap = std::make_unique<TokenMap>(*(other.m_parentMap));
         }
         else
         {
-            m_tokenMap = nullptr;
+            m_parentMap = nullptr;
         }
     }
 

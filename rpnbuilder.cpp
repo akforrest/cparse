@@ -70,13 +70,13 @@ void cparse::initialize()
     Config::defaultConfig().registerBuiltInDefinitions(Config::BuiltInDefinition::AllDefinitions);
 }
 
-Token * cparse::resolveReferenceToken(Token * b, TokenMap * scope)
+Token * cparse::resolveReferenceToken(Token * b, const TokenMap * localScope, const TokenMap * configScope)
 {
     if (b->m_type & REF)
     {
         // Resolve the reference:
         auto * ref = static_cast<RefToken *>(b);
-        Token * value = ref->resolve(scope);
+        Token * value = ref->resolve(localScope, configScope);
 
         delete ref;
         return value;
@@ -254,11 +254,11 @@ namespace
 // Work as a sub-parser:
 // - Stops at delim or '\0'
 // - Returns the rest of the string as char* rest
-TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
+TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
                              const QString & delimStr, int * rest,
                              const Config & config)
 {
-    RpnBuilder data(vars, config.opPrecedence);
+    RpnBuilder data(config.opPrecedence);
     char * nextChar = nullptr;
 
     std::string exprStd = exprStr.toStdString();
@@ -352,7 +352,12 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
             }
             else
             {
-                PackToken * value = vars.find(key);
+                auto * value = vars.find(key);
+
+                if (!value)
+                {
+                    value = config.scope.find(key);
+                }
 
                 if (value)
                 {
@@ -507,17 +512,29 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
                     break;
 
                 case ')':
-                    data.closeBracket("(");
+                    if (!data.closeBracket("("))
+                    {
+                        return {};
+                    }
+
                     ++expr;
                     break;
 
                 case ']':
-                    data.closeBracket("[");
+                    if (!data.closeBracket("["))
+                    {
+                        return {};
+                    }
+
                     ++expr;
                     break;
 
                 case '}':
-                    data.closeBracket("{");
+                    if (!data.closeBracket("{"))
+                    {
+                        return {};
+                    }
+
                     ++expr;
                     break;
 
@@ -648,7 +665,7 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
             if (r_token->m_type & REF)
             {
                 data.right.reset(static_cast<RefToken *>(r_token));
-                r_token = data.right->resolve(&data.scope);
+                r_token = data.right->resolve(&data.scope, &config.scope);
             }
             else if (r_token->m_type == VAR)
             {
@@ -663,7 +680,7 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
             if (l_token->m_type & REF)
             {
                 data.left.reset(static_cast<RefToken *>(l_token));
-                l_token = data.left->resolve(&data.scope);
+                l_token = data.left->resolve(&data.scope, &config.scope);
             }
             else if (l_token->m_type == VAR)
             {

@@ -121,17 +121,15 @@ namespace cparse::builtin_typeSpecificFunctions
     {
         TokenList list = scope["this"].asList();
         QString chars = scope["chars"].asString();
-        std::stringstream result;
 
-        std::vector<PackToken>::const_iterator it = list.list().begin();
-        result << it->asString();
+        QStringList strList;
 
-        for (++it; it != list.list().end(); ++it)
+        for (const auto & it : list.list())
         {
-            result << chars << it->asString();
+            strList << it.asString();
         }
 
-        return QString::fromStdString(result.str());
+        return strList.join(chars);
     }
 
     /* * * * * STR Type built-in functions * * * * */
@@ -180,26 +178,35 @@ namespace cparse::builtin_typeSpecificFunctions
 
     struct Register
     {
-        Register(Config & config, Config::BuiltInDefinition def)
+        Register(Config &, Config::BuiltInDefinition)
         {
-            TokenMap & base_list = ObjectTypeRegistry::typeMap(LIST);
-            base_list["push"] = CppFunction(list_push, push_args, "push");
-            base_list["pop"] = CppFunction(list_pop, list_pop_args, "pop");
-            base_list["len"] = CppFunction(list_len, "len");
-            base_list["join"] = CppFunction(list_join, {"chars"}, "join");
+            // we only register type definitions for internal types here
+            static bool init = false;
 
-            TokenMap & base_str = ObjectTypeRegistry::typeMap(STR);
-            base_str["len"] = CppFunction(&string_len, "len");
-            base_str["lower"] = CppFunction(&string_lower, "lower");
-            base_str["upper"] = CppFunction(&string_upper, "upper");
-            base_str["strip"] = CppFunction(&string_strip, "strip");
-            base_str["split"] = CppFunction(&string_split, {"chars"}, "split");
+            if (init)
+            {
+                return;
+            }
 
-            TokenMap & base_map = TokenMap::base_map();
-            base_map["pop"] = CppFunction(map_pop, map_pop_args, "pop");
-            base_map["len"] = CppFunction(map_len, "len");
-            base_map["instanceof"] = CppFunction(&default_instanceof,
-            {"value"}, "instanceof");
+            init = true;
+
+            TokenMap & listScope = ObjectTypeRegistry::typeMap(LIST);
+            listScope["push"] = CppFunction(list_push, push_args, "push");
+            listScope["pop"] = CppFunction(list_pop, list_pop_args, "pop");
+            listScope["len"] = CppFunction(list_len, "len");
+            listScope["join"] = CppFunction(list_join, {"chars"}, "join");
+
+            TokenMap & strScope = ObjectTypeRegistry::typeMap(STR);
+            strScope["len"] = CppFunction(&string_len, "len");
+            strScope["lower"] = CppFunction(&string_lower, "lower");
+            strScope["upper"] = CppFunction(&string_upper, "upper");
+            strScope["strip"] = CppFunction(&string_strip, "strip");
+            strScope["split"] = CppFunction(&string_split, {"chars"}, "split");
+
+            TokenMap & mapScope = ObjectTypeRegistry::typeMap(MAP);
+            mapScope["pop"] = CppFunction(map_pop, map_pop_args, "pop");
+            mapScope["len"] = CppFunction(map_len, "len");
+            mapScope["instanceof"] = CppFunction(&default_instanceof, {"value"}, "instanceof");
         }
     };
 

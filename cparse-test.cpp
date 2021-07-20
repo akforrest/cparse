@@ -14,17 +14,21 @@ using namespace cparse;
 
 TokenMap vars, emap, tmap, key3;
 
-#define REQUIRE QVERIFY
+#define REQUIRE( statement ) \
+   do {\
+    if (!QTest::qVerify(static_cast<bool>(statement), #statement, "", __FILE__, __LINE__))\
+        Q_ASSERT(false);\
+    } while (false)
 
 // Build a TokenMap which is a child of default_global()
 struct GlobalScope : public TokenMap
 {
-    GlobalScope() : TokenMap(&TokenMap::default_global()) {}
+    GlobalScope() : TokenMap(&Config::defaultConfig().scope) {}
 };
 
 void PREPARE_ENVIRONMENT()
 {
-    vars["pi"] = 3.14;
+    vars["pi"] = 3.14; // the real number is too precise for our tests
     vars["b1"] = 0.0;
     vars["b2"] = 0.86;
     vars["_b"] = 0;
@@ -128,6 +132,40 @@ class Approx
             QVERIFY(false); \
         } \
     } while (false)
+
+
+void calculate_with_no_config()
+{
+    Calculator c1((Config()));
+    REQUIRE(c1.evaluate("-pi + 1", vars).isError());
+    REQUIRE(c1.evaluate("-pi + 1 * b1", vars).isError());
+    REQUIRE(c1.evaluate("(20+10)*3/2-3", vars).isError());
+    REQUIRE(c1.evaluate("1 << 4", vars).isError());
+    REQUIRE(c1.evaluate("1+(-2*3)", vars).isError());
+    REQUIRE(c1.evaluate("1+_b+(-2*3)", vars).isError());
+    REQUIRE(c1.evaluate("4 * -3", vars).isError());
+
+    Config conf;
+    conf.registerBuiltInDefinitions(Config::BuiltInDefinition::NumberOperators |
+                                    Config::BuiltInDefinition::NumberConstants);
+    c1.setConfig(conf);
+    // now math should work
+
+    REQUIRE(c1.evaluate("-pi + 1", vars).asReal() == Approx(-2.14));
+    REQUIRE(c1.evaluate("-pi + 1 * b1", vars).asReal() == Approx(-3.14));
+    REQUIRE(c1.evaluate("(20+10)*3/2-3", vars).asReal() == Approx(42.0));
+    REQUIRE(c1.evaluate("1 << 4", vars).asReal() == Approx(16.0));
+    REQUIRE(c1.evaluate("1+(-2*3)", vars).asReal() == Approx(-5));
+    REQUIRE(c1.evaluate("1+_b+(-2*3)", vars).asReal() == Approx(-5));
+    REQUIRE(c1.evaluate("4 * -3", vars).asInt() == -12);
+
+    // but stuff with boolean logic or sets should still fail
+
+    REQUIRE(c1.evaluate("(3 && True) == True").isError());
+    REQUIRE(c1.evaluate("(3 && 0) == True").isError());
+    REQUIRE(c1.evaluate("(3 || 0) == True").isError());
+    REQUIRE(c1.evaluate("(False || 0) == True").isError());
+}
 
 //TEST_CASE("Static calculate::calculate()", "[calculate]")
 void static_calculate_calculate()
@@ -331,8 +369,8 @@ void prototypical_inheritance()
 //TEST_CASE("Map usage expressions", "[map][map-usage]")
 void map_usage_expressions()
 {
-    TokenMap vars;
-    vars["my_map"] = TokenMap();
+    TokenMap vars(&Config::defaultConfig().scope);
+    vars["my_map"] = TokenMap(&Config::defaultConfig().scope);
     REQUIRE_NOTHROW(Calculator::calculate("my_map['a'] = 1", vars));
     REQUIRE_NOTHROW(Calculator::calculate("my_map['b'] = 2", vars));
     REQUIRE_NOTHROW(Calculator::calculate("my_map['c'] = 3", vars));
@@ -557,7 +595,7 @@ void function_usage_expression()
     REQUIRE(Calculator::calculate("foo(10),")->m_type == TokenType::ERROR);
     REQUIRE_NOTHROW(Calculator::calculate("foo,(10)"));
 
-    REQUIRE(TokenMap::default_global()["abs"].str() == "[Function: abs]");
+    REQUIRE(Config::defaultConfig().scope["abs"].str() == "[Function: abs]");
     REQUIRE(Calculator::calculate("1,2,3,4,5").str() == "(1, 2, 3, 4, 5)");
 
     REQUIRE(Calculator::calculate(" float('0.1') ").asReal() == 0.1);
@@ -726,7 +764,7 @@ void assignment_expressions()
     // on the global scope:
     REQUIRE_NOTHROW(Calculator::calculate("print = 'something'", vars));
     REQUIRE(vars["print"].asString() == "something");
-    REQUIRE(TokenMap::default_global()["print"].str() == "[Function: print]");
+    REQUIRE(Config::defaultConfig().scope["print"].str() == "[Function: print]");
 
     // But it should overwrite variables
     // on non-local scopes as expected:
@@ -806,17 +844,17 @@ void parsing_as_slave_parser()
     REQUIRE(parsedTo == 3);
     REQUIRE(vars["a"].asReal() == 1);
 
-    code = code.mid(parsedTo);
+    code = code.mid(parsedTo + 1);
 
     // With constructor:
     REQUIRE_NOTHROW((c2 = Calculator(code, vars, ";}\n", &parsedTo)));
-    REQUIRE(parsedTo == 5);
+    REQUIRE(parsedTo == 4);
 
-    code = code.mid(parsedTo);
+    code = code.mid(parsedTo + 1);
 
     // With compile method:
     REQUIRE_NOTHROW(c3.compile(code, vars, ";}\n", &parsedTo));
-    REQUIRE(parsedTo == original_code.length() - 1);
+    REQUIRE(parsedTo == code.length() - 1);
 
     REQUIRE_NOTHROW(c2.evaluate(vars));
     REQUIRE(vars["b"] == 2);
@@ -830,7 +868,7 @@ void parsing_as_slave_parser()
 
     code = if_code;
     REQUIRE_NOTHROW(Calculator::calculate(if_code + 4, vars, ")", &parsedTo));
-    REQUIRE(code.at(parsedTo) == if_code[18]);
+    REQUIRE(code.at(parsedTo + 4) == if_code[18]);
 
     code = multiline;
     REQUIRE_NOTHROW(Calculator::calculate(multiline, vars, "\n;", &parsedTo));
@@ -844,11 +882,11 @@ void parsing_as_slave_parser()
 //TEST_CASE("operation_id() function", "[op_id]")
 void operation_id_function()
 {
-#define opIdTest(t1, t2) Operation::buildMask(t1, t2)
-    REQUIRE((opIdTest(NONE, NONE)) == 0x0000000100000001);
-    REQUIRE((opIdTest(FUNC, FUNC)) == 0x0000002000000020);
-    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
-    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
+    //#define opIdTest(t1, t2) Operation::buildMask(t1, t2)
+    //    REQUIRE((opIdTest(NONE, NONE)) == 0x0000000100000001);
+    //    REQUIRE((opIdTest(FUNC, FUNC)) == 0x0000002000000020);
+    //    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
+    //    REQUIRE((opIdTest(FUNC, ANY_TYPE)) == 0x000000200000FFFF);
 }
 
 /* * * * * Declaring adhoc operations * * * * */
@@ -1240,9 +1278,9 @@ void adhoc_operator_parser()
     QString expr = "#12345\n - 10";
     int parsedTo = 0;
     REQUIRE_NOTHROW(Calculator::calculate(expr, vars, "\n", &parsedTo));
-    REQUIRE(parsedTo == 5);
+    REQUIRE(parsedTo == 6);
 
-    REQUIRE(Calculator::calculate(expr.mid(5)).asInt() == -10);
+    REQUIRE(Calculator::calculate(expr.mid(6)).asInt() == -10);
 }
 
 //TEST_CASE("Exception management")
@@ -1255,8 +1293,8 @@ void exception_management()
     REQUIRE(!ecalc2.compile(""));
     REQUIRE(!ecalc2.compile("      "));
 
-    // Uninitialized calculators should eval to None:
-    REQUIRE(Calculator().evaluate().str() == "None");
+    // Uninitialized calculators should eval to Error:
+    REQUIRE(Calculator().evaluate().str() == "Error");
 
     REQUIRE(ecalc1.evaluate()->m_type == TokenType::ERROR);
     REQUIRE_NOTHROW(ecalc1.evaluate(emap));
@@ -1291,6 +1329,7 @@ void cparse::runTests()
 {
     qInfo() << "running cparse tests";
     PREPARE_ENVIRONMENT();
+    calculate_with_no_config();
     static_calculate_calculate();
     calculate_compile();
     numerical_expressions();

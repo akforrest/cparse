@@ -12,18 +12,18 @@ namespace cparse
     {
         public:
 
-            RefToken(PackToken k, Token * v, PackToken m = PackToken::None());
-            RefToken(PackToken k = PackToken::None(), PackToken v = PackToken::None(), PackToken m = PackToken::None());
+            RefToken(PackToken key, Token * value, PackToken origin = PackToken::None());
+            RefToken(PackToken key = PackToken::None(), PackToken value = PackToken::None(), PackToken origin = PackToken::None());
 
-            Token * resolve(TokenMap * localScope = nullptr) const;
+            Token * resolve(const TokenMap * localScope, const TokenMap * configScope) const;
             Token * clone() const override;
 
-            PackToken m_key;
-            PackToken m_origin;
+            const PackToken m_key;
+            const PackToken m_origin;
 
         private:
 
-            PackToken m_originalValue;
+            const PackToken m_originalValue;
     };
 
 }

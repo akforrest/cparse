@@ -89,20 +89,14 @@ namespace cparse::builtin_functions
             return PackToken::Error();
         }
 
-        char * rest;
         const QString & str = tok.asString();
-        errno = 0;
-        qreal ret = strtod(str.toStdString().c_str(), &rest);
 
-        if (str == rest)
-        {
-            qWarning(cparseLog) << "could not convert \"" << str << "\" to qreal!";
-            return PackToken::Error();
-        }
+        bool ok = false;
+        auto ret = str.toDouble(&ok);
 
-        if (errno)
+        if (!ok)
         {
-            qWarning(cparseLog) << "value too big or too small to fit a qreal!";
+            qWarning(cparseLog) << "failed to convert to real!";
             return PackToken::Error();
         }
 
@@ -118,20 +112,14 @@ namespace cparse::builtin_functions
             return PackToken(tok.asInt());
         }
 
-        char * rest;
         const QString & str = tok.asString();
-        errno = 0;
-        qint64 ret = strtol(str.toStdString().c_str(), &rest, 10);
 
-        if (str == rest)
-        {
-            qWarning(cparseLog) << "could not convert \"" << str << "\" to integer!";
-            return PackToken::Error();
-        }
+        bool ok = false;
+        auto ret = str.toInt(&ok);
 
-        if (errno)
+        if (!ok)
         {
-            qWarning(cparseLog) << "value too big or too small to fit an integer!";
+            qWarning(cparseLog) << "failed to convert to int!";
             return PackToken::Error();
         }
 
@@ -348,37 +336,51 @@ namespace cparse::builtin_functions
 
         // Return "" to ask for the normal `PackToken::str()`
         // function to complete the job.
-        return "";
+        return QString();
     }
 
     struct Register
     {
         Register(Config & config, Config::BuiltInDefinition def)
         {
-            TokenMap & global = TokenMap::default_global();
+            TokenMap & scope = config.scope;
 
-            global["print"] = CppFunction(&default_print, "print");
-            global["sum"] = CppFunction(&default_sum, "sum");
-            global["sqrt"] = CppFunction(&default_sqrt, {"num"}, "sqrt");
-            global["sin"] = CppFunction(&default_sin, {"num"}, "sin");
-            global["cos"] = CppFunction(&default_cos, {"num"}, "cos");
-            global["tan"] = CppFunction(&default_tan, {"num"}, "tan");
-            global["abs"] = CppFunction(&default_abs, {"num"}, "abs");
-            global["pow"] = CppFunction(&default_pow, pow_args, "pow");
-            global["min"] = CppFunction(&default_min, min_max_args, "min");
-            global["max"] = CppFunction(&default_max, min_max_args, "max");
-            global["float"] = CppFunction(&default_real, {"value"}, "float");
-            global["real"] = CppFunction(&default_real, {"value"}, "real");
-            global["double"] = CppFunction(&default_real, {"value"}, "double");
-            global["int"] = CppFunction(&default_int, {"value"}, "int");
-            global["str"] = CppFunction(&default_str, {"value"}, "str");
-            global["eval"] = CppFunction(&default_eval, {"value"}, "eval");
-            global["type"] = CppFunction(&default_type, {"value"}, "type");
-            global["extend"] = CppFunction(&default_extend, {"value"}, "extend");
+            if (def & Config::BuiltInDefinition::SystemFunctions)
+            {
+                scope["print"] = CppFunction(&default_print, "print");
+            }
 
-            // Default constructors:
-            global["list"] = CppFunction(&default_list, "list");
-            global["map"] = CppFunction(&default_map, "map");
+            if (def & Config::BuiltInDefinition::MathFunctions)
+            {
+                scope["sum"] = CppFunction(&default_sum, "sum");
+                scope["sqrt"] = CppFunction(&default_sqrt, {"num"}, "sqrt");
+                scope["sin"] = CppFunction(&default_sin, {"num"}, "sin");
+                scope["cos"] = CppFunction(&default_cos, {"num"}, "cos");
+                scope["tan"] = CppFunction(&default_tan, {"num"}, "tan");
+                scope["abs"] = CppFunction(&default_abs, {"num"}, "abs");
+                scope["pow"] = CppFunction(&default_pow, pow_args, "pow");
+                scope["min"] = CppFunction(&default_min, min_max_args, "min");
+                scope["max"] = CppFunction(&default_max, min_max_args, "max");
+                scope["float"] = CppFunction(&default_real, {"value"}, "float");
+                scope["real"] = CppFunction(&default_real, {"value"}, "real");
+                scope["double"] = CppFunction(&default_real, {"value"}, "double");
+                scope["int"] = CppFunction(&default_int, {"value"}, "int");
+            }
+
+            if (def & Config::BuiltInDefinition::SystemFunctions)
+            {
+                scope["str"] = CppFunction(&default_str, {"value"}, "str");
+                scope["eval"] = CppFunction(&default_eval, {"value"}, "eval");
+                scope["type"] = CppFunction(&default_type, {"value"}, "type");
+                scope["extend"] = CppFunction(&default_extend, {"value"}, "extend");
+            }
+
+            if (def & Config::BuiltInDefinition::ObjectOperators)
+            {
+                // Default constructors:
+                scope["list"] = CppFunction(&default_list, "list");
+                scope["map"] = CppFunction(&default_map, "map");
+            }
 
             // Set the custom str function to `PackToken_str()`
             PackToken::str_custom() = PackToken_str;

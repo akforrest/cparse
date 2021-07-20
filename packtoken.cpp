@@ -228,6 +228,9 @@ bool PackToken::asBool() const
         case NONE:
             return false;
 
+        case ERROR:
+            Q_ASSERT_X(false, "PackToken::asReal", "cannot convert an error to type!");
+
         case TUPLE:
         case STUPLE:
             return !static_cast<Tuple *>(m_base)->list().empty();
@@ -267,6 +270,9 @@ qreal PackToken::asReal() const
 
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
+
+        case ERROR:
+            Q_ASSERT_X(false, "PackToken::asReal", "cannot convert an error to type!");
 
         default:
         {
@@ -313,6 +319,9 @@ qint64 PackToken::asInt() const
         case BOOL:
             return static_cast<TokenTyped<uint8_t>*>(m_base)->m_val;
 
+        case ERROR:
+            Q_ASSERT_X(false, "PackToken::asReal", "cannot convert an error to type!");
+
         default:
             if (!(m_base->m_type & NUM))
             {
@@ -329,7 +338,9 @@ qint64 PackToken::asInt() const
 
 bool PackToken::canConvertToString() const
 {
-    return (!(m_base->m_type != STR && m_base->m_type != VAR && m_base->m_type != OP));
+    return m_base->m_type == STR ||
+           m_base->m_type == VAR ||
+           m_base->m_type == OP;
 }
 
 QString PackToken::asString() const
@@ -448,7 +459,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
 
     if (base->m_type & REF)
     {
-        base = static_cast<const RefToken *>(base)->resolve();
+        base = static_cast<const RefToken *>(base)->resolve(nullptr, nullptr);
         name = static_cast<const RefToken *>(base)->m_key.str();
     }
 
@@ -470,6 +481,9 @@ QString PackToken::str(const Token * base, uint32_t nest)
     {
         case NONE:
             return "None";
+
+        case ERROR:
+            return "Error";
 
         case UNARY:
             return "UnaryToken";

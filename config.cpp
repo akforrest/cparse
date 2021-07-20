@@ -13,8 +13,9 @@ Config & Config::defaultConfig()
     return conf;
 }
 
-Config::Config(ParserMap p, OpPrecedenceMap opp, OpMap opMap)
-    : parserMap(std::move(p)),
+Config::Config(TokenMap s, ParserMap p, OpPrecedenceMap opp, OpMap opMap)
+    : scope(std::move(s)),
+      parserMap(std::move(p)),
       opPrecedence(std::move(opp)),
       opMap(std::move(opMap))
 {
@@ -63,4 +64,9 @@ TokenMap & ObjectTypeRegistry::typeMap(TokenType type)
 {
     static TokenTypeMap registry;
     return registry[type];
+}
+
+Config::BuiltInDefinition cparse::operator|(Config::BuiltInDefinition l, Config::BuiltInDefinition r)
+{
+    return static_cast<Config::BuiltInDefinition>(static_cast<int>(l) | r);
 }

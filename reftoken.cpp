@@ -1,6 +1,7 @@
 #include "reftoken.h"
 
 #include "containers.h"
+#include "config.h"
 
 using cparse::Token;
 using cparse::RefToken;
@@ -21,21 +22,35 @@ RefToken::RefToken(PackToken k, PackToken v, PackToken m)
 {
 }
 
-Token * RefToken::resolve(TokenMap * localScope) const
+Token * RefToken::resolve(const TokenMap * localScope, const TokenMap * configScope) const
 {
-    Token * result = nullptr;
+    const PackToken * pack = nullptr;
 
     // Local variables have no origin == NONE,
     // thus, require a localScope to be resolved:
     if (m_origin->m_type == NONE && localScope)
     {
         // Get the most recent value from the local scope:
-        PackToken * r_value = localScope->find(m_key.asString());
+        pack = localScope->find(m_key.asString());
+    }
 
-        if (r_value)
-        {
-            result = (*r_value)->clone();
-        }
+    if (pack == nullptr && configScope && m_origin->m_type == NONE)
+    {
+        // Get the most recent value from the local scope:
+        pack = configScope->find(m_key.asString());
+    }
+
+    if (pack == nullptr && m_origin->m_type != NONE && m_key.canConvertToString())
+    {
+        const auto & typeMap = ObjectTypeRegistry::typeMap(m_origin->m_type);
+        pack = typeMap.find(m_key.asString());
+    }
+
+    Token * result = nullptr;
+
+    if (pack != nullptr)
+    {
+        result = (*pack)->clone();
     }
 
     // In last case return the compilation-time value:
