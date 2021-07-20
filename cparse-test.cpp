@@ -5,6 +5,7 @@
 #include <QtTest>
 #include <utility>
 
+#include "cparse.h"
 #include "cparse-test.h"
 #include "rpnbuilder.h"
 #include "calculator.h"
@@ -1325,9 +1326,17 @@ void exception_management()
     REQUIRE(!ecalc2.compile("map(['hello']]"));
 }
 
+void testLogHandler(QtMsgType , const QMessageLogContext &, const QString &)
+{
+
+}
+
 void cparse::runTests()
 {
-    qInfo() << "running cparse tests";
+    qInfo() << "running cparse tests, logs are disabled";
+
+    auto mainHandler = qInstallMessageHandler(testLogHandler);
+
     PREPARE_ENVIRONMENT();
     calculate_with_no_config();
     static_calculate_calculate();
@@ -1366,5 +1375,8 @@ void cparse::runTests()
     resource_management();
     adhoc_operator_parser();
     exception_management();
+
+    qInstallMessageHandler(mainHandler);
+
     qInfo() << "cparse tests finished";
 }
