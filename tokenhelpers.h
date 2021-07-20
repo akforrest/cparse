@@ -13,10 +13,10 @@ namespace cparse
     // And obtain the original Token*.
     // Please note that it only deletes memory if the token
     // is of type REF.
-    Token * resolve_reference(Token * b, TokenMap * scope = nullptr);
+    Token * resolveReferenceToken(Token * b, TokenMap * scope = nullptr);
     void cleanStack(std::stack<Token *> st);
 
-    inline QString normalize_op(QString op)
+    inline QString normalizeOp(QString op)
     {
         if (op[0] == 'L' || op[0] == 'R')
         {

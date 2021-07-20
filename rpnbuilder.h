@@ -35,6 +35,9 @@ namespace cparse
                                     const QString & delim, int * rest,
                                     const Config & config);
 
+            static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
+                                     const Config & config = Config::defaultConfig());
+
             static void clearRPN(TokenQueue * rpn);
 
             // Check if a character is the first character of a variable:

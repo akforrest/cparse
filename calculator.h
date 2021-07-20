@@ -9,50 +9,52 @@
 
 namespace cparse
 {
-
     class Calculator
     {
         public:
 
-            Calculator();
+            Calculator(const Config & config = Config::defaultConfig());
+
             Calculator(const Calculator & calc);
             Calculator(Calculator && calc) noexcept;
+
             Calculator(const QString & expr, const TokenMap & vars = &TokenMap::empty,
                        const QString & delim = QString(), int * rest = nullptr,
                        const Config & config = Config::defaultConfig());
+
             virtual ~Calculator();
 
             Calculator & operator=(const Calculator & calc);
             Calculator & operator=(Calculator &&) noexcept;
 
             bool compiled() const;
-
             bool compile(const QString & expr, const TokenMap & vars = &TokenMap::empty,
                          const QString & delim = QString(), int * rest = nullptr);
 
+            PackToken evaluate(const TokenMap & vars = &TokenMap::empty) const;
+            PackToken evaluate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
+                               const QString & delim = QString(), int * rest = nullptr);
+
             static PackToken calculate(const QString & expr, const TokenMap & vars = &TokenMap::empty,
-                                       const QString & delim = QString(), int * rest = nullptr);
+                                       const QString & delim = QString(), int * rest = nullptr,
+                                       const Config & config = Config::defaultConfig());
 
-            static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
-                                     const Config & config = Config::defaultConfig());
+            const Config & config() const;
+            void setConfig(const Config & config);
 
-            PackToken eval(const TokenMap & vars = &TokenMap::empty, bool keep_refs = false) const;
+            ////
 
             QString str() const;
             static QString str(TokenQueue rpn);
 
-        protected:
-
-            virtual const Config & config() const;
-
         private:
 
+            Config m_config;
             TokenQueue m_rpn;
             bool m_compiled = false;
     };
 
     QDebug & operator<<(QDebug & os, const cparse::Calculator & t);
 }
-
 
 #endif // CPARSE_CALCULATOR_H

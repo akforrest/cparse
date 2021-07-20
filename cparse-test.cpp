@@ -143,14 +143,14 @@ void calculate_compile()
 {
     Calculator c1;
     c1.compile("-pi+1", vars);
-    REQUIRE(c1.eval().asReal() == Approx(-2.14));
+    REQUIRE(c1.evaluate().asReal() == Approx(-2.14));
 
     Calculator c2("pi+4", vars);
-    REQUIRE(c2.eval().asReal() == Approx(7.14));
-    REQUIRE(c2.eval().asReal() == Approx(7.14));
+    REQUIRE(c2.evaluate().asReal() == Approx(7.14));
+    REQUIRE(c2.evaluate().asReal() == Approx(7.14));
 
     Calculator c3("pi+b1+b2", vars);
-    REQUIRE(c3.eval(vars).asReal() == Approx(4.0));
+    REQUIRE(c3.evaluate(vars).asReal() == Approx(4.0));
 }
 
 //TEST_CASE("Numerical expressions")
@@ -233,28 +233,28 @@ void operator_parsing()
 
     // Test if it is detecting operations correctly:
     REQUIRE_NOTHROW(c1.compile("['list'] == ['list']"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("['list']== ['list']"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("['list'] ==['list']"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("['list']==['list']"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("{a:'list'} == {a:'list'}"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("{a:'list'}== {a:'list'}"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("{a:'list'} =={a:'list'}"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 
     REQUIRE_NOTHROW(c1.compile("{a:'list'}=={a:'list'}"));
-    REQUIRE(c1.eval() == true);
+    REQUIRE(c1.evaluate() == true);
 }
 
 struct Test;
@@ -497,13 +497,13 @@ void tuple_usage_expressions()
     Calculator c;
 
     REQUIRE_NOTHROW(c.compile("'key':'value'"));
-    auto * t0 = static_cast<STuple *>(c.eval()->clone());
+    auto * t0 = static_cast<STuple *>(c.evaluate()->clone());
     REQUIRE(t0->m_type == STUPLE);
     REQUIRE(t0->list().size() == 2);
     delete t0;
 
     REQUIRE_NOTHROW(c.compile("1, 'key':'value', 3"));
-    auto * t1 = static_cast<Tuple *>(c.eval()->clone());
+    auto * t1 = static_cast<Tuple *>(c.evaluate()->clone());
     REQUIRE(t1->m_type == TUPLE);
     REQUIRE(t1->list().size() == 3);
 
@@ -515,7 +515,7 @@ void tuple_usage_expressions()
 
     GlobalScope global;
     REQUIRE_NOTHROW(c.compile("pow, None"));
-    REQUIRE(c.eval(global).str() == "([Function: pow], None)");
+    REQUIRE(c.evaluate(global).str() == "([Function: pow], None)");
 }
 
 //TEST_CASE("List and map constructors usage")
@@ -547,16 +547,16 @@ void map_operator_constructor_usage()
     TokenMap vars;
 
     REQUIRE_NOTHROW(c1.compile("{ 'a': 1 }.a"));
-    REQUIRE(c1.eval().asInt() == 1);
+    REQUIRE(c1.evaluate().asInt() == 1);
 
     REQUIRE_NOTHROW(c1.compile("M = {'a': 1}"));
-    REQUIRE(c1.eval().str() == "{ \"a\": 1 }");
+    REQUIRE(c1.evaluate().str() == "{ \"a\": 1 }");
 
     REQUIRE_NOTHROW(c1.compile("[ 1, 2 ].len()"));
-    REQUIRE(c1.eval().asInt() == 2);
+    REQUIRE(c1.evaluate().asInt() == 2);
 
     REQUIRE_NOTHROW(c1.compile("L = [1,2]"));
-    REQUIRE(c1.eval().str() == "[ 1, 2 ]");
+    REQUIRE(c1.evaluate().str() == "[ 1, 2 ]");
 }
 
 //TEST_CASE("Test list iterable behavior")
@@ -627,7 +627,7 @@ void function_usage_expression()
     REQUIRE(Calculator::calculate("cos(pi/2)", vars).asReal() == Approx(0));
     REQUIRE(Calculator::calculate("tan(pi)", vars).asReal() == Approx(0));
     Calculator c("a + sqrt(4) * 2");
-    REQUIRE(c.eval(vars).asReal() == 0);
+    REQUIRE(c.evaluate(vars).asReal() == 0);
     REQUIRE(Calculator::calculate("sqrt(4-a*3) * 2", vars).asReal() == 8);
     REQUIRE(Calculator::calculate("abs(42)", vars).asReal() == 42);
     REQUIRE(Calculator::calculate("abs(-42)", vars).asReal() == 42);
@@ -662,8 +662,8 @@ void function_usage_expression()
     vars["base"] = 2;
     c.compile("pow(base,2)", vars);
     vars["base"] = 3;
-    REQUIRE(c.eval().asReal() == 4);
-    REQUIRE(c.eval(vars).asReal() == 9);
+    REQUIRE(c.evaluate().asReal() == 4);
+    REQUIRE(c.evaluate(vars).asReal() == 9);
 }
 
 //TEST_CASE("Built-in extend() function")
@@ -729,7 +729,7 @@ void passing_keyword_arguments_to_functions()
     GlobalScope vars;
     Calculator c1;
     REQUIRE_NOTHROW(c1.compile("my_map = map('a':1,'b':2)", vars));
-    REQUIRE_NOTHROW(c1.eval(vars));
+    REQUIRE_NOTHROW(c1.evaluate(vars));
 
     TokenMap map;
     REQUIRE_NOTHROW(map = vars["my_map"].asMap());
@@ -739,12 +739,12 @@ void passing_keyword_arguments_to_functions()
 
     qreal result;
     REQUIRE_NOTHROW(c1.compile("result = pow(2, 'exp': 3)"));
-    REQUIRE_NOTHROW(c1.eval(vars));
+    REQUIRE_NOTHROW(c1.evaluate(vars));
     REQUIRE_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 
     REQUIRE_NOTHROW(c1.compile("result = pow('exp': 3, 'number': 2)"));
-    REQUIRE_NOTHROW(c1.eval(vars));
+    REQUIRE_NOTHROW(c1.evaluate(vars));
     REQUIRE_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 }
@@ -780,10 +780,10 @@ void type_specific_functions()
     REQUIRE(Calculator::calculate("s2.strip()", vars).asString() == "a b");
 
     Calculator c1("L = 'a, b'.split(', ')", vars);
-    REQUIRE(c1.eval(vars).str() == "[ \"a\", \"b\" ]");
+    REQUIRE(c1.evaluate(vars).str() == "[ \"a\", \"b\" ]");
 
     Calculator c2("L.join(', ')");
-    REQUIRE(c2.eval(vars).asString() == "a, b");
+    REQUIRE(c2.evaluate(vars).asString() == "a, b");
 }
 
 //TEST_CASE("Assignment expressions")
@@ -858,19 +858,19 @@ void scope_management()
     TokenMap child = parent.getChild();
 
     // Check scope extension:
-    REQUIRE(c.eval(child).asReal() == Approx(4));
+    REQUIRE(c.evaluate(child).asReal() == Approx(4));
 
     child["b2"] = 1.0;
-    REQUIRE(c.eval(child).asReal() == Approx(4.14));
+    REQUIRE(c.evaluate(child).asReal() == Approx(4.14));
 
     // Testing with 3 namespaces:
     TokenMap vmap = child.getChild();
     vmap["b1"] = -1.14;
-    REQUIRE(c.eval(vmap).asReal() == Approx(3.0));
+    REQUIRE(c.evaluate(vmap).asReal() == Approx(3.0));
 
     TokenMap copy = vmap;
     Calculator c2("pi+b1+b2", copy);
-    REQUIRE(c2.eval().asReal() == Approx(3.0));
+    REQUIRE(c2.evaluate().asReal() == Approx(3.0));
     REQUIRE(Calculator::calculate("pi+b1+b2", copy).asReal() == Approx(3.0));
 }
 
@@ -903,10 +903,10 @@ void parsing_as_slave_parser()
     REQUIRE_NOTHROW(c3.compile(code, vars, ";}\n", &parsedTo));
     REQUIRE(parsedTo == original_code.length() - 1);
 
-    REQUIRE_NOTHROW(c2.eval(vars));
+    REQUIRE_NOTHROW(c2.evaluate(vars));
     REQUIRE(vars["b"] == 2);
 
-    REQUIRE_NOTHROW(c3.eval(vars));
+    REQUIRE_NOTHROW(c3.evaluate(vars));
     REQUIRE(vars["c"] == 3);
 
     // Testing with delimiter between brackets of the expression:
@@ -946,9 +946,9 @@ struct myCalc : public Calculator
         return conf;
     }
 
-    const Config & config() const override
+    myCalc()
+        : Calculator(my_config())
     {
-        return my_config();
     }
 
     using Calculator::Calculator;
@@ -1127,27 +1127,27 @@ void adhoc_operations()
     REQUIRE_NOTHROW(c1.compile(exp));
     REQUIRE_NOTHROW(c2 = myCalc(exp, vars, nullptr, nullptr, myCalc::my_config()));
 
-    REQUIRE(c1.eval() == "Lets create adhoc operators!");
-    REQUIRE(c2.eval() == "Lets create adhoc operators!");
+    REQUIRE(c1.evaluate() == "Lets create adhoc operators!");
+    REQUIRE(c2.evaluate() == "Lets create adhoc operators!");
 
     // Testing opPrecedence:
     exp = "'Lets create %s operators%s' + 'adhoc' . '!'";
     REQUIRE_NOTHROW(c1.compile(exp));
-    REQUIRE(c1.eval() == "Lets create adhoc operators!");
+    REQUIRE(c1.evaluate() == "Lets create adhoc operators!");
 
     exp = "2 - 1 * 1";  // 2 - (1 * 1)
     REQUIRE_NOTHROW(c1.compile(exp));
-    REQUIRE(c1.eval() == 1);
+    REQUIRE(c1.evaluate() == 1);
 
     // Testing op associativity:
     exp = "2 - 1";
     REQUIRE_NOTHROW(c1.compile(exp));
-    REQUIRE(c1.eval() == 1);
+    REQUIRE(c1.evaluate() == 1);
 
     // Associativity right to left, i.e. 2 - (1 - 1)
     exp = "2 - 1 - 1";
     REQUIRE_NOTHROW(c1.compile(exp));
-    REQUIRE(c1.eval() == 2);
+    REQUIRE(c1.evaluate() == 2);
 }
 
 //TEST_CASE("Adhoc unary operations", "[operation][unary][config]")
@@ -1160,13 +1160,13 @@ void adhoc_unary_operations()
         // * * Using custom unary operators: * * //
 
         REQUIRE_NOTHROW(c1.compile("~10"));
-        REQUIRE(c1.eval().asInt() == ~10l);
+        REQUIRE(c1.evaluate().asInt() == ~10l);
 
         REQUIRE_NOTHROW(c1.compile("2 * ~10"));
-        REQUIRE(c1.eval().asInt() == 2 * ~10l);
+        REQUIRE(c1.evaluate().asInt() == 2 * ~10l);
 
         REQUIRE_NOTHROW(c1.compile("2 * ~10 * 3"));
-        REQUIRE(c1.eval().asInt() == 2 * ~(10l * 3));
+        REQUIRE(c1.evaluate().asInt() == 2 * ~(10l * 3));
 
         Calculator c2;
 
@@ -1174,24 +1174,24 @@ void adhoc_unary_operations()
 
         // Testing inside brackets:
         REQUIRE_NOTHROW(c2.compile("(2 * -10) * 3"));
-        REQUIRE(c2.eval() == 2 * -10 * 3);
+        REQUIRE(c2.evaluate() == 2 * -10 * 3);
 
         REQUIRE_NOTHROW(c2.compile("2 * (-10 * 3)"));
-        REQUIRE(c2.eval() == 2 * (-10 * 3));
+        REQUIRE(c2.evaluate() == 2 * (-10 * 3));
 
         REQUIRE_NOTHROW(c2.compile("2 * -(10 * 3)"));
-        REQUIRE(c2.eval() == 2 * -(10 * 3));
+        REQUIRE(c2.evaluate() == 2 * -(10 * 3));
 
         // Testing opPrecedence:
         REQUIRE_NOTHROW(c2.compile("-10 - 2"));  // (-10) - 2
-        REQUIRE(c2.eval() == -12);
+        REQUIRE(c2.evaluate() == -12);
 
         TokenMap vars;
         vars["scope_map"] = TokenMap();
         vars["scope_map"]["my_var"] = 10;
 
         REQUIRE_NOTHROW(c2.compile("- scope_map . my_var"));  // - (map . key2)
-        REQUIRE(c2.eval(vars) == -10);
+        REQUIRE(c2.evaluate(vars) == -10);
     }
 
     //SECTION("Right unary operators")
@@ -1200,33 +1200,33 @@ void adhoc_unary_operations()
 
         // Testing with lower op precedence:
         REQUIRE_NOTHROW(c1.compile("10~"));
-        REQUIRE(c1.eval().asInt() == ~10l);
+        REQUIRE(c1.evaluate().asInt() == ~10l);
 
         REQUIRE_NOTHROW(c1.compile("2 * 10~"));
-        REQUIRE(c1.eval().asInt() == ~(2 * 10l));
+        REQUIRE(c1.evaluate().asInt() == ~(2 * 10l));
 
         REQUIRE_NOTHROW(c1.compile("2 * 10~ * 3"));
-        REQUIRE(c1.eval().asInt() == ~(2 * 10l) * 3);
+        REQUIRE(c1.evaluate().asInt() == ~(2 * 10l) * 3);
 
         // Testing with higher op precedence:
         REQUIRE_NOTHROW(c1.compile("10!"));
-        REQUIRE(c1.eval().asInt() == ~10l);
+        REQUIRE(c1.evaluate().asInt() == ~10l);
 
         REQUIRE_NOTHROW(c1.compile("2 * 10!"));
-        REQUIRE(c1.eval().asInt() == 2 * ~10l);
+        REQUIRE(c1.evaluate().asInt() == 2 * ~10l);
 
         REQUIRE_NOTHROW(c1.compile("2 * 10! * 3"));
-        REQUIRE(c1.eval().asInt() == 2 * ~10l * 3);
+        REQUIRE(c1.evaluate().asInt() == 2 * ~10l * 3);
 
         // Testing inside brackets:
         REQUIRE_NOTHROW(c1.compile("2 * (10~ * 3)"));
-        REQUIRE(c1.eval().asInt() == 2 * ~10l * 3);
+        REQUIRE(c1.evaluate().asInt() == 2 * ~10l * 3);
 
         REQUIRE_NOTHROW(c1.compile("(2 * 10~) * 3"));
-        REQUIRE(c1.eval().asInt() == ~(2 * 10l) * 3);
+        REQUIRE(c1.evaluate().asInt() == ~(2 * 10l) * 3);
 
         REQUIRE_NOTHROW(c1.compile("(2 * 10)~ * 3"));
-        REQUIRE(c1.eval().asInt() == ~(2 * 10l) * 3);
+        REQUIRE(c1.evaluate().asInt() == ~(2 * 10l) * 3);
     }
 }
 
@@ -1238,22 +1238,22 @@ void adhoc_reference_operations()
 
     scope["a"] = 10;
     REQUIRE_NOTHROW(c1.compile("$$ a"));
-    REQUIRE(c1.eval(scope) == 11);
+    REQUIRE(c1.evaluate(scope) == 11);
     REQUIRE(scope["a"] == 11);
 
     scope["a"] = 10;
     REQUIRE_NOTHROW(c1.compile("a $$"));
-    REQUIRE(c1.eval(scope) == 10);
+    REQUIRE(c1.evaluate(scope) == 10);
     REQUIRE(scope["a"] == 11);
 
     scope["a"] = PackToken::None();
     REQUIRE_NOTHROW(c1.compile("a <= 20"));
-    REQUIRE(c1.eval(scope) == 20);
+    REQUIRE(c1.evaluate(scope) == 20);
     REQUIRE(scope["a"] == 20);
 
     scope["a"] = PackToken::None();
     REQUIRE_NOTHROW(c1.compile("30 => a"));
-    REQUIRE(c1.eval(scope) == 30);
+    REQUIRE(c1.evaluate(scope) == 30);
     REQUIRE(scope["a"] == 30);
 }
 
@@ -1263,18 +1263,18 @@ void adhoc_reservedWord_parsers()
     myCalc c1;
 
     REQUIRE_NOTHROW(c1.compile("2 / 2"));
-    REQUIRE(c1.eval().asInt() == 1);
+    REQUIRE(c1.evaluate().asInt() == 1);
 
     REQUIRE_NOTHROW(c1.compile("2 // 2"));
-    REQUIRE(c1.eval().asInt() == 0);
+    REQUIRE(c1.evaluate().asInt() == 0);
 
     REQUIRE_NOTHROW(c1.compile("2 /? 2"));
     //REQUIRE(c1.eval().asInt() == 4);
-    REQUIRE(c1.eval().isError());
+    REQUIRE(c1.evaluate().isError());
 
     REQUIRE_NOTHROW(c1.compile("2 /! 2"));
     //REQUIRE(c1.eval().asInt() == 4);
-    REQUIRE(c1.eval().isError());
+    REQUIRE(c1.evaluate().isError());
 }
 
 //TEST_CASE("Custom parser for operator ':'", "[parser]")
@@ -1284,11 +1284,11 @@ void custom_parser_for_operator()
     Calculator c2;
 
     REQUIRE_NOTHROW(c2.compile("{ a : 1 }"));
-    REQUIRE_NOTHROW(p1 = c2.eval());
+    REQUIRE_NOTHROW(p1 = c2.evaluate());
     REQUIRE(p1["a"] == 1);
 
     REQUIRE_NOTHROW(c2.compile("map(a : 1, b:2, c: \"c\")"));
-    REQUIRE_NOTHROW(p1 = c2.eval());
+    REQUIRE_NOTHROW(p1 = c2.evaluate());
     REQUIRE(p1["a"] == 1);
     REQUIRE(p1["b"] == 2);
     REQUIRE(p1["c"] == "c");
@@ -1341,17 +1341,17 @@ void exception_management()
     REQUIRE(!ecalc2.compile("      "));
 
     // Uninitialized calculators should eval to None:
-    REQUIRE(Calculator().eval().str() == "None");
+    REQUIRE(Calculator().evaluate().str() == "None");
 
-    REQUIRE(ecalc1.eval()->m_type == TokenType::ERROR);
-    REQUIRE_NOTHROW(ecalc1.eval(emap));
+    REQUIRE(ecalc1.evaluate()->m_type == TokenType::ERROR);
+    REQUIRE_NOTHROW(ecalc1.evaluate(emap));
 
     emap.erase("del");
-    REQUIRE(ecalc1.eval(emap)->m_type == TokenType::ERROR);
+    REQUIRE(ecalc1.evaluate(emap)->m_type == TokenType::ERROR);
 
     emap["del"] = 0;
     emap.erase("a");
-    REQUIRE_NOTHROW(ecalc1.eval(emap));
+    REQUIRE_NOTHROW(ecalc1.evaluate(emap));
 
     REQUIRE_NOTHROW(Calculator c5("10 + - - 10"));
     REQUIRE(Calculator("10 + +").compiled() == false);
@@ -1361,7 +1361,7 @@ void exception_management()
     TokenMap v1;
     v1["map"] = TokenMap();
     // Mismatched types, no supported operators.
-    REQUIRE(Calculator("map * 0").eval(v1)->m_type == TokenType::ERROR);
+    REQUIRE(Calculator("map * 0").evaluate(v1)->m_type == TokenType::ERROR);
 
     // This test attempts to cause a memory leak:
     // To see if it still works run with `make check`

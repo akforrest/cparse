@@ -24,6 +24,51 @@ using namespace cparse;
 
 Q_LOGGING_CATEGORY(cparseLog, "cparse")
 
+namespace
+{
+    using namespace cparse;
+
+    [[maybe_unused]] void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
+    {
+        qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
+    }
+
+    bool match_op_id(OpId id, OpId mask)
+    {
+        quint64 result = id & mask;
+        auto * val = reinterpret_cast<uint32_t *>(&result);
+        return (val[0] && val[1]);
+    }
+
+    Token * exec_operation(const PackToken & left, const PackToken & right,
+                           EvaluationData * data, const QString & OP_MASK)
+    {
+        auto it = data->opMap.find(OP_MASK);
+
+        if (it == data->opMap.end())
+        {
+            return nullptr;
+        }
+
+        for (const Operation & operation : it->second)
+        {
+            if (match_op_id(data->opID, operation.getMask()))
+            {
+                auto * execToken = operation.exec(left, right, data).release();
+
+                if (execToken->m_type == TokenType::REJECT)
+                {
+                    continue;
+                }
+
+                return execToken;
+            }
+        }
+
+        return nullptr;
+    }
+}
+
 void cparse::initialize()
 {
     builtin_functions::Startup();
@@ -32,7 +77,7 @@ void cparse::initialize()
     builtin_typeSpecificFunctions::Startup();
 }
 
-Token * cparse::resolve_reference(Token * b, TokenMap * scope)
+Token * cparse::resolveReferenceToken(Token * b, TokenMap * scope)
 {
     if (b->m_type & REF)
     {
@@ -51,7 +96,7 @@ void cparse::cleanStack(std::stack<Token *> st)
 {
     while (!st.empty())
     {
-        delete cparse::resolve_reference(st.top());
+        delete cparse::resolveReferenceToken(st.top());
         st.pop();
     }
 }
@@ -98,7 +143,7 @@ void RpnBuilder::clearRPN(TokenQueue * rpn)
 {
     while (!rpn->empty())
     {
-        delete cparse::resolve_reference(rpn->front());
+        delete cparse::resolveReferenceToken(rpn->front());
         rpn->pop();
     }
 }
@@ -134,7 +179,7 @@ void RpnBuilder::handleOpStack(const QString & op)
         while (!m_opStack.empty() &&
                m_opp.prec(op) >= m_opp.prec(m_opStack.top()))
         {
-            cur_op = normalize_op(m_opStack.top());
+            cur_op = normalizeOp(m_opStack.top());
             m_rpn.push(new TokenTyped<QString>(cur_op, OP));
             m_opStack.pop();
         }
@@ -144,7 +189,7 @@ void RpnBuilder::handleOpStack(const QString & op)
         while (!m_opStack.empty() &&
                m_opp.prec(op) > m_opp.prec(m_opStack.top()))
         {
-            cur_op = normalize_op(m_opStack.top());
+            cur_op = normalizeOp(m_opStack.top());
             m_rpn.push(new TokenTyped<QString>(cur_op, OP));
             m_opStack.pop();
         }
@@ -175,7 +220,7 @@ void RpnBuilder::handleRightUnary(const QString & unary_op)
     // Add the unary token:
     this->m_rpn.push(new TokenUnary());
     // Then add the current op directly into the rpn:
-    m_rpn.push(new TokenTyped<QString>(normalize_op(unary_op), OP));
+    m_rpn.push(new TokenTyped<QString>(normalizeOp(unary_op), OP));
 }
 
 // Work as a sub-parser:
@@ -535,11 +580,183 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, TokenMap vars,
     return data.rpn();
 }
 
+Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, const Config & config)
+{
+    if (rpn.empty())
+    {
+        return nullptr;
+    }
+
+    EvaluationData data(rpn, scope, config.opMap);
+
+    // Evaluate the expression in RPN form.
+    std::stack<Token *> evaluation;
+
+    while (!data.rpn.empty())
+    {
+        Token * base = data.rpn.front()->clone();
+        data.rpn.pop();
+
+        // Operator:
+        if (base->m_type == OP)
+        {
+            data.op = static_cast<TokenTyped<QString>*>(base)->m_val;
+            delete base;
+
+            /* * * * * Resolve operands Values and References: * * * * */
+
+            if (evaluation.size() < 2)
+            {
+                cleanStack(evaluation);
+                qWarning(cparseLog) << "Invalid equation.";
+                return nullptr;
+            }
+
+            Token * r_token = evaluation.top();
+            evaluation.pop();
+            Token * l_token = evaluation.top();
+            evaluation.pop();
+
+            if (r_token->m_type & REF)
+            {
+                data.right.reset(static_cast<RefToken *>(r_token));
+                r_token = data.right->resolve(&data.scope);
+            }
+            else if (r_token->m_type == VAR)
+            {
+                auto key = PackToken(static_cast<TokenTyped<QString>*>(r_token)->m_val);
+                data.right = std::make_unique<RefToken>(key);
+            }
+            else
+            {
+                data.right = std::make_unique<RefToken>();
+            }
+
+            if (l_token->m_type & REF)
+            {
+                data.left.reset(static_cast<RefToken *>(l_token));
+                l_token = data.left->resolve(&data.scope);
+            }
+            else if (l_token->m_type == VAR)
+            {
+                auto key = PackToken(static_cast<TokenTyped<QString>*>(l_token)->m_val);
+                data.left = std::make_unique<RefToken>(key);
+            }
+            else
+            {
+                data.left = std::make_unique<RefToken>();
+            }
+
+            if (l_token->m_type == FUNC && data.op == "()")
+            {
+                // * * * * * Resolve Function Calls: * * * * * //
+
+                auto * l_func = static_cast<Function *>(l_token);
+
+                // Collect the parameter tuple:
+                Tuple right;
+
+                if (r_token->m_type == TUPLE)
+                {
+                    right = *static_cast<Tuple *>(r_token);
+                }
+                else
+                {
+                    right = Tuple(r_token);
+                }
+
+                delete r_token;
+
+                PackToken _this;
+
+                if (data.left->m_origin->m_type != NONE)
+                {
+                    _this = data.left->m_origin;
+                }
+                else
+                {
+                    _this = data.scope;
+                }
+
+                // Execute the function:
+                PackToken ret = Function::call(_this, l_func, &right, data.scope);
+
+                if (ret->m_type == TokenType::ERROR)
+                {
+                    cleanStack(evaluation);
+                    delete l_func;
+                    return nullptr;
+                }
+
+                delete l_func;
+                evaluation.push(ret->clone());
+            }
+            else
+            {
+                // * * * * * Resolve All Other Operations: * * * * * //
+
+                data.opID = Operation::buildMask(l_token->m_type, r_token->m_type);
+                PackToken l_pack(l_token);
+                PackToken r_pack(r_token);
+
+                // Resolve the operation:
+                Token * result = exec_operation(l_pack, r_pack, &data, data.op);
+
+                if (!result)
+                {
+                    result = exec_operation(l_pack, r_pack, &data, "");
+                }
+
+                if (result)
+                {
+                    if (result->m_type == TokenType::ERROR)
+                    {
+                        cleanStack(evaluation);
+                        return nullptr;
+                    }
+
+                    evaluation.push(result);
+                }
+                else
+                {
+                    cleanStack(evaluation);
+                    log_undefined_operation(data.op, l_pack, r_pack);
+                    return nullptr;
+                }
+            }
+        }
+        else if (base->m_type == VAR)      // Variable
+        {
+            PackToken * value = nullptr;
+            QString key = static_cast<TokenTyped<QString>*>(base)->m_val;
+
+            value = data.scope.find(key);
+
+            if (value)
+            {
+                Token * copy = (*value)->clone();
+                evaluation.push(new RefToken(PackToken(key), copy));
+                delete base;
+            }
+            else
+            {
+                evaluation.push(base);
+            }
+        }
+        else
+        {
+            evaluation.push(base);
+        }
+    }
+
+    return evaluation.top();
+}
+
 void RpnBuilder::processOpStack()
 {
     while (!m_opStack.empty())
     {
-        QString cur_op = normalize_op(m_opStack.top());
+        QString cur_op = normalizeOp(m_opStack.top());
         m_rpn.push(new TokenTyped<QString>(cur_op, OP));
         m_opStack.pop();
     }
@@ -677,7 +894,7 @@ bool RpnBuilder::closeBracket(const QString & bracket)
 
     while (!m_opStack.empty() && m_opStack.top() != bracket)
     {
-        cur_op = normalize_op(m_opStack.top());
+        cur_op = normalizeOp(m_opStack.top());
         m_rpn.push(new TokenTyped<QString>(cur_op, OP));
         m_opStack.pop();
     }
@@ -725,7 +942,7 @@ void cleanStack(std::stack<Token *> st)
 {
     while (!st.empty())
     {
-        delete resolve_reference(st.top());
+        delete resolveReferenceToken(st.top());
         st.pop();
     }
 }
