@@ -82,11 +82,11 @@ namespace cparse
             // Implement the Iterable Interface:
             struct MapIterator : public TokenIterator
             {
-                const TokenMapData::MapType & map;
-                TokenMapData::MapType::const_iterator it = map.begin();
+                const TokenMap::MapType & map;
+                TokenMap::MapType::const_iterator it = map.begin();
                 PackToken last;
 
-                MapIterator(const TokenMapData::MapType & map) : map(map) {}
+                MapIterator(const TokenMap::MapType & map) : map(map) {}
 
                 PackToken * next() override;
                 void reset() override;
@@ -136,7 +136,7 @@ namespace cparse
         this->m_type = MAP;
     }
 
-    inline TokenMapData::MapType & TokenMap::map() const
+    inline TokenMap::MapType & TokenMap::map() const
     {
         return m_ref->m_map;
     }

@@ -432,8 +432,8 @@ QString PackToken::str(uint32_t nest) const
 QString PackToken::str(const Token * base, uint32_t nest)
 {
     QString ss;
-    TokenMapData::MapType * tmap;
-    TokenMapData::MapType::iterator m_it;
+    TokenMap::MapType * tmap;
+    TokenMap::MapType::iterator m_it;
 
     TokenList::ListType * tlist;
     TokenList::ListType::iterator l_it;
