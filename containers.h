@@ -14,31 +14,6 @@
 
 namespace cparse
 {
-    template <typename T>
-    class Container
-    {
-        public:
-
-            Container(): m_ref(std::make_shared<T>()) {}
-            Container(const T & t): m_ref(std::make_shared<T>(t)) {}
-
-        public:
-
-            operator T * () const
-            {
-                return m_ref.get();
-            }
-
-            friend bool operator==(Container<T> first, Container<T> second)
-            {
-                return first.m_ref == second.m_ref;
-            }
-
-        protected:
-
-            std::shared_ptr<T> m_ref;
-    };
-
     class TokenIterator;
 
     class IterableToken : public Token
@@ -83,9 +58,11 @@ namespace cparse
         std::unique_ptr<TokenMap> m_tokenMap;
     };
 
-    class TokenMap : public Container<TokenMapData>, public IterableToken
+    class TokenMap : public IterableToken
     {
         public:
+
+            using MapType = TokenMapData::MapType;
 
             // Static factories:
             static TokenMap empty;
@@ -99,7 +76,7 @@ namespace cparse
             bool operator==(const TokenMap & other) const;
 
             // Attribute getters for the `MapData_t` content:
-            TokenMapData::MapType & map() const;
+            MapType & map() const;
             TokenMap * parent() const;
 
             // Implement the Iterable Interface:
@@ -138,16 +115,23 @@ namespace cparse
             const PackToken & operator[](const QString & str) const;
 
             void erase(const QString & key);
+
+        private:
+
+            std::shared_ptr<TokenMapData> m_ref;
     };
 
     inline TokenMap::TokenMap(TokenMap * parent)
-        : Container(parent), IterableToken(MAP)
+        : IterableToken(MAP),
+          m_ref(std::make_shared<TokenMapData>(parent))
     {
         // For the Token super class
         this->m_type = MAP;
     }
 
-    inline TokenMap::TokenMap(const TokenMap & other) : Container(other), IterableToken(other)
+    inline TokenMap::TokenMap(const TokenMap & other)
+        : IterableToken(other),
+          m_ref(other.m_ref)
     {
         this->m_type = MAP;
     }
@@ -172,14 +156,14 @@ namespace cparse
         return new TokenMap(*this);
     }
 
-    class TokenList : public Container<std::vector<PackToken>>, public IterableToken
+    class TokenList : public IterableToken
     {
-
         public:
 
             using ListType = std::vector<PackToken>;
 
             TokenList()
+                : m_ref(std::make_shared<std::vector<PackToken>>())
             {
                 this->m_type = LIST;
             }
@@ -230,6 +214,10 @@ namespace cparse
             {
                 return new TokenList(*this);
             }
+
+        private:
+
+            std::shared_ptr<std::vector<PackToken> > m_ref;
     };
 
     class Tuple : public TokenList

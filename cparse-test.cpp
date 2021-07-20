@@ -263,97 +263,6 @@ void operator_parsing()
     REQUIRE(c1.evaluate() == true);
 }
 
-struct Test;
-struct TestData_t
-{
-    Test * t = nullptr;
-    TestData_t() {}
-    TestData_t(const Test & t);
-    ~TestData_t();
-};
-
-struct Test : public Container<TestData_t>
-{
-    Test() {}
-    void set(Test t)
-    {
-        m_ref->t = new Test(std::move(t));
-    }
-    Test * get()
-    {
-        return m_ref->t;
-    }
-
-    std::weak_ptr<TestData_t> wkref()
-    {
-        return m_ref;
-    }
-    void reset()
-    {
-        m_ref.reset();
-    }
-};
-
-TestData_t::TestData_t(const Test & t) : t(new Test(t)) {}
-TestData_t::~TestData_t()
-{
-    delete t;
-}
-
-//TEST_CASE("Reference counting system", "[rc]")
-void reference_counting()
-{
-    //SECTION("Testing constructors:")
-    {
-        Test t1;
-        Test t2;
-        t2.set(t1);
-
-        REQUIRE(t1.get() == nullptr);
-        REQUIRE(*(t2.get()) == t1);
-    }
-    // t1 and t2 should have been deleted by now.
-    // If no exceptions were thrown it is working.
-
-    //SECTION("Testing cycles")
-    {
-        std::weak_ptr<TestData_t> r1, r2, r3, r4;
-        {
-            Test t1;
-            Test t2;
-            t2.set(t1);
-
-            // Build a cycle:
-            REQUIRE_NOTHROW(t1.set(t2));
-
-            // Add some non cyclic references:
-            Test t3;
-            Test t4;
-            t4.set(t2);
-
-            // Save some weak refs for later tests:
-            r1 = t1.wkref();
-            r2 = t2.wkref();
-            r3 = t3.wkref();
-            r4 = t4.wkref();
-        }
-
-        REQUIRE(r1.expired() == false);
-        REQUIRE(r2.expired() == false);
-        REQUIRE(r3.expired() == true);
-        REQUIRE(r4.expired() == true);
-        REQUIRE_NOTHROW(r1.lock()->t->reset());
-        REQUIRE(r1.expired() == true);
-        REQUIRE(r2.expired() == true);
-    }
-    // t1, t2, t3 and t4 should have been deleted by now.
-    // If no exceptions were thrown it is working.
-
-    // Note:
-    // There should be no memory leaks and no "still reachable"
-    // blocks when testing with valgrind.
-}
-
 //TEST_CASE("String operations")
 void string_operations()
 {
@@ -1388,7 +1297,6 @@ void cparse::runTests()
     boolean_expressions();
     string_expressions();
     operator_parsing();
-    reference_counting();
     string_operations();
     map_expressions();
     prototypical_inheritance();
