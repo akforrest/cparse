@@ -46,7 +46,7 @@ Calculator::Calculator(const Calculator & calc)
 
     m_config = calc.m_config;
     m_compiled = calc.m_compiled;
-    m_vars = calc.m_vars;
+    m_compileTimeVars = calc.m_compileTimeVars;
 }
 
 Calculator::Calculator(Calculator && calc) noexcept
@@ -54,7 +54,7 @@ Calculator::Calculator(Calculator && calc) noexcept
 {
     std::swap(calc.m_rpn, m_rpn);
     std::swap(calc.m_config, m_config);
-    std::swap(calc.m_vars, m_vars);
+    std::swap(calc.m_compileTimeVars, m_compileTimeVars);
 }
 
 Calculator::Calculator(const Config & config)
@@ -68,7 +68,7 @@ Calculator::Calculator(const QString & expr, const TokenMap & vars,
 {
     m_rpn = RpnBuilder::toRPN(expr, vars, delim, rest, config);
     m_compiled = !m_rpn.empty();
-    m_vars = TokenMap::detachedCopy(vars);
+    m_compileTimeVars = TokenMap::detachedCopy(vars);
 }
 
 Calculator::~Calculator()
@@ -94,7 +94,7 @@ Calculator & Calculator::operator=(const Calculator & calc)
 
     m_config = calc.m_config;
     m_compiled = calc.m_compiled;
-    m_vars = calc.m_vars;
+    m_compileTimeVars = calc.m_compileTimeVars;
 
     return *this;
 }
@@ -102,7 +102,7 @@ Calculator & Calculator::operator=(const Calculator & calc)
 Calculator & Calculator::operator=(Calculator && calc) noexcept
 {
     std::swap(calc.m_rpn, m_rpn);
-    std::swap(calc.m_vars, m_vars);
+    std::swap(calc.m_compileTimeVars, m_compileTimeVars);
     std::swap(calc.m_compiled, m_compiled);
     std::swap(calc.m_config, m_config);
     return *this;
@@ -141,13 +141,13 @@ bool Calculator::compile(const QString & expr, const TokenMap & vars,
     RpnBuilder::clearRPN(&this->m_rpn);
     m_rpn = RpnBuilder::toRPN(expr, vars, delim, rest, m_config);
     m_compiled = !m_rpn.empty();
-    m_vars = TokenMap::detachedCopy(vars);
+    m_compileTimeVars = TokenMap::detachedCopy(vars);
     return this->compiled();
 }
 
 PackToken Calculator::evaluate() const
 {
-    return this->evaluate(m_vars);
+    return this->evaluate(m_compileTimeVars);
 }
 
 PackToken Calculator::evaluate(const TokenMap & vars) const

@@ -51,7 +51,7 @@ namespace cparse
         private:
 
             Config m_config;
-            TokenMap m_vars;
+            TokenMap m_compileTimeVars;
             TokenQueue m_rpn;
             bool m_compiled = false;
     };
