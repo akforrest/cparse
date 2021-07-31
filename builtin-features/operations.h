@@ -177,12 +177,10 @@ namespace cparse::builtin_operations
 
         if (op == "-")
         {
-            if (!right.canConvertToReal())
+            if (right.canConvertToReal())
             {
-                return false;
+                return -right.asReal();
             }
-
-            return -right.asReal();
         }
 
         log_undefined_operation(data->op, left, right);
