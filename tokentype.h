@@ -19,6 +19,9 @@ namespace cparse
         // Note: The mask system accepts at most 26 (32-6) different base types.
         STR, FUNC,
 
+        USER     = 0x0A,
+        USER_END = 0x1F,
+
         // Numerals:
         NUM = 0x20,   // Everything with the bit 0x20 set is a number.
         REAL = 0x21,  // == 0x20 + 0x1 => Real numbers.
