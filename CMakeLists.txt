@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.21)
 include_guard(DIRECTORY)
 
 message(STATUS "adding library: cparse")
-set(FYRE_ENABLE_CPARSE TRUE PARENT_SCOPE)
+set(CPARSE_ENABLED TRUE PARENT_SCOPE)
 
-project(cparse VERSION ${FYRE_APP_VERSION} LANGUAGES CXX)
+set(CPARSE_VERSION "1.0.0" CACHE STRING "library version")
+option(CPARSE_ENABLE_TESTING "Build unit tests" OFF)
+
+project(cparse VERSION ${CPARSE_VERSION} LANGUAGES CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS
     Core
@@ -23,7 +26,6 @@ list(APPEND ${PROJECT_NAME}_SOURCES
     builtin-features/reservedwords.h
     builtin-features/typespecificfunctions.h
     include/cparse/config.h
-    include/cparse/cparse-test.h
     include/cparse/cparse.h
     include/cparse/operation.h
     include/cparse/packtoken.h
@@ -37,18 +39,13 @@ list(APPEND ${PROJECT_NAME}_SOURCES
     include/cparse/tokentype.h
 )
 
-## TEST BITS
-#CONFIG += cparseUnitTests
-#cparseUnitTests {
-#    CONFIG += no_testcase_installs
-#    QT += testlib
-#    SOURCES += $$PWD/cparse-test.cpp
-#    HEADERS += $$PWD/cparse-test.h
-#}
+if(CPARSE_ENABLE_TESTING)
+    add_subdirectory(test)
+endif()
 
 qt_add_library(${PROJECT_NAME} STATIC ${${PROJECT_NAME}_SOURCES})
 
-target_compile_definitions(${PROJECT_NAME} INTERFACE FYRE_ENABLE_CPARSE)
+target_compile_definitions(${PROJECT_NAME} INTERFACE CPARSE_ENABLE_CPARSE)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_include_directories(${PROJECT_NAME} PRIVATE include/cparse)
 target_link_libraries(${PROJECT_NAME} PUBLIC Qt6::Core)

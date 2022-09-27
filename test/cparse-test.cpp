@@ -2,24 +2,75 @@
 #include <memory>
 #include <string>
 
+#include <QObject>
 #include <QtTest>
 #include <utility>
 
-#include "cparse.h"
-#include "cparse-test.h"
-#include "rpnbuilder.h"
-#include "calculator.h"
-#include "reftoken.h"
+#include "cparse/cparse.h"
+#include "cparse/rpnbuilder.h"
+#include "cparse/calculator.h"
+#include "cparse/reftoken.h"
+
+class CParseTest : public QObject
+{
+        Q_OBJECT
+
+    public:
+
+        CParseTest();
+
+    private slots:
+
+        void initTestCase();
+
+        void calculate_with_no_config();
+        void static_calculate_calculate();
+        void calculate_compile();
+        void numerical_expressions();
+        void boolean_expressions();
+        void string_expressions();
+        void operator_parsing();
+        void string_operations();
+        void map_expressions();
+        void prototypical_inheritance();
+        void map_usage_expressions();
+        void list_usage_expressions();
+        void tuple_usage_expressions();
+        void list_map_constructor_usage();
+        void map_operator_constructor_usage();
+        void test_list_iterable_behavior();
+        void test_map_iterable_behavior();
+        void function_usage_expression();
+        void built_in_extend_function();
+        void built_in_str_function();
+        void multiple_argument_functions();
+        void passing_keyword_arguments_to_functions();
+        void default_functions();
+        void type_specific_functions();
+        void assignment_expressions();
+        void assignment_expressions_on_maps();
+        void scope_management();
+        void parsing_as_slave_parser();
+        void operation_id_function();
+        void adhoc_operations();
+        void adhoc_unary_operations();
+        void adhoc_reference_operations();
+        void adhoc_reservedWord_parsers();
+        void custom_parser_for_operator();
+        void resource_management();
+        void adhoc_operator_parser();
+        void exception_management();
+};
 
 using namespace cparse;
 
 TokenMap vars, emap, tmap, key3;
 
 #define REQUIRE( statement ) \
-   do {\
-    if (!QTest::qVerify(static_cast<bool>(statement), #statement, "", __FILE__, __LINE__))\
+do {\
+        if (!QTest::qVerify(static_cast<bool>(statement), #statement, "", __FILE__, __LINE__))\
         Q_ASSERT(false);\
-    } while (false)
+} while (false)
 
 // Build a TokenMap which is a child of default_global()
 struct GlobalScope : public TokenMap
@@ -27,29 +78,6 @@ struct GlobalScope : public TokenMap
     GlobalScope() : TokenMap(&Config::defaultConfig().scope) {}
 };
 
-void PREPARE_ENVIRONMENT()
-{
-    vars["pi"] = 3.14; // the real number is too precise for our tests
-    vars["b1"] = 0.0;
-    vars["b2"] = 0.86;
-    vars["_b"] = 0;
-    vars["str1"] = "foo";
-    vars["str2"] = "bar";
-    vars["str3"] = "foobar";
-    vars["str4"] = "foo10";
-    vars["str5"] = "10bar";
-
-    vars["map"] = tmap;
-    tmap["key"] = "mapped value";
-    tmap["key1"] = "second mapped value";
-    tmap["key2"] = 10;
-    tmap["key3"] = key3;
-    tmap["key3"]["map1"] = "inception1";
-    tmap["key3"]["map2"] = "inception2";
-
-    emap["a"] = 10;
-    emap["b"] = 20;
-}
 class Approx
 {
     public:
@@ -126,16 +154,23 @@ class Approx
 
 #define REQUIRE_FALSE( expr ) QVERIFY(!(expr))
 #define REQUIRE_NOTHROW( expr ) \
-    do { \
-        try { \
+do { \
+    try { \
             expr; \
-        }  catch (...) { \
+    }  catch (...) { \
             QVERIFY(false); \
-        } \
-    } while (false)
+    } \
+} while (false)
 
+Config basicConfig()
+{
+    Config conf;
+    conf.registerBuiltInDefinitions(Config::BuiltInDefinition::NumberOperators |
+                                    Config::BuiltInDefinition::NumberConstants);
+    return conf;
+}
 
-void calculate_with_no_config()
+void CParseTest::calculate_with_no_config()
 {
     Calculator c1((Config()));
     REQUIRE(c1.evaluate("-pi + 1", vars).isError());
@@ -146,10 +181,7 @@ void calculate_with_no_config()
     REQUIRE(c1.evaluate("1+_b+(-2*3)", vars).isError());
     REQUIRE(c1.evaluate("4 * -3", vars).isError());
 
-    Config conf;
-    conf.registerBuiltInDefinitions(Config::BuiltInDefinition::NumberOperators |
-                                    Config::BuiltInDefinition::NumberConstants);
-    c1.setConfig(conf);
+    c1.setConfig(basicConfig());
     // now math should work
 
     REQUIRE(c1.evaluate("-pi + 1", vars).asReal() == Approx(-2.14));
@@ -169,7 +201,7 @@ void calculate_with_no_config()
 }
 
 //TEST_CASE("Static calculate::calculate()", "[calculate]")
-void static_calculate_calculate()
+void CParseTest::static_calculate_calculate()
 {
     REQUIRE(Calculator::calculate("-pi + 1", vars).asReal() == Approx(-2.14));
     REQUIRE(Calculator::calculate("-pi + 1 * b1", vars).asReal() == Approx(-3.14));
@@ -184,7 +216,7 @@ void static_calculate_calculate()
 }
 
 //TEST_CASE("calculate::compile() and calculate::eval()", "[compile]")
-void calculate_compile()
+void CParseTest::calculate_compile()
 {
     Calculator c1;
     c1.compile("-pi+1", vars);
@@ -199,7 +231,7 @@ void calculate_compile()
 }
 
 //TEST_CASE("Numerical expressions")
-void numerical_expressions()
+void CParseTest::numerical_expressions()
 {
     REQUIRE(Calculator::calculate("123").asInt() == 123);
     REQUIRE(Calculator::calculate("0x1f").asInt() == 31);
@@ -219,7 +251,7 @@ void numerical_expressions()
 }
 
 //TEST_CASE("Boolean expressions")
-void boolean_expressions()
+void CParseTest::boolean_expressions()
 {
     REQUIRE_FALSE(Calculator::calculate("3 < 3").asBool());
     REQUIRE(Calculator::calculate("3 <= 3").asBool());
@@ -245,7 +277,7 @@ void boolean_expressions()
 }
 
 //TEST_CASE("String expressions")
-void string_expressions()
+void CParseTest::string_expressions()
 {
     REQUIRE(Calculator::calculate("str1 + str2 == str3", vars).asBool());
     REQUIRE_FALSE(Calculator::calculate("str1 + str2 != str3", vars).asBool());
@@ -272,7 +304,7 @@ void string_expressions()
 }
 
 //TEST_CASE("Testing operator parsing mechanism", "[operator]")
-void operator_parsing()
+void CParseTest::operator_parsing()
 {
     Calculator c1;
 
@@ -303,7 +335,7 @@ void operator_parsing()
 }
 
 //TEST_CASE("String operations")
-void string_operations()
+void CParseTest::string_operations()
 {
     // String formatting:
     REQUIRE(Calculator::calculate("'the test %s working' % 'is'").asString() == "the test is working");
@@ -324,7 +356,7 @@ void string_operations()
 }
 
 //TEST_CASE("Map access expressions", "[map][map-access]")
-void map_expressions()
+void CParseTest::map_expressions()
 {
     REQUIRE(Calculator::calculate("map[\"key\"]", vars).asString() == "mapped value");
     REQUIRE(Calculator::calculate("map[\"key\"+1]", vars).asString() ==
@@ -338,7 +370,7 @@ void map_expressions()
 }
 
 //TEST_CASE("Prototypical inheritance tests")
-void prototypical_inheritance()
+void CParseTest::prototypical_inheritance()
 {
     TokenMap vars;
     TokenMap parent;
@@ -368,7 +400,7 @@ void prototypical_inheritance()
 }
 
 //TEST_CASE("Map usage expressions", "[map][map-usage]")
-void map_usage_expressions()
+void CParseTest::map_usage_expressions()
 {
     TokenMap vars(&Config::defaultConfig().scope);
     vars["my_map"] = TokenMap(&Config::defaultConfig().scope);
@@ -389,7 +421,7 @@ void map_usage_expressions()
 }
 
 //TEST_CASE("List usage expressions", "[list]")
-void list_usage_expressions()
+void CParseTest::list_usage_expressions()
 {
     TokenMap vars;
     vars["my_list"] = TokenList();
@@ -424,6 +456,7 @@ void list_usage_expressions()
     REQUIRE_NOTHROW(Calculator::calculate("concat[-2] = 10", vars));
     REQUIRE_NOTHROW(Calculator::calculate("concat[2] = '3'", vars));
     REQUIRE_NOTHROW(Calculator::calculate("concat[3] = None", vars));
+    auto concatStr = vars["concat"].str();
     REQUIRE(vars["concat"].str() == "[ 1, 2, \"3\", None, 10, 6 ]");
 
     // List index out of range:
@@ -445,7 +478,7 @@ void list_usage_expressions()
 }
 
 //TEST_CASE("Tuple usage expressions", "[tuple]")
-void tuple_usage_expressions()
+void CParseTest::tuple_usage_expressions()
 {
     TokenMap vars;
     Calculator c;
@@ -473,7 +506,7 @@ void tuple_usage_expressions()
 }
 
 //TEST_CASE("List and map constructors usage")
-void list_map_constructor_usage()
+void CParseTest::list_map_constructor_usage()
 {
     GlobalScope vars;
     REQUIRE_NOTHROW(Calculator::calculate("my_map = map()", vars));
@@ -495,7 +528,7 @@ void list_map_constructor_usage()
 }
 
 //TEST_CASE("Map '{}' and list '[]' constructor usage")
-void map_operator_constructor_usage()
+void CParseTest::map_operator_constructor_usage()
 {
     Calculator c1;
     TokenMap vars;
@@ -514,7 +547,7 @@ void map_operator_constructor_usage()
 }
 
 //TEST_CASE("Test list iterable behavior")
-void test_list_iterable_behavior()
+void CParseTest::test_list_iterable_behavior()
 {
     GlobalScope vars;
     REQUIRE_NOTHROW(Calculator::calculate("L = list(1,2,3)", vars));
@@ -540,7 +573,7 @@ void test_list_iterable_behavior()
 }
 
 //TEST_CASE("Test map iterable behavior")
-void test_map_iterable_behavior()
+void CParseTest::test_map_iterable_behavior()
 {
     GlobalScope vars;
     vars["M"] = TokenMap();
@@ -570,7 +603,7 @@ void test_map_iterable_behavior()
 }
 
 //TEST_CASE("Function usage expressions")
-void function_usage_expression()
+void CParseTest::function_usage_expression()
 {
     GlobalScope vars;
     vars["pi"] = 3.141592653589793;
@@ -621,7 +654,7 @@ void function_usage_expression()
 }
 
 //TEST_CASE("Built-in extend() function")
-void built_in_extend_function()
+void CParseTest::built_in_extend_function()
 {
     GlobalScope vars;
 
@@ -648,7 +681,7 @@ PackToken map_str(const TokenMap &)
 }
 
 //TEST_CASE("Built-in str() function")
-void built_in_str_function()
+void CParseTest::built_in_str_function()
 {
     REQUIRE(Calculator::calculate(" str(None) ").asString() == "None");
     REQUIRE(Calculator::calculate(" str(10) ").asString() == "10");
@@ -670,7 +703,7 @@ void built_in_str_function()
 }
 
 //TEST_CASE("Multiple argument functions")
-void multiple_argument_functions()
+void CParseTest::multiple_argument_functions()
 {
     GlobalScope vars;
     REQUIRE_NOTHROW(Calculator::calculate("total = sum(1,2,3,4)", vars));
@@ -678,7 +711,7 @@ void multiple_argument_functions()
 }
 
 //TEST_CASE("Passing keyword arguments to functions", "[function][kwargs]")
-void passing_keyword_arguments_to_functions()
+void CParseTest::passing_keyword_arguments_to_functions()
 {
     GlobalScope vars;
     Calculator c1;
@@ -704,7 +737,7 @@ void passing_keyword_arguments_to_functions()
 }
 
 //TEST_CASE("Default functions")
-void default_functions()
+void CParseTest::default_functions()
 {
     REQUIRE(Calculator::calculate("type(None)").asString() == "none");
     REQUIRE(Calculator::calculate("type(10.0)").asString() == "real");
@@ -722,7 +755,7 @@ void default_functions()
 }
 
 //TEST_CASE("Type specific functions")
-void type_specific_functions()
+void CParseTest::type_specific_functions()
 {
     TokenMap vars;
     vars["s1"] = "String";
@@ -741,7 +774,7 @@ void type_specific_functions()
 }
 
 //TEST_CASE("Assignment expressions")
-void assignment_expressions()
+void CParseTest::assignment_expressions()
 {
     GlobalScope vars;
     Calculator::calculate("assignment = 10", vars);
@@ -776,7 +809,7 @@ void assignment_expressions()
 }
 
 //TEST_CASE("Assignment expressions on maps")
-void assignment_expressions_on_maps()
+void CParseTest::assignment_expressions_on_maps()
 {
     vars["m"] = TokenMap();
     Calculator::calculate("m['asn'] = 10", vars);
@@ -801,7 +834,7 @@ void assignment_expressions_on_maps()
 }
 
 //TEST_CASE("Scope management")
-void scope_management()
+void CParseTest::scope_management()
 {
     Calculator c("pi+b1+b2");
     TokenMap parent;
@@ -832,7 +865,7 @@ void scope_management()
 // a pointer to the place it has stopped parsing
 // and accept a list of delimiters that should make it stop.
 //TEST_CASE("Parsing as slave parser")
-void parsing_as_slave_parser()
+void CParseTest::parsing_as_slave_parser()
 {
     QString original_code = "a=1; b=2\n c=a+b }";
     QString code = original_code;
@@ -868,7 +901,7 @@ void parsing_as_slave_parser()
     QString multiline = "a = (\n  1,\n  2,\n  3\n)\n print(a);";
 
     code = if_code;
-    REQUIRE_NOTHROW(Calculator::calculate(if_code + 4, vars, ")", &parsedTo));
+    REQUIRE_NOTHROW(Calculator::calculate(if_code/* + 4*/, vars, ")", &parsedTo));
     REQUIRE(code.at(parsedTo + 4) == if_code[18]);
 
     code = multiline;
@@ -881,7 +914,7 @@ void parsing_as_slave_parser()
 
 // This function is for internal use only:
 //TEST_CASE("operation_id() function", "[op_id]")
-void operation_id_function()
+void CParseTest::operation_id_function()
 {
     //#define opIdTest(t1, t2) Operation::buildMask(t1, t2)
     //    REQUIRE((opIdTest(NONE, NONE)) == 0x0000000100000001);
@@ -1074,7 +1107,7 @@ struct myCalcStartup
 /* * * * * Testing adhoc operations * * * * */
 
 //TEST_CASE("Adhoc operations", "[operation][config]")
-void adhoc_operations()
+void CParseTest::adhoc_operations()
 {
     myCalc c1, c2;
     const char * exp = "'Lets create %s operators%s' + ('adhoc' . '!' )";
@@ -1105,7 +1138,7 @@ void adhoc_operations()
 }
 
 //TEST_CASE("Adhoc unary operations", "[operation][unary][config]")
-void adhoc_unary_operations()
+void CParseTest::adhoc_unary_operations()
 {
     //SECTION("Left Unary Operators")
     {
@@ -1185,7 +1218,7 @@ void adhoc_unary_operations()
 }
 
 //TEST_CASE("Adhoc reference operations", "[operation][reference][config]")
-void adhoc_reference_operations()
+void CParseTest::adhoc_reference_operations()
 {
     myCalc c1;
     TokenMap scope;
@@ -1212,7 +1245,7 @@ void adhoc_reference_operations()
 }
 
 //TEST_CASE("Adhoc reservedWord parsers", "[parser][config]")
-void adhoc_reservedWord_parsers()
+void CParseTest::adhoc_reservedWord_parsers()
 {
     myCalc c1;
 
@@ -1232,7 +1265,7 @@ void adhoc_reservedWord_parsers()
 }
 
 //TEST_CASE("Custom parser for operator ':'", "[parser]")
-void custom_parser_for_operator()
+void CParseTest::custom_parser_for_operator()
 {
     PackToken p1;
     Calculator c2;
@@ -1249,7 +1282,7 @@ void custom_parser_for_operator()
 }
 
 //TEST_CASE("Resource management")
-void resource_management()
+void CParseTest::resource_management()
 {
     Calculator C1, C2("1 + 1");
 
@@ -1265,7 +1298,7 @@ void resource_management()
 /* * * * * Testing adhoc operator parser * * * * */
 
 //TEST_CASE("Adhoc operator parser", "[operator]")
-void adhoc_operator_parser()
+void CParseTest::adhoc_operator_parser()
 {
     // Testing comments:
     REQUIRE(Calculator::calculate("1 + 1 # And a comment!").asInt() == 2);
@@ -1285,7 +1318,7 @@ void adhoc_operator_parser()
 }
 
 //TEST_CASE("Exception management")
-void exception_management()
+void CParseTest::exception_management()
 {
     Calculator ecalc1, ecalc2;
     ecalc1.compile("a+b+del", emap);
@@ -1326,57 +1359,38 @@ void exception_management()
     REQUIRE(!ecalc2.compile("map(['hello']]"));
 }
 
-void testLogHandler(QtMsgType , const QMessageLogContext &, const QString &)
+CParseTest::CParseTest()
 {
-
+    cparse::initialize();
 }
 
-void cparse::runTests()
+void CParseTest::initTestCase()
 {
-    qInfo() << "running cparse tests, logs are disabled";
+    vars = {};
+    tmap = {};
+    emap = {};
 
-    auto mainHandler = qInstallMessageHandler(testLogHandler);
+    vars["pi"] = 3.14; // the real number is too precise for our tests
+    vars["b1"] = 0.0;
+    vars["b2"] = 0.86;
+    vars["_b"] = 0;
+    vars["str1"] = "foo";
+    vars["str2"] = "bar";
+    vars["str3"] = "foobar";
+    vars["str4"] = "foo10";
+    vars["str5"] = "10bar";
 
-    PREPARE_ENVIRONMENT();
-    calculate_with_no_config();
-    static_calculate_calculate();
-    calculate_compile();
-    numerical_expressions();
-    boolean_expressions();
-    string_expressions();
-    operator_parsing();
-    string_operations();
-    map_expressions();
-    prototypical_inheritance();
-    map_usage_expressions();
-    list_usage_expressions();
-    tuple_usage_expressions();
-    list_map_constructor_usage();
-    map_operator_constructor_usage();
-    test_list_iterable_behavior();
-    test_map_iterable_behavior();
-    function_usage_expression();
-    built_in_extend_function();
-    built_in_str_function();
-    multiple_argument_functions();
-    passing_keyword_arguments_to_functions();
-    default_functions();
-    type_specific_functions();
-    assignment_expressions();
-    assignment_expressions_on_maps();
-    scope_management();
-    parsing_as_slave_parser();
-    operation_id_function();
-    adhoc_operations();
-    adhoc_unary_operations();
-    adhoc_reference_operations();
-    adhoc_reservedWord_parsers();
-    custom_parser_for_operator();
-    resource_management();
-    adhoc_operator_parser();
-    exception_management();
+    vars["map"] = tmap;
+    tmap["key"] = "mapped value";
+    tmap["key1"] = "second mapped value";
+    tmap["key2"] = 10;
+    tmap["key3"] = key3;
+    tmap["key3"]["map1"] = "inception1";
+    tmap["key3"]["map2"] = "inception2";
 
-    qInstallMessageHandler(mainHandler);
-
-    qInfo() << "cparse tests finished";
+    emap["a"] = 10;
+    emap["b"] = 20;
 }
+
+QTEST_MAIN(CParseTest)
+#include "cparse-test.moc"
