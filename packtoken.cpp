@@ -492,7 +492,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
             return static_cast<const TokenTyped<QString>*>(base)->m_val;
 
         case VAR:
-            return "Var(" + static_cast<const TokenTyped<QString>*>(base)->m_val + ")";
+            return static_cast<const TokenTyped<QString>*>(base)->m_val;
 
         case REAL:
             ss += QString::number(static_cast<const TokenTyped<qreal>*>(base)->m_val);
@@ -507,7 +507,7 @@ QString PackToken::str(const Token * base, uint32_t nest)
             return boolval ? "true" : "false";
 
         case STR:
-            return "Str(\"" + static_cast<const TokenTyped<QString>*>(base)->m_val + "\")";
+            return "\"" + static_cast<const TokenTyped<QString>*>(base)->m_val + "\"";
 
         case FUNC:
             func = static_cast<const Function *>(base);
