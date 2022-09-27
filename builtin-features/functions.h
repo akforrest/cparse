@@ -3,10 +3,10 @@
 
 #include <cmath>
 
-#include "../cparse.h"
-#include "../calculator.h"
-#include "../containers.h"
-#include "../functions.h"
+#include "cparse/cparse.h"
+#include "cparse/calculator.h"
+#include "cparse/containers.h"
+#include "cparse/functions.h"
 
 namespace cparse::builtin_functions
 {

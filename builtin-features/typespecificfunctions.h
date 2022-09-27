@@ -1,10 +1,9 @@
 #ifndef CPARSE_BUILTIN_TYPESPECIFICFUNCTIONS_H
 #define CPARSE_BUILTIN_TYPESPECIFICFUNCTIONS_H
 
-#include "../calculator.h"
-#include "../containers.h"
-#include "../functions.h"
-#include "../rpnbuilder.h"
+#include "cparse/calculator.h"
+#include "cparse/containers.h"
+#include "cparse/functions.h"
 
 namespace cparse::builtin_typeSpecificFunctions
 {

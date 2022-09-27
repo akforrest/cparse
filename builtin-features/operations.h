@@ -3,12 +3,11 @@
 
 #include <cmath>
 
-#include "../cparse.h"
-#include "../calculator.h"
-#include "../containers.h"
-#include "../functions.h"
-#include "../rpnbuilder.h"
-#include "../reftoken.h"
+#include "cparse/cparse.h"
+#include "cparse/calculator.h"
+#include "cparse/containers.h"
+#include "cparse/functions.h"
+#include "cparse/reftoken.h"
 
 namespace cparse::builtin_operations
 {
@@ -427,7 +426,7 @@ namespace cparse::builtin_operations
                 index += left.size();
             }
 
-            if (index < 0 || static_cast<size_t>(index) >= left.size())
+            if (index < 0 || static_cast<qsizetype>(index) >= left.size())
             {
                 qWarning(cparseLog) << "String index out of range";
                 return PackToken::Error();

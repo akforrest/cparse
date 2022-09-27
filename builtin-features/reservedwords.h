@@ -1,11 +1,11 @@
 #ifndef CPARSE_BUILTIN_RESERVEDWORDS_H
 #define CPARSE_BUILTIN_RESERVEDWORDS_H
 
-#include "../cparse.h"
-#include "../calculator.h"
-#include "../containers.h"
-#include "../functions.h"
-#include "../rpnbuilder.h"
+#include "cparse/cparse.h"
+#include "cparse/calculator.h"
+#include "cparse/containers.h"
+#include "cparse/functions.h"
+#include "cparse/rpnbuilder.h"
 
 namespace cparse::builtin_reservedWords
 {
