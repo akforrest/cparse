@@ -3,10 +3,10 @@
 #include "containers.h"
 #include "config.h"
 
-using cparse::Token;
 using cparse::RefToken;
+using cparse::Token;
 
-RefToken::RefToken(PackToken k, Token * v, PackToken m)
+RefToken::RefToken(PackToken k, Token *v, PackToken m)
     : Token(TokenType(v->m_type | TokenType::REF)),
       m_key(std::forward<PackToken>(k)),
       m_origin(std::forward<PackToken>(m)),
@@ -22,34 +22,30 @@ RefToken::RefToken(PackToken k, PackToken v, PackToken m)
 {
 }
 
-Token * RefToken::resolve(const TokenMap * localScope, const TokenMap * configScope) const
+Token *RefToken::resolve(const TokenMap *localScope, const TokenMap *configScope) const
 {
-    const PackToken * pack = nullptr;
+    const PackToken *pack = nullptr;
 
     // Local variables have no origin == NONE,
     // thus, require a localScope to be resolved:
-    if (m_origin->m_type == NONE && localScope)
-    {
+    if (m_origin->m_type == NONE && localScope) {
         // Get the most recent value from the local scope:
         pack = localScope->find(m_key.asString());
     }
 
-    if (pack == nullptr && configScope && m_origin->m_type == NONE)
-    {
+    if (pack == nullptr && configScope && m_origin->m_type == NONE) {
         // Get the most recent value from the local scope:
         pack = configScope->find(m_key.asString());
     }
 
-    if (pack == nullptr && m_origin->m_type != NONE && m_key.canConvertToString())
-    {
-        const auto & typeMap = ObjectTypeRegistry::typeMap(m_origin->m_type);
+    if (pack == nullptr && m_origin->m_type != NONE && m_key.canConvertToString()) {
+        const auto &typeMap = ObjectTypeRegistry::typeMap(m_origin->m_type);
         pack = typeMap.find(m_key.asString());
     }
 
-    Token * result = nullptr;
+    Token *result = nullptr;
 
-    if (pack != nullptr)
-    {
+    if (pack != nullptr) {
         result = (*pack)->clone();
     }
 
@@ -57,7 +53,7 @@ Token * RefToken::resolve(const TokenMap * localScope, const TokenMap * configSc
     return result ? result : m_originalValue->clone();
 }
 
-Token * RefToken::clone() const
+Token *RefToken::clone() const
 {
     return new RefToken(*this);
 }

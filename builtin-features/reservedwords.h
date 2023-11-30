@@ -7,33 +7,31 @@
 #include "cparse/functions.h"
 #include "cparse/rpnbuilder.h"
 
-namespace cparse::builtin_reservedWords
-{
+namespace cparse::builtin_reservedWords {
     using namespace cparse;
     // Literal Tokens: True, False and None:
     PackToken trueToken = PackToken(true);
     PackToken falseToken = PackToken(false);
     PackToken noneToken = PackToken::None();
 
-    bool True(const char *, const char **, RpnBuilder * data)
+    bool True(const char *, const char **, RpnBuilder *data)
     {
         return data->handleToken(trueToken->clone());
     }
 
-    bool False(const char *, const char **, RpnBuilder * data)
+    bool False(const char *, const char **, RpnBuilder *data)
     {
         return data->handleToken(falseToken->clone());
     }
 
-    bool None(const char *, const char **, RpnBuilder * data)
+    bool None(const char *, const char **, RpnBuilder *data)
     {
         return data->handleToken(noneToken->clone());
     }
 
-    bool LineComment(const char * expr, const char ** rest, RpnBuilder *)
+    bool LineComment(const char *expr, const char **rest, RpnBuilder *)
     {
-        while (*expr && *expr != '\n')
-        {
+        while (*expr && *expr != '\n') {
             ++expr;
         }
 
@@ -41,15 +39,13 @@ namespace cparse::builtin_reservedWords
         return true;
     }
 
-    bool SlashStarComment(const char * expr, const char ** rest, RpnBuilder *)
+    bool SlashStarComment(const char *expr, const char **rest, RpnBuilder *)
     {
-        while (*expr && !(expr[0] == '*' && expr[1] == '/'))
-        {
+        while (*expr && !(expr[0] == '*' && expr[1] == '/')) {
             ++expr;
         }
 
-        if (*expr == '\0')
-        {
+        if (*expr == '\0') {
             qWarning(cparseLog) << "Unexpected end of file after '/*' comment!";
             return false;
         }
@@ -60,29 +56,26 @@ namespace cparse::builtin_reservedWords
         return true;
     }
 
-    bool KeywordOperator(const char *, const char **, RpnBuilder * data)
+    bool KeywordOperator(const char *, const char **, RpnBuilder *data)
     {
         // Convert any STuple like `a : 10` to `'a': 10`:
-        if (data->lastTokenType() == VAR)
-        {
+        if (data->lastTokenType() == VAR) {
             data->setLastTokenType(STR);
         }
 
         return data->handleOp(":");
     }
 
-    bool DotOperator(const char * expr, const char ** rest, RpnBuilder * data)
+    bool DotOperator(const char *expr, const char **rest, RpnBuilder *data)
     {
         data->handleOp(".");
 
-        while (*expr && isspace(*expr))
-        {
+        while (*expr && isspace(*expr)) {
             ++expr;
         }
 
         // If it did not find a valid variable name after it:
-        if (!RpnBuilder::isVariableNameChar(*expr))
-        {
+        if (!RpnBuilder::isVariableNameChar(*expr)) {
             qWarning(cparseLog) << "Expected variable name after '.' operator";
             return false;
         }
@@ -94,18 +87,16 @@ namespace cparse::builtin_reservedWords
 
     struct Register
     {
-        Register(Config & config, Config::BuiltInDefinition def)
+        Register(Config &config, Config::BuiltInDefinition def)
         {
-            ParserMap & parser = config.parserMap;
+            ParserMap &parser = config.parserMap;
 
-            if (def & Config::BuiltInDefinition::LogicalOperators)
-            {
+            if (def & Config::BuiltInDefinition::LogicalOperators) {
                 parser.add("True", &True);
                 parser.add("False", &False);
             }
 
-            if (def & Config::BuiltInDefinition::SystemFunctions)
-            {
+            if (def & Config::BuiltInDefinition::SystemFunctions) {
                 parser.add("None", &None);
                 parser.add("#", &LineComment);
                 parser.add("//", &LineComment);
@@ -116,13 +107,12 @@ namespace cparse::builtin_reservedWords
                 parser.add('.', &DotOperator);
             }
 
-            if (def & Config::BuiltInDefinition::NumberConstants)
-            {
+            if (def & Config::BuiltInDefinition::NumberConstants) {
                 config.scope["pi"] = std::atan(1) * 4;
             }
         }
     };
 
-}  // namespace builtin_reservedWords
+} // namespace builtin_reservedWords
 
 #endif // CPARSE_BUILTIN_RESERVEDWORDS_H

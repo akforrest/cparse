@@ -9,33 +9,29 @@
 #include "cparse/functions.h"
 #include "cparse/reftoken.h"
 
-namespace cparse::builtin_operations
-{
-    [[maybe_unused]] static void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
+namespace cparse::builtin_operations {
+    [[maybe_unused]] static void log_undefined_operation(const QString &op, const PackToken &left, const PackToken &right)
     {
-        qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
+        qWarning(cparseLog) << "Unexpected operation with operator '" << op
+                            << "' and operands: " << left.str() << " and " << right.str();
     }
 
     using namespace cparse;
     // Assignment operator "="
-    PackToken Assign(const PackToken &, const PackToken & right, EvaluationData * data)
+    PackToken Assign(const PackToken &, const PackToken &right, EvaluationData *data)
     {
-        const PackToken & key = data->left->m_key;
-        const PackToken & origin = data->left->m_origin;
+        const PackToken &key = data->left->m_key;
+        const PackToken &origin = data->left->m_origin;
 
         // If the left operand has a name:
-        if (key->m_type == TokenType::STR)
-        {
+        if (key->m_type == TokenType::STR) {
             auto var_name = key.asString();
 
             // If it is an attribute of a TokenMap:
-            if (origin->m_type == TokenType::MAP)
-            {
-                TokenMap & map = origin.asMap();
+            if (origin->m_type == TokenType::MAP) {
+                TokenMap &map = origin.asMap();
                 map[var_name] = right;
-            }
-            else
-            {
+            } else {
                 // store the override of this in the local scope map
                 // this will override vars passed in for the evaluation but
                 // not the config level scope
@@ -43,23 +39,16 @@ namespace cparse::builtin_operations
             }
 
             // If the left operand has an index number:
-        }
-        else if (key->m_type & TokenType::NUM)
-        {
-            if (origin->m_type == TokenType::LIST)
-            {
-                TokenList & list = origin.asList();
+        } else if (key->m_type & TokenType::NUM) {
+            if (origin->m_type == TokenType::LIST) {
+                TokenList &list = origin.asList();
                 size_t index = key.asInt();
                 list[index] = right;
-            }
-            else
-            {
+            } else {
                 qWarning(cparseLog) << "left operand of assignment is not a list";
                 return PackToken::Error();
             }
-        }
-        else
-        {
+        } else {
             log_undefined_operation(data->op, key, right);
             return PackToken::Error();
         }
@@ -67,10 +56,9 @@ namespace cparse::builtin_operations
         return right;
     }
 
-    PackToken Comma(const PackToken & left, const PackToken & right, EvaluationData *)
+    PackToken Comma(const PackToken &left, const PackToken &right, EvaluationData *)
     {
-        if (left->m_type == TokenType::TUPLE)
-        {
+        if (left->m_type == TokenType::TUPLE) {
             left.asTuple().list().push_back(right);
             return left;
         }
@@ -78,10 +66,9 @@ namespace cparse::builtin_operations
         return Tuple(left, right);
     }
 
-    PackToken Colon(const PackToken & left, const PackToken & right, EvaluationData *)
+    PackToken Colon(const PackToken &left, const PackToken &right, EvaluationData *)
     {
-        if (left->m_type == TokenType::STUPLE)
-        {
+        if (left->m_type == TokenType::STUPLE) {
             left.asSTuple().list().push_back(right);
             return left;
         }
@@ -89,10 +76,9 @@ namespace cparse::builtin_operations
         return STuple(left, right);
     }
 
-    PackToken Equal(const PackToken & left, const PackToken & right, EvaluationData * data)
+    PackToken Equal(const PackToken &left, const PackToken &right, EvaluationData *data)
     {
-        if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
-        {
+        if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR) {
             log_undefined_operation(data->op, left, right);
             return PackToken::Error();
         }
@@ -100,10 +86,9 @@ namespace cparse::builtin_operations
         return PackToken(left == right);
     }
 
-    PackToken Different(const PackToken & left, const PackToken & right, EvaluationData * data)
+    PackToken Different(const PackToken &left, const PackToken &right, EvaluationData *data)
     {
-        if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR)
-        {
+        if (left->m_type == TokenType::VAR || right->m_type == TokenType::VAR) {
             log_undefined_operation(data->op, left, right);
             return PackToken::Error();
         }
@@ -111,24 +96,20 @@ namespace cparse::builtin_operations
         return PackToken(left != right);
     }
 
-    PackToken MapIndex(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken MapIndex(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToMap() ||
-            !p_right.canConvertToString())
-        {
+        if (!p_left.canConvertToMap() || !p_right.canConvertToString()) {
             return PackToken::Reject();
         }
 
-        TokenMap & left = p_left.asMap();
+        TokenMap &left = p_left.asMap();
         auto right = p_right.asString();
-        const auto & op = data->op;
+        const auto &op = data->op;
 
-        if (op == "[]" || op == ".")
-        {
-            PackToken * p_value = left.find(right);
+        if (op == "[]" || op == ".") {
+            PackToken *p_value = left.find(right);
 
-            if (p_value)
-            {
+            if (p_value) {
                 return RefToken(right, *p_value, left);
             }
 
@@ -140,21 +121,18 @@ namespace cparse::builtin_operations
     }
 
     // Resolve build-in operations for non-map types, e.g.: 'str'.len()
-    PackToken TypeSpecificFunction(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken TypeSpecificFunction(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (p_left->m_type == TokenType::MAP ||
-            !p_right.canConvertToString())
-        {
+        if (p_left->m_type == TokenType::MAP || !p_right.canConvertToString()) {
             return PackToken::Reject();
         }
 
-        TokenMap & attr_map = ObjectTypeRegistry::typeMap(p_left->m_type);
+        TokenMap &attr_map = ObjectTypeRegistry::typeMap(p_left->m_type);
         QString key = p_right.asString();
 
-        PackToken * attr = attr_map.find(key);
+        PackToken *attr = attr_map.find(key);
 
-        if (attr)
-        {
+        if (attr) {
             // Note: If attr is a function, it will receive have
             // scope["this"] == source, so it can make changes on this object.
             // Or just read some information for example: its length.
@@ -165,19 +143,16 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken UnaryNumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
+    PackToken UnaryNumeralOperation(const PackToken &left, const PackToken &right, EvaluationData *data)
     {
-        const QString & op = data->op;
+        const QString &op = data->op;
 
-        if (op == "+")
-        {
+        if (op == "+") {
             return right;
         }
 
-        if (op == "-")
-        {
-            if (right.canConvertToReal())
-            {
+        if (op == "-") {
+            if (right.canConvertToReal()) {
                 return -right.asReal();
             }
         }
@@ -186,11 +161,9 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken NumeralOperation(const PackToken & left, const PackToken & right, EvaluationData * data)
+    PackToken NumeralOperation(const PackToken &left, const PackToken &right, EvaluationData *data)
     {
-        if (!left.canConvertToReal() ||
-            !right.canConvertToReal())
-        {
+        if (!left.canConvertToReal() || !right.canConvertToReal()) {
             return PackToken::Error();
         }
 
@@ -204,75 +177,61 @@ namespace cparse::builtin_operations
         right_d = right.asReal();
         right_i = right.asInt();
 
-        const QString & op = data->op;
+        const QString &op = data->op;
 
-        if (op == "+")
-        {
+        if (op == "+") {
             return left_d + right_d;
         }
 
-        if (op == "*")
-        {
+        if (op == "*") {
             return left_d * right_d;
         }
 
-        if (op == "-")
-        {
+        if (op == "-") {
             return left_d - right_d;
         }
 
-        if (op == "/")
-        {
+        if (op == "/") {
             return left_d / right_d;
         }
 
-        if (op == "<<")
-        {
+        if (op == "<<") {
             return left_i << right_i;
         }
 
-        if (op == "**")
-        {
+        if (op == "**") {
             return pow(left_d, right_d);
         }
 
-        if (op == ">>")
-        {
+        if (op == ">>") {
             return left_i >> right_i;
         }
 
-        if (op == "%")
-        {
+        if (op == "%") {
             return left_i % right_i;
         }
 
-        if (op == "<")
-        {
+        if (op == "<") {
             return left_d < right_d;
         }
 
-        if (op == ">")
-        {
+        if (op == ">") {
             return left_d > right_d;
         }
 
-        if (op == "<=")
-        {
+        if (op == "<=") {
             return left_d <= right_d;
         }
 
-        if (op == ">=")
-        {
+        if (op == ">=") {
             return left_d >= right_d;
         }
 
-        if (op == "&&")
-        {
+        if (op == "&&") {
             return left_i && right_i;
         }
 
-        if (op == "||")
-        {
+        if (op == "||") {
             return left_i || right_i;
         }
 
@@ -280,37 +239,30 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken FormatOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData *)
+    PackToken FormatOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *)
     {
-        if (!p_left.canConvertToString())
-        {
+        if (!p_left.canConvertToString()) {
             return PackToken::Error();
         }
 
         QString s_left = p_left.asString();
         auto stdstring = s_left.toStdString();
-        const char * left = stdstring.c_str();
+        const char *left = stdstring.c_str();
 
         Tuple right;
 
-        if (p_right->m_type == TokenType::TUPLE)
-        {
+        if (p_right->m_type == TokenType::TUPLE) {
             right = p_right.asTuple();
-        }
-        else
-        {
+        } else {
             right = Tuple(p_right);
         }
 
         QString result;
 
-        for (const PackToken & token : right.list())
-        {
+        for (const PackToken &token : right.list()) {
             // Find the next occurrence of "%s"
-            while (*left && (*left != '%' || left[1] != 's'))
-            {
-                if (*left == '\\' && left[1] == '%')
-                {
+            while (*left && (*left != '%' || left[1] != 's')) {
+                if (*left == '\\' && left[1] == '%') {
                     ++left;
                 }
 
@@ -318,8 +270,7 @@ namespace cparse::builtin_operations
                 ++left;
             }
 
-            if (*left == '\0')
-            {
+            if (*left == '\0') {
                 qWarning(cparseLog) << "Not all arguments converted during string formatting";
                 return PackToken::Error();
             }
@@ -327,23 +278,18 @@ namespace cparse::builtin_operations
             left += 2;
 
             // Replace it by the token string representation:
-            if (token->m_type == TokenType::STR)
-            {
+            if (token->m_type == TokenType::STR) {
                 // Avoid using PackToken::str for strings
                 // or it will enclose it quotes `"str"`
                 result += token.asString();
-            }
-            else
-            {
+            } else {
                 result += token.str();
             }
         }
 
         // Find the next occurrence of "%s" if exists:
-        while (*left && (*left != '%' || left[1] != 's'))
-        {
-            if (*left == '\\' && left[1] == '%')
-            {
+        while (*left && (*left != '%' || left[1] != 's')) {
+            if (*left == '\\' && left[1] == '%') {
                 ++left;
             }
 
@@ -351,8 +297,7 @@ namespace cparse::builtin_operations
             ++left;
         }
 
-        if (*left != '\0')
-        {
+        if (*left != '\0') {
             qWarning(cparseLog) << "Not enough arguments for format string";
             return PackToken::Error();
         }
@@ -360,30 +305,25 @@ namespace cparse::builtin_operations
         return result;
     }
 
-    PackToken StringOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken StringOnStringOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToString() ||
-            !p_right.canConvertToString())
-        {
+        if (!p_left.canConvertToString() || !p_right.canConvertToString()) {
             return PackToken::Error();
         }
 
-        const QString & left = p_left.asString();
-        const QString & right = p_right.asString();
-        const QString & op = data->op;
+        const QString &left = p_left.asString();
+        const QString &right = p_right.asString();
+        const QString &op = data->op;
 
-        if (op == "+")
-        {
+        if (op == "+") {
             return left + right;
         }
 
-        if (op == "==")
-        {
+        if (op == "==") {
             return (left == right);
         }
 
-        if (op == "!=")
-        {
+        if (op == "!=") {
             return (left != right);
         }
 
@@ -391,43 +331,36 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken StringOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken StringOnNumberOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToString())
-        {
+        if (!p_left.canConvertToString()) {
             return PackToken::Error();
         }
 
-        const QString & left = p_left.asString();
-        const QString & op = data->op;
+        const QString &left = p_left.asString();
+        const QString &op = data->op;
 
-        if (op == "+")
-        {
-            if (!p_right.canConvertToReal())
-            {
+        if (op == "+") {
+            if (!p_right.canConvertToReal()) {
                 return PackToken::Error();
             }
 
             return left + QString::number(p_right.asReal());
         }
 
-        if (op == "[]")
-        {
-            if (!p_right.canConvertToInt())
-            {
+        if (op == "[]") {
+            if (!p_right.canConvertToInt()) {
                 return PackToken::Error();
             }
 
             auto index = p_right.asInt();
 
-            if (index < 0)
-            {
+            if (index < 0) {
                 // Reverse index, i.e. list[-1] = list[list.size()-1]
                 index += left.size();
             }
 
-            if (index < 0 || static_cast<qsizetype>(index) >= left.size())
-            {
+            if (index < 0 || static_cast<qsizetype>(index) >= left.size()) {
                 qWarning(cparseLog) << "String index out of range";
                 return PackToken::Error();
             }
@@ -439,18 +372,16 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken NumberOnStringOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken NumberOnStringOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToReal() || !p_right.canConvertToString())
-        {
+        if (!p_left.canConvertToReal() || !p_right.canConvertToString()) {
             return PackToken::Error();
         }
 
         auto left = p_left.asReal();
         auto right = p_right.asString();
 
-        if (data->op == "+")
-        {
+        if (data->op == "+") {
             return QString::number(left) + right;
         }
 
@@ -458,32 +389,28 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken ListOnNumberOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken ListOnNumberOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToList())
-        {
+        if (!p_left.canConvertToList()) {
             return PackToken::Error();
         }
 
         TokenList left = p_left.asList();
 
-        if (data->op == "[]" && p_right.canConvertToInt())
-        {
+        if (data->op == "[]" && p_right.canConvertToInt()) {
             auto index = p_right.asInt();
 
-            if (index < 0)
-            {
+            if (index < 0) {
                 // Reverse index, i.e. list[-1] = list[list.size()-1]
                 index += left.list().size();
             }
 
-            if (index < 0 || static_cast<size_t>(index) >= left.list().size())
-            {
+            if (index < 0 || static_cast<size_t>(index) >= left.list().size()) {
                 qWarning(cparseLog) << "List index out of range!";
                 return PackToken::Error();
             }
 
-            PackToken & value = left.list()[index];
+            PackToken &value = left.list()[index];
 
             return RefToken(index, value, p_left);
         }
@@ -492,25 +419,22 @@ namespace cparse::builtin_operations
         return PackToken::Error();
     }
 
-    PackToken ListOnListOperation(const PackToken & p_left, const PackToken & p_right, EvaluationData * data)
+    PackToken ListOnListOperation(const PackToken &p_left, const PackToken &p_right, EvaluationData *data)
     {
-        if (!p_left.canConvertToList() || !p_right.canConvertToList())
-        {
+        if (!p_left.canConvertToList() || !p_right.canConvertToList()) {
             return PackToken::Error();
         }
 
-        TokenList & left = p_left.asList();
-        TokenList & right = p_right.asList();
+        TokenList &left = p_left.asList();
+        TokenList &right = p_right.asList();
 
-        if (data->op == "+")
-        {
+        if (data->op == "+") {
             // Deep copy the first list:
             TokenList result;
             result.list() = left.list();
 
             // Insert items from the right list into the left:
-            for (PackToken & p : right.list())
-            {
+            for (PackToken &p : right.list()) {
                 result.list().push_back(p);
             }
 
@@ -523,37 +447,34 @@ namespace cparse::builtin_operations
 
     struct Register
     {
-        Register(Config & config, Config::BuiltInDefinition def)
+        Register(Config &config, Config::BuiltInDefinition def)
         {
             // Create the operator precedence map based on C++ default
             // precedence order as described on cppreference website:
             // http://en.cppreference.com/w/cpp/language/operator_precedence
-            OpPrecedenceMap & opp = config.opPrecedence;
+            OpPrecedenceMap &opp = config.opPrecedence;
 
             using BiType = Config::BuiltInDefinition;
 
-            if (def & BiType::ObjectOperators)
-            {
+            if (def & BiType::ObjectOperators) {
                 opp.add("[]", 2);
                 opp.add("()", 2);
                 opp.add(".", 2);
             }
 
-            if (def & BiType::NumberOperators)
-            {
+            if (def & BiType::NumberOperators) {
                 opp.add("**", 3);
-                opp.add("*",  5);
+                opp.add("*", 5);
                 opp.add("/", 5);
                 opp.add("%", 5);
-                opp.add("+",  6);
+                opp.add("+", 6);
                 opp.add("-", 6);
                 opp.add("<<", 7);
                 opp.add(">>", 7);
             }
 
-            if (def & BiType::LogicalOperators)
-            {
-                opp.add("<",  8);
+            if (def & BiType::LogicalOperators) {
+                opp.add("<", 8);
                 opp.add("<=", 8);
                 opp.add(">=", 8);
                 opp.add(">", 8);
@@ -563,45 +484,39 @@ namespace cparse::builtin_operations
                 opp.add("||", 14);
             }
 
-            if (def & BiType::ObjectOperators)
-            {
+            if (def & BiType::ObjectOperators) {
                 opp.add("=", 15);
                 opp.add(":", 15);
                 opp.add(",", 16);
             }
 
-            if (def & BiType::NumberOperators)
-            {
+            if (def & BiType::NumberOperators) {
                 // Add unary operators:
-                opp.addUnary("+",  3);
+                opp.addUnary("+", 3);
                 opp.addUnary("-", 3);
             }
 
             // Link operations to respective operators:
-            OpMap & opMap = config.opMap;
+            OpMap &opMap = config.opMap;
 
-            if (def & BiType::ObjectOperators)
-            {
+            if (def & BiType::ObjectOperators) {
                 opMap.add({ANY_TYPE, "=", ANY_TYPE}, &Assign);
                 opMap.add({ANY_TYPE, ",", ANY_TYPE}, &Comma);
                 opMap.add({ANY_TYPE, ":", ANY_TYPE}, &Colon);
             }
 
-            if (def & BiType::LogicalOperators)
-            {
+            if (def & BiType::LogicalOperators) {
                 opMap.add({ANY_TYPE, "==", ANY_TYPE}, &Equal);
                 opMap.add({ANY_TYPE, "!=", ANY_TYPE}, &Different);
             }
 
-            if (def & BiType::ObjectOperators)
-            {
+            if (def & BiType::ObjectOperators) {
                 opMap.add({MAP, "[]", STR}, &MapIndex);
                 opMap.add({ANY_TYPE, ".", STR}, &TypeSpecificFunction);
                 opMap.add({MAP, ".", STR}, &MapIndex);
             }
 
-            if (def & BiType::SystemFunctions)
-            {
+            if (def & BiType::SystemFunctions) {
                 opMap.add({STR, "%", ANY_TYPE}, &FormatOperation);
             }
 
@@ -609,29 +524,24 @@ namespace cparse::builtin_operations
 
             // Note: The order is important:
 
-            if (def & BiType::NumberOperators)
-            {
+            if (def & BiType::NumberOperators) {
                 opMap.add({NUM, ANY_OP, NUM}, &NumeralOperation);
                 opMap.add({UNARY, ANY_OP, NUM}, &UnaryNumeralOperation);
             }
 
-            if (def & BiType::NumberConstants ||
-                def & BiType::SystemFunctions ||
-                def & BiType::ObjectOperators)
-            {
+            if (def & BiType::NumberConstants || def & BiType::SystemFunctions || def & BiType::ObjectOperators) {
                 opMap.add({STR, ANY_OP, NUM}, &StringOnNumberOperation);
                 opMap.add({NUM, ANY_OP, STR}, &NumberOnStringOperation);
                 opMap.add({STR, ANY_OP, STR}, &StringOnStringOperation);
             }
 
-            if (def & BiType::SystemFunctions || def & BiType::ObjectOperators)
-            {
+            if (def & BiType::SystemFunctions || def & BiType::ObjectOperators) {
                 opMap.add({LIST, ANY_OP, NUM}, &ListOnNumberOperation);
                 opMap.add({LIST, ANY_OP, LIST}, &ListOnListOperation);
             }
         }
     };
 
-}  // namespace builtin_operations
+} // namespace builtin_operations
 
 #endif // CPARSE_BUILTIN_OPERATIONS_H

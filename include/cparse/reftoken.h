@@ -4,26 +4,23 @@
 #include "token.h"
 #include "packtoken.h"
 
-namespace cparse
-{
+namespace cparse {
     // The RefToken keeps information about the context in which a variable was
     // originally evaluated and allow a final value to be correctly resolved afterwards.
     class RefToken : public Token
     {
-        public:
+    public:
+        RefToken(PackToken key, Token *value, PackToken origin = PackToken::None());
+        RefToken(PackToken key = PackToken::None(), PackToken value = PackToken::None(), PackToken origin = PackToken::None());
 
-            RefToken(PackToken key, Token * value, PackToken origin = PackToken::None());
-            RefToken(PackToken key = PackToken::None(), PackToken value = PackToken::None(), PackToken origin = PackToken::None());
+        Token *resolve(const TokenMap *localScope, const TokenMap *configScope) const;
+        Token *clone() const override;
 
-            Token * resolve(const TokenMap * localScope, const TokenMap * configScope) const;
-            Token * clone() const override;
+        const PackToken m_key;
+        const PackToken m_origin;
 
-            const PackToken m_key;
-            const PackToken m_origin;
-
-        private:
-
-            const PackToken m_originalValue;
+    private:
+        const PackToken m_originalValue;
     };
 
 }

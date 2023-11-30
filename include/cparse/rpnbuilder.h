@@ -23,71 +23,65 @@
 #include "containers.h"
 #include "functions.h"
 
-namespace cparse
-{
+namespace cparse {
     // This struct was created to expose internal toRPN() variables
     // to custom parsers, in special to the rWordParser_t functions.
     class RpnBuilder
     {
-        public:
+    public:
+        static TokenQueue toRPN(const QString &expr, const TokenMap &vars, const QString &delim, int *rest, const Config &config);
 
-            static TokenQueue toRPN(const QString & expr, const TokenMap & vars,
-                                    const QString & delim, int * rest,
-                                    const Config & config);
+        static Token *calculate(const TokenQueue &RPN, const TokenMap &scope, const Config &config = Config::defaultConfig());
 
-            static Token * calculate(const TokenQueue & RPN, const TokenMap & scope,
-                                     const Config & config = Config::defaultConfig());
+        static void clearRPN(TokenQueue *rpn);
 
-            static void clearRPN(TokenQueue * rpn);
+        // Check if a character is the first character of a variable:
+        static bool isVariableNameChar(char c);
+        static QString parseVariableName(const char *expr, const char **rest, bool allowDigits);
 
-            // Check if a character is the first character of a variable:
-            static bool isVariableNameChar(char c);
-            static QString parseVariableName(const char * expr, const char ** rest, bool allowDigits);
+        bool handleOp(const QString &op);
+        bool handleToken(Token *token);
+        bool openBracket(const QString &bracket);
+        bool closeBracket(const QString &bracket);
 
-            bool handleOp(const QString & op);
-            bool handleToken(Token * token);
-            bool openBracket(const QString & bracket);
-            bool closeBracket(const QString & bracket);
+        TokenType lastTokenType() const;
+        void setLastTokenType(TokenType type);
 
-            TokenType lastTokenType() const;
-            void setLastTokenType(TokenType type);
+    private:
+        RpnBuilder(const OpPrecedenceMap &opp) : m_opp(opp) { }
 
-        private:
+        void processOpStack();
 
-            RpnBuilder(const OpPrecedenceMap & opp) : m_opp(opp) {}
+        QString topOp() const;
 
-            void processOpStack();
+        uint32_t bracketLevel() const;
 
-            QString topOp() const;
+        bool lastTokenWasOp() const;
+        bool lastTokenWasUnary() const;
 
-            uint32_t bracketLevel() const;
+        const TokenQueue &rpn() const;
 
-            bool lastTokenWasOp() const;
-            bool lastTokenWasUnary() const;
+        bool opExists(const QString &op) const;
 
-            const TokenQueue & rpn() const;
+        void clear();
 
-            bool opExists(const QString & op) const;
+        void handleOpStack(const QString &op);
+        void handleBinary(const QString &op);
+        void handleLeftUnary(const QString &op);
+        void handleRightUnary(const QString &op);
 
-            void clear();
+        TokenQueue m_rpn;
+        std::stack<QString> m_opStack;
+        uint8_t m_lastTokenWasOp = true;
+        bool m_lastTokenWasUnary = false;
+        const OpPrecedenceMap &m_opp;
 
-            void handleOpStack(const QString & op);
-            void handleBinary(const QString & op);
-            void handleLeftUnary(const QString & op);
-            void handleRightUnary(const QString & op);
-
-            TokenQueue m_rpn;
-            std::stack<QString> m_opStack;
-            uint8_t m_lastTokenWasOp = true;
-            bool m_lastTokenWasUnary = false;
-            const OpPrecedenceMap & m_opp;
-
-            // Used to make sure the expression won't
-            // end inside a bracket evaluation just because
-            // found a delimiter like '\n' or ')'
-            uint32_t m_bracketLevel = 0;
+        // Used to make sure the expression won't
+        // end inside a bracket evaluation just because
+        // found a delimiter like '\n' or ')'
+        uint32_t m_bracketLevel = 0;
     };
 
-}  // namespace cparse
+} // namespace cparse
 
-#endif  // CPARSE_SHUNTING_YARD_H_
+#endif // CPARSE_SHUNTING_YARD_H_

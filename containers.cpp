@@ -8,12 +8,12 @@
 
 using namespace cparse;
 
-bool TokenMap::operator==(const TokenMap & other) const
+bool TokenMap::operator==(const TokenMap &other) const
 {
     return m_ref == other.m_ref && m_type == other.m_type;
 }
 
-TokenMap TokenMap::detachedCopy(const TokenMap & other)
+TokenMap TokenMap::detachedCopy(const TokenMap &other)
 {
     TokenMap m(other);
     m.m_ref = std::make_shared<TokenMapData>(*other.m_ref);
@@ -22,17 +22,16 @@ TokenMap TokenMap::detachedCopy(const TokenMap & other)
 
 /* * * * * Iterator functions * * * * */
 
-TokenIterator * TokenIterator::getIterator() const
+TokenIterator *TokenIterator::getIterator() const
 {
     return static_cast<TokenIterator *>(this->clone());
 }
 
 /* * * * * TokenMap iterator implemented functions * * * * */
 
-PackToken * TokenMap::MapIterator::next()
+PackToken *TokenMap::MapIterator::next()
 {
-    if (it != map.end())
-    {
+    if (it != map.end()) {
         last = PackToken(it->first);
         ++it;
         return &last;
@@ -49,10 +48,9 @@ void TokenMap::MapIterator::reset()
 
 /* * * * * TokenList functions: * * * * */
 
-PackToken & TokenList::operator[](const quint64 idx) const
+PackToken &TokenList::operator[](const quint64 idx) const
 {
-    if (list().size() <= idx)
-    {
+    if (list().size() <= idx) {
         qWarning(cparseLog) << "List index out of range";
         return PackToken::Error();
     }
@@ -62,10 +60,9 @@ PackToken & TokenList::operator[](const quint64 idx) const
 
 /* * * * * TokenList iterator implemented functions * * * * */
 
-PackToken * TokenList::ListIterator::next()
+PackToken *TokenList::ListIterator::next()
 {
-    if (i < list->size())
-    {
+    if (i < list->size()) {
         return &list->at(i++);
     }
 
@@ -80,41 +77,29 @@ void TokenList::ListIterator::reset()
 
 TokenMap::TokenMapData::TokenMapData() = default;
 
-TokenMap::TokenMapData::TokenMapData(TokenMap * p)
-    : m_parentMap(p ? new TokenMap(*p) : nullptr)
-{
-}
+TokenMap::TokenMapData::TokenMapData(TokenMap *p) : m_parentMap(p ? new TokenMap(*p) : nullptr) { }
 
-TokenMap::TokenMapData::TokenMapData(const TokenMapData & other)
+TokenMap::TokenMapData::TokenMapData(const TokenMapData &other)
 {
     m_map = other.m_map;
 
-    if (other.m_parentMap)
-    {
+    if (other.m_parentMap) {
         m_parentMap = std::make_unique<TokenMap>(*(other.m_parentMap));
-    }
-    else
-    {
+    } else {
         m_parentMap = nullptr;
     }
 }
 
-TokenMap::TokenMapData::~TokenMapData()
-{
-}
+TokenMap::TokenMapData::~TokenMapData() { }
 
-TokenMap::TokenMapData & TokenMap::TokenMapData::operator=(const TokenMapData & other)
+TokenMap::TokenMapData &TokenMap::TokenMapData::operator=(const TokenMapData &other)
 {
-    if (this != &other)
-    {
+    if (this != &other) {
         m_map = other.m_map;
 
-        if (other.m_parentMap)
-        {
+        if (other.m_parentMap) {
             m_parentMap = std::make_unique<TokenMap>(*(other.m_parentMap));
-        }
-        else
-        {
+        } else {
             m_parentMap = nullptr;
         }
     }
@@ -124,110 +109,96 @@ TokenMap::TokenMapData & TokenMap::TokenMapData::operator=(const TokenMapData & 
 
 /* * * * * TokenMap Class: * * * * */
 
-PackToken * TokenMap::find(const QString & key)
+PackToken *TokenMap::find(const QString &key)
 {
     auto it = map().find(key);
 
-    if (it != map().end())
-    {
+    if (it != map().end()) {
         return &it->second;
     }
 
-    if (parent())
-    {
+    if (parent()) {
         return parent()->find(key);
     }
 
     return nullptr;
 }
 
-const PackToken * TokenMap::find(const QString & key) const
+const PackToken *TokenMap::find(const QString &key) const
 {
     auto it = map().find(key);
 
-    if (it != map().end())
-    {
+    if (it != map().end()) {
         return &it->second;
     }
 
-    if (parent())
-    {
+    if (parent()) {
         return parent()->find(key);
     }
 
     return nullptr;
 }
 
-TokenMap * TokenMap::findMap(const QString & key)
+TokenMap *TokenMap::findMap(const QString &key)
 {
     auto it = map().find(key);
 
-    if (it != map().end())
-    {
+    if (it != map().end()) {
         return this;
     }
 
-    if (parent())
-    {
+    if (parent()) {
         return parent()->findMap(key);
     }
 
     return nullptr;
 }
 
-const TokenMap * TokenMap::findMap(const QString & key) const
+const TokenMap *TokenMap::findMap(const QString &key) const
 {
     auto it = map().find(key);
 
-    if (it != map().end())
-    {
+    if (it != map().end()) {
         return this;
     }
 
-    if (parent())
-    {
+    if (parent()) {
         return parent()->findMap(key);
     }
 
     return nullptr;
 }
 
-void TokenMap::assign(const QString & key, Token * value)
+void TokenMap::assign(const QString &key, Token *value)
 {
-    if (value)
-    {
+    if (value) {
         value = value->clone();
-    }
-    else
-    {
+    } else {
         qWarning(cparseLog) << "TokenMap assignment expected a non NULL argument as value!";
         Q_ASSERT(false);
         return;
     }
 
-    PackToken * variable = find(key);
+    PackToken *variable = find(key);
 
-    if (variable)
-    {
+    if (variable) {
         (*variable) = PackToken(value);
-    }
-    else
-    {
+    } else {
         map()[key] = PackToken(value);
     }
 }
 
-void TokenMap::insert(const QString & key, Token * value)
+void TokenMap::insert(const QString &key, Token *value)
 {
     (*this)[key] = PackToken(value->clone());
 }
 
-PackToken & TokenMap::operator[](const QString & key)
+PackToken &TokenMap::operator[](const QString &key)
 {
     return map()[key];
 }
 
-const PackToken & TokenMap::operator[](const QString & key) const
+const PackToken &TokenMap::operator[](const QString &key) const
 {
     return map()[key];
 }
@@ -237,7 +208,7 @@ TokenMap TokenMap::getChild()
     return TokenMap(this);
 }
 
-void TokenMap::erase(const QString & key)
+void TokenMap::erase(const QString &key)
 {
     map().erase(key);
 }

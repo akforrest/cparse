@@ -8,8 +8,8 @@
 #include <exception>
 #include <string>
 #include <stack>
-#include <utility>  // For std::pair
-#include <cstring>  // For strchr()
+#include <utility> // For std::pair
+#include <cstring> // For strchr()
 
 #include "cparse.h"
 #include "calculator.h"
@@ -20,40 +20,35 @@ using namespace cparse;
 
 Q_LOGGING_CATEGORY(cparseLog, "cparse")
 
-namespace
-{
+namespace {
     using namespace cparse;
 
-    [[maybe_unused]] void log_undefined_operation(const QString & op, const PackToken & left, const PackToken & right)
+    [[maybe_unused]] void log_undefined_operation(const QString &op, const PackToken &left, const PackToken &right)
     {
-        qWarning(cparseLog) << "Unexpected operation with operator '" << op << "' and operands: " << left.str() << " and " << right.str();
+        qWarning(cparseLog) << "Unexpected operation with operator '" << op
+                            << "' and operands: " << left.str() << " and " << right.str();
     }
 
     bool match_op_id(OpId id, OpId mask)
     {
         quint64 result = id & mask;
-        auto * val = reinterpret_cast<uint32_t *>(&result);
+        auto *val = reinterpret_cast<uint32_t *>(&result);
         return (val[0] && val[1]);
     }
 
-    Token * exec_operation(const PackToken & left, const PackToken & right,
-                           EvaluationData * data, const QString & OP_MASK)
+    Token *exec_operation(const PackToken &left, const PackToken &right, EvaluationData *data, const QString &OP_MASK)
     {
         auto it = data->opMap.find(OP_MASK);
 
-        if (it == data->opMap.end())
-        {
+        if (it == data->opMap.end()) {
             return nullptr;
         }
 
-        for (const Operation & operation : it->second)
-        {
-            if (match_op_id(data->opID, operation.getMask()))
-            {
-                auto * execToken = operation.exec(left, right, data).release();
+        for (const Operation &operation : it->second) {
+            if (match_op_id(data->opID, operation.getMask())) {
+                auto *execToken = operation.exec(left, right, data).release();
 
-                if (execToken->m_type == TokenType::REJECT)
-                {
+                if (execToken->m_type == TokenType::REJECT) {
                     continue;
                 }
 
@@ -70,13 +65,12 @@ void cparse::initialize()
     Config::defaultConfig().registerBuiltInDefinitions(Config::BuiltInDefinition::AllDefinitions);
 }
 
-Token * cparse::resolveReferenceToken(Token * b, const TokenMap * localScope, const TokenMap * configScope)
+Token *cparse::resolveReferenceToken(Token *b, const TokenMap *localScope, const TokenMap *configScope)
 {
-    if (b->m_type & REF)
-    {
+    if (b->m_type & REF) {
         // Resolve the reference:
-        auto * ref = static_cast<RefToken *>(b);
-        Token * value = ref->resolve(localScope, configScope);
+        auto *ref = static_cast<RefToken *>(b);
+        Token *value = ref->resolve(localScope, configScope);
 
         delete ref;
         return value;
@@ -87,8 +81,7 @@ Token * cparse::resolveReferenceToken(Token * b, const TokenMap * localScope, co
 
 void cparse::cleanStack(std::stack<Token *> st)
 {
-    while (!st.empty())
-    {
+    while (!st.empty()) {
         delete cparse::resolveReferenceToken(st.top());
         st.pop();
     }
@@ -99,8 +92,7 @@ void cparse::cleanStack(std::stack<Token *> st)
 // Convert a type into an unique mask for bit wise operations:
 uint32_t Operation::mask(TokenType type)
 {
-    if (type == ANY_TYPE)
-    {
+    if (type == ANY_TYPE) {
         return 0xFFFF;
     }
 
@@ -114,9 +106,8 @@ OpId Operation::buildMask(TokenType left, TokenType right)
     return (result << 32) | mask(right);
 }
 
-Operation::Operation(const OpSignature & sig, OpFunc func)
-    : m_mask(buildMask(sig.left, sig.right)),
-      m_exec(func)
+Operation::Operation(const OpSignature &sig, OpFunc func)
+    : m_mask(buildMask(sig.left, sig.right)), m_exec(func)
 {
 }
 
@@ -125,17 +116,16 @@ cparse::OpId Operation::getMask() const
     return m_mask;
 }
 
-PackToken Operation::exec(const PackToken & left, const PackToken & right, EvaluationData * data) const
+PackToken Operation::exec(const PackToken &left, const PackToken &right, EvaluationData *data) const
 {
     return m_exec(left, right, data);
 }
 
 /* * * * * rpnBuilder Class: * * * * */
 
-void RpnBuilder::clearRPN(TokenQueue * rpn)
+void RpnBuilder::clearRPN(TokenQueue *rpn)
 {
-    while (!rpn->empty())
-    {
+    while (!rpn->empty()) {
         delete cparse::resolveReferenceToken(rpn->front());
         rpn->pop();
     }
@@ -162,26 +152,19 @@ void RpnBuilder::clear()
  *     pop o2 off the stack onto the output queue.
  *   Push o1 on the stack.
  */
-void RpnBuilder::handleOpStack(const QString & op)
+void RpnBuilder::handleOpStack(const QString &op)
 {
     QString cur_op;
 
     // If it associates from left to right:
-    if (m_opp.assoc(op) == 0)
-    {
-        while (!m_opStack.empty() &&
-               m_opp.prec(op) >= m_opp.prec(m_opStack.top()))
-        {
+    if (m_opp.assoc(op) == 0) {
+        while (!m_opStack.empty() && m_opp.prec(op) >= m_opp.prec(m_opStack.top())) {
             cur_op = normalizeOp(m_opStack.top());
             m_rpn.push(new TokenTyped<QString>(cur_op, OP));
             m_opStack.pop();
         }
-    }
-    else
-    {
-        while (!m_opStack.empty() &&
-               m_opp.prec(op) > m_opp.prec(m_opStack.top()))
-        {
+    } else {
+        while (!m_opStack.empty() && m_opp.prec(op) > m_opp.prec(m_opStack.top())) {
             cur_op = normalizeOp(m_opStack.top());
             m_rpn.push(new TokenTyped<QString>(cur_op, OP));
             m_opStack.pop();
@@ -189,7 +172,7 @@ void RpnBuilder::handleOpStack(const QString & op)
     }
 }
 
-void RpnBuilder::handleBinary(const QString & op)
+void RpnBuilder::handleBinary(const QString &op)
 {
     // Handle OP precedence
     handleOpStack(op);
@@ -198,7 +181,7 @@ void RpnBuilder::handleBinary(const QString & op)
 }
 
 // Convert left unary operators to binary and handle them:
-void RpnBuilder::handleLeftUnary(const QString & unary_op)
+void RpnBuilder::handleLeftUnary(const QString &unary_op)
 {
     this->m_rpn.push(new TokenUnary());
     // Only put it on the stack and wait to check op precedence:
@@ -206,7 +189,7 @@ void RpnBuilder::handleLeftUnary(const QString & unary_op)
 }
 
 // Convert right unary operators to binary and handle them:
-void RpnBuilder::handleRightUnary(const QString & unary_op)
+void RpnBuilder::handleRightUnary(const QString &unary_op)
 {
     // Handle OP precedence:
     handleOpStack(unary_op);
@@ -216,29 +199,26 @@ void RpnBuilder::handleRightUnary(const QString & unary_op)
     m_rpn.push(new TokenTyped<QString>(normalizeOp(unary_op), OP));
 }
 
-namespace
-{
+namespace {
     using namespace cparse;
-    PackToken defaultMapConstructor(const TokenMap & scope)
+    PackToken defaultMapConstructor(const TokenMap &scope)
     {
         return scope["kwargs"];
     }
 
-    PackToken defaultListConstructor(const TokenMap & scope)
+    PackToken defaultListConstructor(const TokenMap &scope)
     {
         // Get the arguments:
         TokenList list = scope["args"].asList();
 
         // If the only argument is iterable:
-        if (list.list().size() == 1 && list.list()[0]->m_type & IT)
-        {
+        if (list.list().size() == 1 && list.list()[0]->m_type & IT) {
             TokenList new_list;
-            TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
+            TokenIterator *it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
 
-            PackToken * next = it->next();
+            PackToken *next = it->next();
 
-            while (next)
-            {
+            while (next) {
                 new_list.list().push_back(*next);
                 next = it->next();
             }
@@ -254,56 +234,45 @@ namespace
 // Work as a sub-parser:
 // - Stops at delim or '\0'
 // - Returns the rest of the string as char* rest
-TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
-                             const QString & delimStr, int * rest,
-                             const Config & config)
+TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const QString &delimStr, int *rest, const Config &config)
 {
     RpnBuilder data(config.opPrecedence);
-    char * nextChar = nullptr;
+    char *nextChar = nullptr;
 
     std::string exprStd = exprStr.toStdString();
     std::string delimStd = delimStr.toStdString();
 
-    const char * expr = exprStd.c_str();
-    const char * delim = delimStd.c_str();
+    const char *expr = exprStd.c_str();
+    const char *delim = delimStd.c_str();
 
     static char c = '\0';
 
-    if (!delim)
-    {
+    if (!delim) {
         delim = &c;
     }
 
-    while (*expr && isspace(*expr) && !strchr(delim, *expr))
-    {
+    while (*expr && isspace(*expr) && !strchr(delim, *expr)) {
         ++expr;
     }
 
-    if (*expr == '\0' || strchr(delim, *expr))
-    {
+    if (*expr == '\0' || strchr(delim, *expr)) {
         qWarning(cparseLog) << "Cannot build a Calculator from an empty expression!";
         return {};
     }
 
     // In one pass, ignore whitespace and parse the expression into RPN
     // using Dijkstra's Shunting-yard algorithm.
-    while (*expr && (data.bracketLevel() || !strchr(delim, *expr)))
-    {
-        if (isdigit(*expr))
-        {
+    while (*expr && (data.bracketLevel() || !strchr(delim, *expr))) {
+        if (isdigit(*expr)) {
             int base = 10;
 
             // Parse the prefix notation for octal and hex numbers:
-            if (expr[0] == '0')
-            {
-                if (expr[1] == 'x')
-                {
+            if (expr[0] == '0') {
+                if (expr[1] == 'x') {
                     // 0x1 == 1 in hex notation
                     base = 16;
                     expr += 2;
-                }
-                else if (isdigit(expr[1]))
-                {
+                } else if (isdigit(expr[1])) {
                     // 01 == 1 in octal notation
                     base = 8;
                     expr++;
@@ -314,95 +283,71 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
             qint64 _int = strtoll(expr, &nextChar, base);
 
             // If the number was not a float:
-            if (base != 10 || !strchr(".eE", *nextChar))
-            {
-                if (!data.handleToken(new TokenTyped<qint64>(_int, INT)))
-                {
+            if (base != 10 || !strchr(".eE", *nextChar)) {
+                if (!data.handleToken(new TokenTyped<qint64>(_int, INT))) {
                     return {};
                 }
-            }
-            else
-            {
+            } else {
                 qreal digit = strtod(expr, &nextChar);
 
-                if (!data.handleToken(new TokenTyped<qreal>(digit, REAL)))
-                {
+                if (!data.handleToken(new TokenTyped<qreal>(digit, REAL))) {
                     return {};
                 }
             }
 
             expr = nextChar;
-        }
-        else if (RpnBuilder::isVariableNameChar(*expr))
-        {
-            WordParserFunc * parser;
+        } else if (RpnBuilder::isVariableNameChar(*expr)) {
+            WordParserFunc *parser;
 
             // If the token is a variable, resolve it and
             // add the parsed number to the output queue.
-            const char * expr2 = expr;
+            const char *expr2 = expr;
             QString key = RpnBuilder::parseVariableName(expr, &expr, true);
 
-            if ((parser = config.parserMap.find(key)))
-            {
+            if ((parser = config.parserMap.find(key))) {
                 // Parse reserved words:
-                if (!parser(expr, &expr, &data))
-                {
+                if (!parser(expr, &expr, &data)) {
                     data.clear();
                     return {};
                 }
-            }
-            else
-            {
-                auto * value = vars.find(key);
+            } else {
+                auto *value = vars.find(key);
 
-                if (!value)
-                {
+                if (!value) {
                     value = config.scope.find(key);
                 }
 
-                if (value)
-                {
+                if (value) {
                     // Save a reference token:
-                    Token * copy = (*value)->clone();
+                    Token *copy = (*value)->clone();
 
-                    if (!data.handleToken(new RefToken(PackToken(key), copy)))
-                    {
+                    if (!data.handleToken(new RefToken(PackToken(key), copy))) {
                         return {};
                     }
-                }
-                else
-                {
+                } else {
                     // Save the variable name:
-                    if (!data.m_lastTokenWasOp || !data.handleToken(new TokenTyped<QString>(key, VAR)))
-                    {
+                    if (!data.m_lastTokenWasOp || !data.handleToken(new TokenTyped<QString>(key, VAR))) {
                         expr = expr2;
                         key = RpnBuilder::parseVariableName(expr, &expr, false);
                         // Check if the word parser applies:
-                        auto * parser = config.parserMap.find(key);
+                        auto *parser = config.parserMap.find(key);
 
                         // Evaluate the meaning of this operator in the following order:
                         // 1. Is there a word parser for it?
                         // 2. Is it a valid operator?
                         // 3. Is there a character parser for its first character?
-                        if (parser)
-                        {
+                        if (parser) {
                             // Parse reserved operators:
 
-                            if (!parser(expr, &expr, &data))
-                            {
+                            if (!parser(expr, &expr, &data)) {
                                 data.clear();
                                 return {};
                             }
-                        }
-                        else if (data.opExists(key))
-                        {
-                            if (!data.handleOp(key))
-                            {
+                        } else if (data.opExists(key)) {
+                            if (!data.handleOp(key)) {
                                 return {};
                             }
-                        }
-                        else
-                        {
+                        } else {
                             data.clear();
                             qWarning(cparseLog) << "Invalid variable name or operator: " + key;
                             return {};
@@ -410,9 +355,7 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
                     }
                 }
             }
-        }
-        else if (*expr == '\'' || *expr == '"')
-        {
+        } else if (*expr == '\'' || *expr == '"') {
             // If it is a string literal, parse it and
             // add to the output queue.
             char quote = *expr;
@@ -420,228 +363,189 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
             ++expr;
             QString ss;
 
-            while (*expr && *expr != quote && *expr != '\n')
-            {
-                if (*expr == '\\')
-                {
-                    switch (expr[1])
-                    {
-                        case 'n':
-                            expr += 2;
-                            ss += '\n';
-                            break;
+            while (*expr && *expr != quote && *expr != '\n') {
+                if (*expr == '\\') {
+                    switch (expr[1]) {
+                    case 'n':
+                        expr += 2;
+                        ss += '\n';
+                        break;
 
-                        case 't':
-                            expr += 2;
-                            ss += '\t';
-                            break;
+                    case 't':
+                        expr += 2;
+                        ss += '\t';
+                        break;
 
-                        default:
-                            if (strchr("\"'\n", expr[1]))
-                            {
-                                ++expr;
-                            }
-
-                            ss += *expr;
+                    default:
+                        if (strchr("\"'\n", expr[1])) {
                             ++expr;
+                        }
+
+                        ss += *expr;
+                        ++expr;
                     }
-                }
-                else
-                {
+                } else {
                     ss += *expr;
                     ++expr;
                 }
             }
 
-            if (*expr != quote)
-            {
+            if (*expr != quote) {
                 QString squote = (quote == '"' ? "\"" : "'");
                 data.clear();
-                qWarning(cparseLog) << "Expected quote (" + squote + ") at end of string declaration: " + squote + ss + ".";
+                qWarning(cparseLog) << "Expected quote (" + squote
+                                + ") at end of string declaration: " + squote + ss + ".";
                 return {};
             }
 
             ++expr;
 
-            if (!data.handleToken(new TokenTyped<QString>(ss, STR)))
-            {
+            if (!data.handleToken(new TokenTyped<QString>(ss, STR))) {
                 return {};
             }
-        }
-        else
-        {
+        } else {
             // Otherwise, the variable is an operator or paranthesis.
-            switch (*expr)
-            {
-                case '(':
+            switch (*expr) {
+            case '(':
 
-                    // If it is a function call:
-                    if (!data.lastTokenWasOp())
-                    {
-                        // This counts as a bracket and as an operator:
-                        if (!data.handleOp("()"))
-                        {
-                            return {};
-                        }
-
-                        // Add it as a bracket to the op stack:
-                    }
-
-                    data.openBracket("(");
-                    ++expr;
-                    break;
-
-                case '[':
-                    if (!data.lastTokenWasOp())
-                    {
-                        // If it is an operator:
-                        if (!data.handleOp("[]"))
-                        {
-                            return {};
-                        }
-                    }
-                    else
-                    {
-                        // If it is the list constructor:
-                        // Add the list constructor to the rpn:
-                        if (!data.handleToken(new CppFunction(&defaultListConstructor, "list")))
-                        {
-                            return {};
-                        }
-
-                        // We make the program see it as a normal function call:
-                        if (!data.handleOp("()"))
-                        {
-                            return {};
-                        }
+                // If it is a function call:
+                if (!data.lastTokenWasOp()) {
+                    // This counts as a bracket and as an operator:
+                    if (!data.handleOp("()")) {
+                        return {};
                     }
 
                     // Add it as a bracket to the op stack:
-                    data.openBracket("[");
-                    ++expr;
-                    break;
+                }
 
-                case '{':
+                data.openBracket("(");
+                ++expr;
+                break;
 
-                    // Add a map constructor call to the rpn:
-                    if (!data.handleToken(new CppFunction(&defaultMapConstructor, "map")))
-                    {
+            case '[':
+                if (!data.lastTokenWasOp()) {
+                    // If it is an operator:
+                    if (!data.handleOp("[]")) {
+                        return {};
+                    }
+                } else {
+                    // If it is the list constructor:
+                    // Add the list constructor to the rpn:
+                    if (!data.handleToken(new CppFunction(&defaultListConstructor, "list"))) {
                         return {};
                     }
 
                     // We make the program see it as a normal function call:
-                    if (!data.handleOp("()"))
-                    {
-                        return {};
-                    }
-
-                    if (!data.openBracket("{"))
-                    {
-                        return {};
-                    }
-
-                    ++expr;
-                    break;
-
-                case ')':
-                    if (!data.closeBracket("("))
-                    {
-                        return {};
-                    }
-
-                    ++expr;
-                    break;
-
-                case ']':
-                    if (!data.closeBracket("["))
-                    {
-                        return {};
-                    }
-
-                    ++expr;
-                    break;
-
-                case '}':
-                    if (!data.closeBracket("{"))
-                    {
-                        return {};
-                    }
-
-                    ++expr;
-                    break;
-
-                default:
-                {
-                    // Then the token is an operator
-
-                    const char * start = expr;
-                    QString ss;
-                    ss += *expr;
-                    ++expr;
-
-                    while (*expr && ispunct(*expr) && !strchr("+-'\"()[]{}_", *expr))
-                    {
-                        ss += *expr;
-                        ++expr;
-                    }
-
-                    QString op = ss;
-
-                    // Check if the word parser applies:
-                    auto * parser = config.parserMap.find(op);
-
-                    // Evaluate the meaning of this operator in the following order:
-                    // 1. Is there a word parser for it?
-                    // 2. Is it a valid operator?
-                    // 3. Is there a character parser for its first character?
-                    if (parser)
-                    {
-                        // Parse reserved operators:
-
-                        if (!parser(expr, &expr, &data))
-                        {
-                            data.clear();
-                            return {};
-                        }
-                    }
-                    else if (data.opExists(op))
-                    {
-                        if (!data.handleOp(op))
-                        {
-                            return {};
-                        }
-                    }
-                    else if ((parser = config.parserMap.find(QString(op[0]))))
-                    {
-                        expr = start + 1;
-
-                        if (!parser(expr, &expr, &data))
-                        {
-                            data.clear();
-                            return {};
-                        }
-                    }
-                    else
-                    {
-                        data.clear();
-                        qWarning(cparseLog) << "Invalid operator: " + op;
+                    if (!data.handleOp("()")) {
                         return {};
                     }
                 }
+
+                // Add it as a bracket to the op stack:
+                data.openBracket("[");
+                ++expr;
+                break;
+
+            case '{':
+
+                // Add a map constructor call to the rpn:
+                if (!data.handleToken(new CppFunction(&defaultMapConstructor, "map"))) {
+                    return {};
+                }
+
+                // We make the program see it as a normal function call:
+                if (!data.handleOp("()")) {
+                    return {};
+                }
+
+                if (!data.openBracket("{")) {
+                    return {};
+                }
+
+                ++expr;
+                break;
+
+            case ')':
+                if (!data.closeBracket("(")) {
+                    return {};
+                }
+
+                ++expr;
+                break;
+
+            case ']':
+                if (!data.closeBracket("[")) {
+                    return {};
+                }
+
+                ++expr;
+                break;
+
+            case '}':
+                if (!data.closeBracket("{")) {
+                    return {};
+                }
+
+                ++expr;
+                break;
+
+            default: {
+                // Then the token is an operator
+
+                const char *start = expr;
+                QString ss;
+                ss += *expr;
+                ++expr;
+
+                while (*expr && ispunct(*expr) && !strchr("+-'\"()[]{}_", *expr)) {
+                    ss += *expr;
+                    ++expr;
+                }
+
+                QString op = ss;
+
+                // Check if the word parser applies:
+                auto *parser = config.parserMap.find(op);
+
+                // Evaluate the meaning of this operator in the following order:
+                // 1. Is there a word parser for it?
+                // 2. Is it a valid operator?
+                // 3. Is there a character parser for its first character?
+                if (parser) {
+                    // Parse reserved operators:
+
+                    if (!parser(expr, &expr, &data)) {
+                        data.clear();
+                        return {};
+                    }
+                } else if (data.opExists(op)) {
+                    if (!data.handleOp(op)) {
+                        return {};
+                    }
+                } else if ((parser = config.parserMap.find(QString(op[0])))) {
+                    expr = start + 1;
+
+                    if (!parser(expr, &expr, &data)) {
+                        data.clear();
+                        return {};
+                    }
+                } else {
+                    data.clear();
+                    qWarning(cparseLog) << "Invalid operator: " + op;
+                    return {};
+                }
+            }
             }
         }
 
         // Ignore spaces but stop on delimiter if not inside brackets.
-        while (*expr && isspace(*expr)
-               && (data.bracketLevel() || !strchr(delim, *expr)))
-        {
+        while (*expr && isspace(*expr) && (data.bracketLevel() || !strchr(delim, *expr))) {
             ++expr;
         }
     }
 
     // Check for syntax errors (excess of operators i.e. 10 + + -1):
-    if (data.lastTokenWasUnary())
-    {
+    if (data.lastTokenWasUnary()) {
         data.clear();
         qWarning(cparseLog) << "Expected operand after unary operator `" << data.topOp() << "`";
         return {};
@@ -649,18 +553,16 @@ TokenQueue RpnBuilder::toRPN(const QString & exprStr, const TokenMap & vars,
 
     data.processOpStack();
 
-    if (rest)
-    {
+    if (rest) {
         *rest = expr - exprStd.c_str();
     }
 
     return data.rpn();
 }
 
-Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, const Config & config)
+Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const Config &config)
 {
-    if (rpn.empty())
-    {
+    if (rpn.empty()) {
         return nullptr;
     }
 
@@ -669,76 +571,59 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
     // Evaluate the expression in RPN form.
     std::stack<Token *> evaluation;
 
-    while (!data.rpn.empty())
-    {
-        Token * base = data.rpn.front()->clone();
+    while (!data.rpn.empty()) {
+        Token *base = data.rpn.front()->clone();
         data.rpn.pop();
 
         // Operator:
-        if (base->m_type == OP)
-        {
-            data.op = static_cast<TokenTyped<QString>*>(base)->m_val;
+        if (base->m_type == OP) {
+            data.op = static_cast<TokenTyped<QString> *>(base)->m_val;
             delete base;
 
             /* * * * * Resolve operands Values and References: * * * * */
 
-            if (evaluation.size() < 2)
-            {
+            if (evaluation.size() < 2) {
                 cleanStack(evaluation);
                 qWarning(cparseLog) << "Invalid equation.";
                 return nullptr;
             }
 
-            Token * r_token = evaluation.top();
+            Token *r_token = evaluation.top();
             evaluation.pop();
-            Token * l_token = evaluation.top();
+            Token *l_token = evaluation.top();
             evaluation.pop();
 
-            if (r_token->m_type & REF)
-            {
+            if (r_token->m_type & REF) {
                 data.right.reset(static_cast<RefToken *>(r_token));
                 r_token = data.right->resolve(&data.scope, &config.scope);
-            }
-            else if (r_token->m_type == VAR)
-            {
-                auto key = PackToken(static_cast<TokenTyped<QString>*>(r_token)->m_val);
+            } else if (r_token->m_type == VAR) {
+                auto key = PackToken(static_cast<TokenTyped<QString> *>(r_token)->m_val);
                 data.right = std::make_unique<RefToken>(key);
-            }
-            else
-            {
+            } else {
                 data.right = std::make_unique<RefToken>();
             }
 
-            if (l_token->m_type & REF)
-            {
+            if (l_token->m_type & REF) {
                 data.left.reset(static_cast<RefToken *>(l_token));
                 l_token = data.left->resolve(&data.scope, &config.scope);
-            }
-            else if (l_token->m_type == VAR)
-            {
-                auto key = PackToken(static_cast<TokenTyped<QString>*>(l_token)->m_val);
+            } else if (l_token->m_type == VAR) {
+                auto key = PackToken(static_cast<TokenTyped<QString> *>(l_token)->m_val);
                 data.left = std::make_unique<RefToken>(key);
-            }
-            else
-            {
+            } else {
                 data.left = std::make_unique<RefToken>();
             }
 
-            if (l_token->m_type == FUNC && data.op == "()")
-            {
+            if (l_token->m_type == FUNC && data.op == "()") {
                 // * * * * * Resolve Function Calls: * * * * * //
 
-                auto * l_func = static_cast<Function *>(l_token);
+                auto *l_func = static_cast<Function *>(l_token);
 
                 // Collect the parameter tuple:
                 Tuple right;
 
-                if (r_token->m_type == TUPLE)
-                {
+                if (r_token->m_type == TUPLE) {
                     right = *static_cast<Tuple *>(r_token);
-                }
-                else
-                {
+                } else {
                     right = Tuple(r_token);
                 }
 
@@ -746,20 +631,16 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
 
                 PackToken _this;
 
-                if (data.left->m_origin->m_type != NONE)
-                {
+                if (data.left->m_origin->m_type != NONE) {
                     _this = data.left->m_origin;
-                }
-                else
-                {
+                } else {
                     _this = data.scope;
                 }
 
                 // Execute the function:
                 PackToken ret = Function::call(_this, l_func, &right, data.scope);
 
-                if (ret->m_type == TokenType::ERROR)
-                {
+                if (ret->m_type == TokenType::ERROR) {
                     cleanStack(evaluation);
                     delete l_func;
                     return nullptr;
@@ -767,9 +648,7 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
 
                 delete l_func;
                 evaluation.push(ret->clone());
-            }
-            else
-            {
+            } else {
                 // * * * * * Resolve All Other Operations: * * * * * //
 
                 data.opID = Operation::buildMask(l_token->m_type, r_token->m_type);
@@ -777,51 +656,40 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
                 PackToken r_pack(r_token);
 
                 // Resolve the operation:
-                Token * result = exec_operation(l_pack, r_pack, &data, data.op);
+                Token *result = exec_operation(l_pack, r_pack, &data, data.op);
 
-                if (!result)
-                {
+                if (!result) {
                     result = exec_operation(l_pack, r_pack, &data, "");
                 }
 
-                if (result)
-                {
-                    if (result->m_type == TokenType::ERROR)
-                    {
+                if (result) {
+                    if (result->m_type == TokenType::ERROR) {
                         cleanStack(evaluation);
                         return nullptr;
                     }
 
                     evaluation.push(result);
-                }
-                else
-                {
+                } else {
                     cleanStack(evaluation);
                     log_undefined_operation(data.op, l_pack, r_pack);
                     return nullptr;
                 }
             }
-        }
-        else if (base->m_type == VAR)      // Variable
+        } else if (base->m_type == VAR) // Variable
         {
-            PackToken * value = nullptr;
-            QString key = static_cast<TokenTyped<QString>*>(base)->m_val;
+            PackToken *value = nullptr;
+            QString key = static_cast<TokenTyped<QString> *>(base)->m_val;
 
             value = data.scope.find(key);
 
-            if (value)
-            {
-                Token * copy = (*value)->clone();
+            if (value) {
+                Token *copy = (*value)->clone();
                 evaluation.push(new RefToken(PackToken(key), copy));
                 delete base;
-            }
-            else
-            {
+            } else {
                 evaluation.push(base);
             }
-        }
-        else
-        {
+        } else {
             evaluation.push(base);
         }
     }
@@ -831,16 +699,14 @@ Token * RpnBuilder::calculate(const TokenQueue & rpn, const TokenMap & scope, co
 
 void RpnBuilder::processOpStack()
 {
-    while (!m_opStack.empty())
-    {
+    while (!m_opStack.empty()) {
         QString cur_op = normalizeOp(m_opStack.top());
         m_rpn.push(new TokenTyped<QString>(cur_op, OP));
         m_opStack.pop();
     }
 
     // In case one of the custom parsers left an empty expression:
-    if (m_rpn.empty())
-    {
+    if (m_rpn.empty()) {
         m_rpn.push(new TokenNone());
     }
 }
@@ -875,38 +741,32 @@ bool RpnBuilder::lastTokenWasUnary() const
     return m_lastTokenWasUnary;
 }
 
-const cparse::TokenQueue & RpnBuilder::rpn() const
+const cparse::TokenQueue &RpnBuilder::rpn() const
 {
     return m_rpn;
 }
 
-bool RpnBuilder::opExists(const QString & op) const
+bool RpnBuilder::opExists(const QString &op) const
 {
     return m_opp.exists(op);
 }
 
-bool RpnBuilder::handleOp(const QString & op)
+bool RpnBuilder::handleOp(const QString &op)
 {
     // If it's a left unary operator:
-    if (this->m_lastTokenWasOp)
-    {
-        if (m_opp.exists("L" + op))
-        {
+    if (this->m_lastTokenWasOp) {
+        if (m_opp.exists("L" + op)) {
             handleLeftUnary("L" + op);
             this->m_lastTokenWasUnary = true;
             this->m_lastTokenWasOp = op[0].unicode();
-        }
-        else
-        {
+        } else {
             clearRPN(&(this->m_rpn));
             qWarning(cparseLog) << "Unrecognized unary operator: '" << op << "'.";
             return false;
         }
 
         // If its a right unary operator:
-    }
-    else if (m_opp.exists("R" + op))
-    {
+    } else if (m_opp.exists("R" + op)) {
         handleRightUnary("R" + op);
 
         // Set it to false, since we have already added
@@ -915,15 +775,10 @@ bool RpnBuilder::handleOp(const QString & op)
         this->m_lastTokenWasOp = false;
 
         // If it is a binary operator:
-    }
-    else
-    {
-        if (m_opp.exists(op))
-        {
+    } else {
+        if (m_opp.exists(op)) {
             handleBinary(op);
-        }
-        else
-        {
+        } else {
             clearRPN(&(m_rpn));
             qWarning(cparseLog) << "Undefined operator: `" << op << "`!";
             return false;
@@ -936,10 +791,9 @@ bool RpnBuilder::handleOp(const QString & op)
     return true;
 }
 
-bool RpnBuilder::handleToken(Token * token)
+bool RpnBuilder::handleToken(Token *token)
 {
-    if (!m_lastTokenWasOp)
-    {
+    if (!m_lastTokenWasOp) {
         qWarning(cparseLog) << "Expected an operator or bracket but got " << PackToken::str(token);
         delete token;
         return false;
@@ -951,7 +805,7 @@ bool RpnBuilder::handleToken(Token * token)
     return true;
 }
 
-bool RpnBuilder::openBracket(const QString & bracket)
+bool RpnBuilder::openBracket(const QString &bracket)
 {
     m_opStack.push(bracket);
     m_lastTokenWasOp = bracket[0].unicode();
@@ -960,24 +814,21 @@ bool RpnBuilder::openBracket(const QString & bracket)
     return true;
 }
 
-bool RpnBuilder::closeBracket(const QString & bracket)
+bool RpnBuilder::closeBracket(const QString &bracket)
 {
-    if (char(m_lastTokenWasOp) == bracket[0])
-    {
+    if (char(m_lastTokenWasOp) == bracket[0]) {
         m_rpn.push(new Tuple());
     }
 
     QString cur_op;
 
-    while (!m_opStack.empty() && m_opStack.top() != bracket)
-    {
+    while (!m_opStack.empty() && m_opStack.top() != bracket) {
         cur_op = normalizeOp(m_opStack.top());
         m_rpn.push(new TokenTyped<QString>(cur_op, OP));
         m_opStack.pop();
     }
 
-    if (m_opStack.empty())
-    {
+    if (m_opStack.empty()) {
         RpnBuilder::clearRPN(&m_rpn);
         qWarning(cparseLog) << "Extra '" + bracket + "' on the expression!";
         return false;
@@ -995,20 +846,18 @@ bool RpnBuilder::isVariableNameChar(const char c)
     return isalpha(c) || c == '_';
 }
 
-QString RpnBuilder::parseVariableName(const char * expr, const char ** rest, bool allowDigits)
+QString RpnBuilder::parseVariableName(const char *expr, const char **rest, bool allowDigits)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigits && isdigit(*expr)))
-    {
+    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigits && isdigit(*expr))) {
         ss += *expr;
         ++expr;
     }
 
-    if (rest)
-    {
+    if (rest) {
         *rest = expr;
     }
 
@@ -1017,8 +866,7 @@ QString RpnBuilder::parseVariableName(const char * expr, const char ** rest, boo
 
 void cleanStack(std::stack<Token *> st)
 {
-    while (!st.empty())
-    {
+    while (!st.empty()) {
         delete resolveReferenceToken(st.top());
         st.pop();
     }
@@ -1036,10 +884,9 @@ cparse::OpPrecedenceMap::OpPrecedenceMap()
     m_rtol.insert("=");
 }
 
-void cparse::OpPrecedenceMap::add(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::add(const QString &op, int precedence)
 {
-    if (precedence < 0)
-    {
+    if (precedence < 0) {
         m_rtol.insert(op);
         precedence = -precedence;
     }
@@ -1047,32 +894,28 @@ void cparse::OpPrecedenceMap::add(const QString & op, int precedence)
     m_prMap[op] = precedence;
 }
 
-void cparse::OpPrecedenceMap::addUnary(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::addUnary(const QString &op, int precedence)
 {
     add("L" + op, precedence);
 
     // Also add a binary operator with same precedence so
     // it is possible to verify if an op exists just by checking
     // the binary set of operators:
-    if (!exists(op))
-    {
+    if (!exists(op)) {
         add(op, precedence);
     }
 }
 
-void cparse::OpPrecedenceMap::addRightUnary(const QString & op, int precedence)
+void cparse::OpPrecedenceMap::addRightUnary(const QString &op, int precedence)
 {
     add("R" + op, precedence);
 
     // Also add a binary operator with same precedence so
     // it is possible to verify if an op exists just by checking
     // the binary set of operators:
-    if (!exists(op))
-    {
+    if (!exists(op)) {
         add(op, precedence);
-    }
-    else
-    {
+    } else {
         // Note that using a unary and binary operators with
         // the same left operand is ambiguous and that the unary
         // operator will take precedence.
@@ -1082,44 +925,45 @@ void cparse::OpPrecedenceMap::addRightUnary(const QString & op, int precedence)
     }
 }
 
-int cparse::OpPrecedenceMap::prec(const QString & op) const
+int cparse::OpPrecedenceMap::prec(const QString &op) const
 {
     return m_prMap.at(op);
 }
 
-bool cparse::OpPrecedenceMap::assoc(const QString & op) const
+bool cparse::OpPrecedenceMap::assoc(const QString &op) const
 {
     return m_rtol.count(op);
 }
 
-bool cparse::OpPrecedenceMap::exists(const QString & op) const
+bool cparse::OpPrecedenceMap::exists(const QString &op) const
 {
     return m_prMap.count(op);
 }
 
-EvaluationData::EvaluationData(TokenQueue rpn, const TokenMap & scope, const OpMap & opMap)
-    : rpn(std::move(rpn)), scope(scope), opMap(opMap) {}
+EvaluationData::EvaluationData(TokenQueue rpn, const TokenMap &scope, const OpMap &opMap)
+    : rpn(std::move(rpn)), scope(scope), opMap(opMap)
+{
+}
 
+cparse::OpSignature::OpSignature(const TokenType L, const QString &op, const TokenType R)
+    : left(L), op(op), right(R)
+{
+}
 
-cparse::OpSignature::OpSignature(const TokenType L, const QString & op, const TokenType R)
-    : left(L), op(op), right(R) {}
-
-void cparse::OpMap::add(const OpSignature & sig, Operation::OpFunc func)
+void cparse::OpMap::add(const OpSignature &sig, Operation::OpFunc func)
 {
     (*this)[sig.op].push_back(Operation(sig, func));
 }
 
 QString cparse::OpMap::str() const
 {
-    if (this->empty())
-    {
+    if (this->empty()) {
         return "{}";
     }
 
     QString result = "{ ";
 
-    for (const auto & pair : (*this))
-    {
+    for (const auto &pair : (*this)) {
         result += "\"" + pair.first + "\", ";
     }
 

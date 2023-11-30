@@ -6,8 +6,7 @@
 
 #include <QLoggingCategory>
 
-namespace cparse
-{
+namespace cparse {
     void initialize();
 }
 

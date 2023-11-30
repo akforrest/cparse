@@ -5,77 +5,59 @@
 
 #include <queue>
 
-namespace cparse
-{
+namespace cparse {
     class Token
     {
-        public:
+    public:
+        Token() { }
+        Token(TokenType type) : m_type(type) { }
+        virtual ~Token() { }
 
-            Token() {}
-            Token(TokenType type) : m_type(type) {}
-            virtual ~Token() {}
+        virtual Token *clone() const = 0;
 
-            virtual Token * clone() const = 0;
-
-            TokenType m_type = TokenType::ANY_TYPE;
+        TokenType m_type = TokenType::ANY_TYPE;
     };
 
-    template<class T> class TokenTyped : public Token
+    template <class T>
+    class TokenTyped : public Token
     {
-        public:
+    public:
+        TokenTyped(T t, TokenType type) : Token(type), m_val(t) { }
+        Token *clone() const override;
 
-            TokenTyped(T t, TokenType type) : Token(type), m_val(t) {}
-            Token * clone() const override;
-
-            T m_val;
+        T m_val;
     };
 
     class TokenNone : public Token
     {
-        public:
-
-            TokenNone() : Token(NONE) {}
-            Token * clone() const override
-            {
-                return new TokenNone(*this);
-            }
+    public:
+        TokenNone() : Token(NONE) { }
+        Token *clone() const override { return new TokenNone(*this); }
     };
 
     class TokenReject : public Token
     {
-        public:
-
-            TokenReject() : Token(REJECT) {}
-            Token * clone() const override
-            {
-                return new TokenReject(*this);
-            }
+    public:
+        TokenReject() : Token(REJECT) { }
+        Token *clone() const override { return new TokenReject(*this); }
     };
 
     class TokenError : public Token
     {
-        public:
-
-            TokenError() : Token(ERROR) {}
-            Token * clone() const override
-            {
-                return new TokenError(*this);
-            }
+    public:
+        TokenError() : Token(ERROR) { }
+        Token *clone() const override { return new TokenError(*this); }
     };
 
     class TokenUnary : public Token
     {
-        public:
-
-            TokenUnary() : Token(UNARY) {}
-            Token * clone() const override
-            {
-                return new TokenUnary(*this);
-            }
+    public:
+        TokenUnary() : Token(UNARY) { }
+        Token *clone() const override { return new TokenUnary(*this); }
     };
 
-    template<class T>
-    Token * TokenTyped<T>::clone() const
+    template <class T>
+    Token *TokenTyped<T>::clone() const
     {
         return new TokenTyped(*this);
     }

@@ -7,56 +7,55 @@
 #include "containers.h"
 #include "config.h"
 
-namespace cparse
-{
+namespace cparse {
     class Calculator
     {
-        public:
+    public:
+        Calculator(const Config &config = Config::defaultConfig());
 
-            Calculator(const Config & config = Config::defaultConfig());
+        Calculator(const Calculator &calc);
+        Calculator(Calculator &&calc) noexcept;
 
-            Calculator(const Calculator & calc);
-            Calculator(Calculator && calc) noexcept;
+        Calculator(const QString &expr,
+                   const TokenMap &vars = {},
+                   const QString &delim = QString(),
+                   int *rest = nullptr,
+                   const Config &config = Config::defaultConfig());
 
-            Calculator(const QString & expr, const TokenMap & vars = {},
-                       const QString & delim = QString(), int * rest = nullptr,
-                       const Config & config = Config::defaultConfig());
+        virtual ~Calculator();
 
-            virtual ~Calculator();
+        Calculator &operator=(const Calculator &calc);
+        Calculator &operator=(Calculator &&) noexcept;
 
-            Calculator & operator=(const Calculator & calc);
-            Calculator & operator=(Calculator &&) noexcept;
+        bool compiled() const;
+        bool compile(const QString &expr, const TokenMap &vars = {}, const QString &delim = QString(), int *rest = nullptr);
 
-            bool compiled() const;
-            bool compile(const QString & expr, const TokenMap & vars = {},
-                         const QString & delim = QString(), int * rest = nullptr);
+        PackToken evaluate() const;
+        PackToken evaluate(const TokenMap &vars) const;
+        PackToken evaluate(const QString &expr, const TokenMap &vars = {}, const QString &delim = QString(), int *rest = nullptr);
 
-            PackToken evaluate() const;
-            PackToken evaluate(const TokenMap & vars) const;
-            PackToken evaluate(const QString & expr, const TokenMap & vars = {},
-                               const QString & delim = QString(), int * rest = nullptr);
+        static PackToken calculate(const QString &expr,
+                                   const TokenMap &vars = {},
+                                   const QString &delim = QString(),
+                                   int *rest = nullptr,
+                                   const Config &config = Config::defaultConfig());
 
-            static PackToken calculate(const QString & expr, const TokenMap & vars = {},
-                                       const QString & delim = QString(), int * rest = nullptr,
-                                       const Config & config = Config::defaultConfig());
+        const Config &config() const;
+        void setConfig(const Config &config);
 
-            const Config & config() const;
-            void setConfig(const Config & config);
+        ////
 
-            ////
+        QString str() const;
+        static QString str(TokenQueue rpn);
 
-            QString str() const;
-            static QString str(TokenQueue rpn);
-
-        private:
-
-            Config m_config;
-            TokenMap m_compileTimeVars;
-            TokenQueue m_rpn;
-            bool m_compiled = false;
+    private:
+        Config m_config;
+        TokenMap m_compileTimeVars;
+        TokenQueue m_rpn;
+        bool m_compiled = false;
     };
 
-    QDebug & operator<<(QDebug & os, const cparse::Calculator & t);
+    QDebug &operator<<(QDebug &os, const cparse::Calculator &t);
 }
 
 #endif // CPARSE_CALCULATOR_H

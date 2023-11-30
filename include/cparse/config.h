@@ -9,80 +9,68 @@
 
 #include "operation.h"
 
-namespace cparse
-{
+namespace cparse {
     class RpnBuilder;
 
     // WordParserFunc is the function type called when
     // a reserved word or character is found at parsing time
 
-    using WordParserFunc = bool (const char *, const char **, RpnBuilder *);
+    using WordParserFunc = bool(const char *, const char **, RpnBuilder *);
     using WordParserFuncMap = std::map<QString, WordParserFunc *>;
     using CharParserFuncMap = std::map<char, WordParserFunc *>;
 
     class ParserMap
     {
-        public:
+    public:
+        // Add reserved word:
+        void add(const QString &word, WordParserFunc *parser);
 
-            // Add reserved word:
-            void add(const QString & word, WordParserFunc * parser);
+        // Add reserved character:
+        void add(char c, WordParserFunc *parser);
 
-            // Add reserved character:
-            void add(char c,  WordParserFunc * parser);
+        WordParserFunc *find(const QString &text) const;
+        WordParserFunc *find(char c) const;
 
-            WordParserFunc * find(const QString & text) const;
-            WordParserFunc * find(char c) const;
-
-        private:
-
-            WordParserFuncMap wmap;
-            CharParserFuncMap cmap;
+    private:
+        WordParserFuncMap wmap;
+        CharParserFuncMap cmap;
     };
 
     using TokenTypeMap = std::map<TokenType, TokenMap>;
 
     class Config
     {
-        public:
+    public:
+        enum BuiltInDefinition {
+            NumberConstants = 1 << 0, // e.g. pi
+            NumberOperators = 1 << 1, // e.g. +, -
+            LogicalOperators = 1 << 2, // || == etc
+            ObjectOperators = 1 << 3, // [], {}, join, .
+            MathFunctions = 1 << 4, // sin, tan, max
+            SystemFunctions = 1 << 5, // print
+            AllDefinitions = NumberConstants | NumberOperators | LogicalOperators | ObjectOperators | MathFunctions | SystemFunctions
+        };
 
-            enum BuiltInDefinition
-            {
-                NumberConstants  = 1 << 0, // e.g. pi
-                NumberOperators  = 1 << 1, // e.g. +, -
-                LogicalOperators = 1 << 2, // || == etc
-                ObjectOperators  = 1 << 3, // [], {}, join, .
-                MathFunctions    = 1 << 4, // sin, tan, max
-                SystemFunctions  = 1 << 5, // print
-                AllDefinitions = NumberConstants |
-                                 NumberOperators |
-                                 LogicalOperators |
-                                 ObjectOperators |
-                                 MathFunctions |
-                                 SystemFunctions
-            };
+        Config() = default;
+        Config(TokenMap scope, ParserMap p, OpPrecedenceMap opp, OpMap opMap);
 
-            Config() = default;
-            Config(TokenMap scope, ParserMap p, OpPrecedenceMap opp, OpMap opMap);
+        void registerBuiltInDefinitions(BuiltInDefinition def);
 
-            void registerBuiltInDefinitions(BuiltInDefinition def);
+        static Config &defaultConfig();
 
-            static Config & defaultConfig();
-
-            TokenMap scope;
-            ParserMap parserMap;
-            OpPrecedenceMap opPrecedence;
-            OpMap opMap;
+        TokenMap scope;
+        ParserMap parserMap;
+        OpPrecedenceMap opPrecedence;
+        OpMap opMap;
     };
 
     class ObjectTypeRegistry
     {
-        public:
+    public:
+        static TokenMap &typeMap(TokenType type);
 
-            static TokenMap & typeMap(TokenType type);
-
-        private:
-
-            ObjectTypeRegistry() = default;
+    private:
+        ObjectTypeRegistry() = default;
     };
 
     Config::BuiltInDefinition operator|(Config::BuiltInDefinition l, Config::BuiltInDefinition r);

@@ -8,13 +8,12 @@
 #include "cparse/containers.h"
 #include "cparse/functions.h"
 
-namespace cparse::builtin_functions
-{
+namespace cparse::builtin_functions {
     using namespace cparse;
 
     /* * * * * Built-in Functions: * * * * */
 
-    PackToken default_print(const TokenMap & scope)
+    PackToken default_print(const TokenMap &scope)
     {
         // Get the argument list:
         TokenList list = scope["args"].asList();
@@ -23,23 +22,16 @@ namespace cparse::builtin_functions
 
         auto dbg = qInfo();
 
-        for (const PackToken & item : list.list())
-        {
-            if (first)
-            {
+        for (const PackToken &item : list.list()) {
+            if (first) {
                 first = false;
-            }
-            else
-            {
+            } else {
                 dbg << " ";
             }
 
-            if (item->m_type == TokenType::STR)
-            {
+            if (item->m_type == TokenType::STR) {
                 dbg << item.asString();
-            }
-            else
-            {
+            } else {
                 dbg << item.str();
             }
         }
@@ -47,55 +39,50 @@ namespace cparse::builtin_functions
         return PackToken::None();
     }
 
-    PackToken default_sum(const TokenMap & scope)
+    PackToken default_sum(const TokenMap &scope)
     {
         // Get the arguments:
         TokenList list = scope["args"].asList();
 
-        if (list.list().size() == 1 && list.list().front()->m_type == TokenType::LIST)
-        {
+        if (list.list().size() == 1 && list.list().front()->m_type == TokenType::LIST) {
             list = list.list().front().asList();
         }
 
         qreal sum = 0;
 
-        for (const PackToken & num : list.list())
-        {
+        for (const PackToken &num : list.list()) {
             sum += num.asReal();
         }
 
         return PackToken(sum);
     }
 
-    PackToken default_eval(const TokenMap & scope)
+    PackToken default_eval(const TokenMap &scope)
     {
         auto code = scope["value"].asString();
         // Evaluate it as a Calculator expression:
         return Calculator::calculate(code.toStdString().c_str(), scope);
     }
 
-    PackToken default_real(const TokenMap & scope)
+    PackToken default_real(const TokenMap &scope)
     {
         PackToken tok = scope["value"];
 
-        if (tok->m_type & TokenType::NUM)
-        {
+        if (tok->m_type & TokenType::NUM) {
             return PackToken(tok.asReal());
         }
 
-        if (!tok.canConvertToString())
-        {
+        if (!tok.canConvertToString()) {
             qWarning(cparseLog) << "could not convert \"" << tok << "\" to qreal!";
             return PackToken::Error();
         }
 
-        const QString & str = tok.asString();
+        const QString &str = tok.asString();
 
         bool ok = false;
         auto ret = str.toDouble(&ok);
 
-        if (!ok)
-        {
+        if (!ok) {
             qWarning(cparseLog) << "failed to convert to real!";
             return PackToken::Error();
         }
@@ -103,22 +90,20 @@ namespace cparse::builtin_functions
         return PackToken(ret);
     }
 
-    PackToken default_int(const TokenMap & scope)
+    PackToken default_int(const TokenMap &scope)
     {
         PackToken tok = scope["value"];
 
-        if (tok->m_type & TokenType::NUM)
-        {
+        if (tok->m_type & TokenType::NUM) {
             return PackToken(tok.asInt());
         }
 
-        const QString & str = tok.asString();
+        const QString &str = tok.asString();
 
         bool ok = false;
         auto ret = str.toInt(&ok);
 
-        if (!ok)
-        {
+        if (!ok) {
             qWarning(cparseLog) << "failed to convert to int!";
             return PackToken::Error();
         }
@@ -126,99 +111,96 @@ namespace cparse::builtin_functions
         return PackToken(ret);
     }
 
-    PackToken default_str(const TokenMap & scope)
+    PackToken default_str(const TokenMap &scope)
     {
         // Return its string representation:
         PackToken tok = scope["value"];
 
-        if (tok->m_type == TokenType::STR)
-        {
+        if (tok->m_type == TokenType::STR) {
             return tok;
         }
 
         return PackToken(tok.str());
     }
 
-    PackToken default_type(const TokenMap & scope)
+    PackToken default_type(const TokenMap &scope)
     {
         PackToken tok = scope["value"];
-        PackToken * p_type;
+        PackToken *p_type;
 
-        switch (tok->m_type)
-        {
-            case TokenType::NONE:
-                return PackToken("none");
+        switch (tok->m_type) {
+        case TokenType::NONE:
+            return PackToken("none");
 
-            case TokenType::VAR:
-                return PackToken("variable");
+        case TokenType::VAR:
+            return PackToken("variable");
 
-            case TokenType::REAL:
-                return PackToken("real");
+        case TokenType::REAL:
+            return PackToken("real");
 
-            case TokenType::INT:
-                return PackToken("integer");
+        case TokenType::INT:
+            return PackToken("integer");
 
-            case TokenType::BOOL:
-                return PackToken("boolean");
+        case TokenType::BOOL:
+            return PackToken("boolean");
 
-            case TokenType::STR:
-                return PackToken("string");
+        case TokenType::STR:
+            return PackToken("string");
 
-            case TokenType::FUNC:
-                return PackToken("function");
+        case TokenType::FUNC:
+            return PackToken("function");
 
-            case TokenType::IT:
-                return PackToken("iterable");
+        case TokenType::IT:
+            return PackToken("iterable");
 
-            case TokenType::TUPLE:
-                return PackToken("tuple");
+        case TokenType::TUPLE:
+            return PackToken("tuple");
 
-            case TokenType::STUPLE:
-                return PackToken("argument tuple");
+        case TokenType::STUPLE:
+            return PackToken("argument tuple");
 
-            case TokenType::LIST:
-                return PackToken("list");
+        case TokenType::LIST:
+            return PackToken("list");
 
-            case TokenType::MAP:
-                p_type = tok.asMap().find("__type__");
+        case TokenType::MAP:
+            p_type = tok.asMap().find("__type__");
 
-                if (p_type && (*p_type)->m_type == TokenType::STR)
-                {
-                    return *p_type;
-                }
+            if (p_type && (*p_type)->m_type == TokenType::STR) {
+                return *p_type;
+            }
 
-                return PackToken("map");
+            return PackToken("map");
 
-            default:
-                return PackToken("unknown_type");
+        default:
+            return PackToken("unknown_type");
         }
     }
 
-    PackToken default_sqrt(const TokenMap & scope)
+    PackToken default_sqrt(const TokenMap &scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(sqrt(number));
     }
-    PackToken default_sin(const TokenMap & scope)
+    PackToken default_sin(const TokenMap &scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(sin(number));
     }
-    PackToken default_cos(const TokenMap & scope)
+    PackToken default_cos(const TokenMap &scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(cos(number));
     }
-    PackToken default_tan(const TokenMap & scope)
+    PackToken default_tan(const TokenMap &scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
         return PackToken(tan(number));
     }
-    PackToken default_abs(const TokenMap & scope)
+    PackToken default_abs(const TokenMap &scope)
     {
         // Get a single argument:
         auto number = scope["num"].asReal();
@@ -226,7 +208,7 @@ namespace cparse::builtin_functions
     }
 
     const FunctionArgs pow_args = {"number", "exp"};
-    PackToken default_pow(const TokenMap & scope)
+    PackToken default_pow(const TokenMap &scope)
     {
         // Get two arguments:
         auto number = scope["number"].asReal();
@@ -236,7 +218,7 @@ namespace cparse::builtin_functions
     }
 
     const FunctionArgs min_max_args = {"left", "right"};
-    PackToken default_max(const TokenMap & scope)
+    PackToken default_max(const TokenMap &scope)
     {
         // Get two arguments:
         auto left = scope["left"].asReal();
@@ -245,7 +227,7 @@ namespace cparse::builtin_functions
         return PackToken(std::max(left, right));
     }
 
-    PackToken default_min(const TokenMap & scope)
+    PackToken default_min(const TokenMap &scope)
     {
         // Get two arguments:
         auto left = scope["left"].asReal();
@@ -256,21 +238,19 @@ namespace cparse::builtin_functions
 
     /* * * * * default constructor functions * * * * */
 
-    PackToken default_list(const TokenMap & scope)
+    PackToken default_list(const TokenMap &scope)
     {
         // Get the arguments:
         TokenList list = scope["args"].asList();
 
         // If the only argument is iterable:
-        if (list.list().size() == 1 && list.list()[0]->m_type & TokenType::IT)
-        {
+        if (list.list().size() == 1 && list.list()[0]->m_type & TokenType::IT) {
             TokenList new_list;
-            TokenIterator * it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
+            TokenIterator *it = static_cast<IterableToken *>(list.list()[0].token())->getIterator();
 
-            PackToken * next = it->next();
+            PackToken *next = it->next();
 
-            while (next)
-            {
+            while (next) {
                 new_list.list().push_back(*next);
                 next = it->next();
             }
@@ -282,19 +262,18 @@ namespace cparse::builtin_functions
         return list;
     }
 
-    PackToken default_map(const TokenMap & scope)
+    PackToken default_map(const TokenMap &scope)
     {
         return scope["kwargs"];
     }
 
     /* * * * * Object inheritance tools: * * * * */
 
-    PackToken default_extend(const TokenMap & scope)
+    PackToken default_extend(const TokenMap &scope)
     {
         PackToken tok = scope["value"];
 
-        if (tok->m_type == TokenType::MAP)
-        {
+        if (tok->m_type == TokenType::MAP) {
             return tok.asMap().getChild();
         }
 
@@ -303,28 +282,24 @@ namespace cparse::builtin_functions
     }
 
     // Example of replacement function for PackToken::str():
-    QString PackToken_str(const Token * base, quint32 nest)
+    QString PackToken_str(const Token *base, quint32 nest)
     {
-        const Function * func;
+        const Function *func;
 
         // Find the TokenMap with the type specific functions
         // for the type of the base token:
-        const TokenMap * typeFuncs;
+        const TokenMap *typeFuncs;
 
-        if (base->m_type == TokenType::MAP)
-        {
+        if (base->m_type == TokenType::MAP) {
             typeFuncs = static_cast<const TokenMap *>(base);
-        }
-        else
-        {
+        } else {
             typeFuncs = &ObjectTypeRegistry::typeMap(base->m_type);
         }
 
         // Check if this type has a custom stringify function:
-        const PackToken * p_func = typeFuncs->find("__str__");
+        const PackToken *p_func = typeFuncs->find("__str__");
 
-        if (p_func && (*p_func)->m_type == TokenType::FUNC)
-        {
+        if (p_func && (*p_func)->m_type == TokenType::FUNC) {
             // Return the result of this function passing the
             // nesting level as first (and only) argument:
             func = p_func->asFunc();
@@ -341,17 +316,15 @@ namespace cparse::builtin_functions
 
     struct Register
     {
-        Register(Config & config, Config::BuiltInDefinition def)
+        Register(Config &config, Config::BuiltInDefinition def)
         {
-            TokenMap & scope = config.scope;
+            TokenMap &scope = config.scope;
 
-            if (def & Config::BuiltInDefinition::SystemFunctions)
-            {
+            if (def & Config::BuiltInDefinition::SystemFunctions) {
                 scope["print"] = CppFunction(&default_print, "print");
             }
 
-            if (def & Config::BuiltInDefinition::MathFunctions)
-            {
+            if (def & Config::BuiltInDefinition::MathFunctions) {
                 scope["sum"] = CppFunction(&default_sum, "sum");
                 scope["sqrt"] = CppFunction(&default_sqrt, {"num"}, "sqrt");
                 scope["sin"] = CppFunction(&default_sin, {"num"}, "sin");
@@ -367,16 +340,14 @@ namespace cparse::builtin_functions
                 scope["int"] = CppFunction(&default_int, {"value"}, "int");
             }
 
-            if (def & Config::BuiltInDefinition::SystemFunctions)
-            {
+            if (def & Config::BuiltInDefinition::SystemFunctions) {
                 scope["str"] = CppFunction(&default_str, {"value"}, "str");
                 scope["eval"] = CppFunction(&default_eval, {"value"}, "eval");
                 scope["type"] = CppFunction(&default_type, {"value"}, "type");
                 scope["extend"] = CppFunction(&default_extend, {"value"}, "extend");
             }
 
-            if (def & Config::BuiltInDefinition::ObjectOperators)
-            {
+            if (def & Config::BuiltInDefinition::ObjectOperators) {
                 // Default constructors:
                 scope["list"] = CppFunction(&default_list, "list");
                 scope["map"] = CppFunction(&default_map, "map");
@@ -387,6 +358,6 @@ namespace cparse::builtin_functions
         }
     };
 
-}  // namespace builtin_functions
+} // namespace builtin_functions
 
 #endif // CPARSE_BUILTIN_FUNCTION_H
