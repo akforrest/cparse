@@ -62,6 +62,7 @@ namespace cparse {
         ParserMap parserMap;
         OpPrecedenceMap opPrecedence;
         OpMap opMap;
+        std::function<PackToken(const QString &)> variableResolver;
     };
 
     class ObjectTypeRegistry

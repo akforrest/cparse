@@ -164,6 +164,11 @@ void Calculator::setConfig(const Config &config)
     m_config = config;
 }
 
+void Calculator::setVariableResolver(std::function<PackToken(const QString &)> &&f)
+{
+    m_config.variableResolver = std::move(f);
+}
+
 /* * * * * For Debug Only * * * * */
 
 QString Calculator::str() const

@@ -85,6 +85,7 @@ namespace cparse {
 
         void assign(const QString &key, Token *value);
         void insert(const QString &key, Token *value);
+        void insert(const QString &key, PackToken &&value);
 
         TokenMap getChild();
 

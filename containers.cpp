@@ -193,6 +193,11 @@ void TokenMap::insert(const QString &key, Token *value)
     (*this)[key] = PackToken(value->clone());
 }
 
+void TokenMap::insert(const QString &key, PackToken &&value)
+{
+    (*this)[key] = value;
+}
+
 PackToken &TokenMap::operator[](const QString &key)
 {
     return map()[key];

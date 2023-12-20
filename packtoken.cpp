@@ -147,6 +147,28 @@ bool PackToken::isError() const
     return m_base->m_type == TokenType::ERROR;
 }
 
+bool PackToken::isEmpty() const
+{
+    switch (m_base->m_type) {
+    case VAR:
+    case STR:
+        return static_cast<TokenTyped<QString> *>(m_base)->m_val.isEmpty();
+    case MAP:
+        return static_cast<TokenMap *>(m_base)->map().empty();
+    case LIST:
+        return static_cast<TokenList *>(m_base)->list().empty();
+    case TUPLE:
+        return static_cast<Tuple *>(m_base)->list().empty();
+    case STUPLE:
+        return static_cast<STuple *>(m_base)->list().empty();
+    case NONE:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 const PackToken &PackToken::operator[](const QString &key) const
 {
     if (m_base->m_type != MAP) {

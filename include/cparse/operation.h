@@ -25,6 +25,7 @@ namespace cparse {
         TokenQueue rpn;
         TokenMap scope;
         const OpMap &opMap;
+        const std::function<PackToken(const QString &)> &variableResolver;
 
         std::unique_ptr<RefToken> left;
         std::unique_ptr<RefToken> right;
@@ -32,7 +33,10 @@ namespace cparse {
         QString op;
         OpId opID{};
 
-        EvaluationData(TokenQueue rpn, const TokenMap &scope, const OpMap &opMap);
+        EvaluationData(TokenQueue rpn,
+                       const TokenMap &scope,
+                       const OpMap &opMap,
+                       const std::function<PackToken(const QString &)> &func);
     };
 
     class Operation

@@ -62,6 +62,7 @@ namespace cparse {
         TokenType type() const;
 
         bool isError() const;
+        bool isEmpty() const;
 
         bool canConvertToBool() const;
         bool canConvertToString() const;

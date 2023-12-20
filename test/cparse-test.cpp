@@ -13,160 +13,143 @@
 
 class CParseTest : public QObject
 {
-        Q_OBJECT
+    Q_OBJECT
 
-    public:
+public:
+    CParseTest();
 
-        CParseTest();
+private slots:
 
-    private slots:
+    void initTestCase();
 
-        void initTestCase();
-
-        void calculate_with_no_config();
-        void static_calculate_calculate();
-        void calculate_compile();
-        void numerical_expressions();
-        void boolean_expressions();
-        void string_expressions();
-        void operator_parsing();
-        void string_operations();
-        void map_expressions();
-        void prototypical_inheritance();
-        void map_usage_expressions();
-        void list_usage_expressions();
-        void tuple_usage_expressions();
-        void list_map_constructor_usage();
-        void map_operator_constructor_usage();
-        void test_list_iterable_behavior();
-        void test_map_iterable_behavior();
-        void function_usage_expression();
-        void built_in_extend_function();
-        void built_in_str_function();
-        void multiple_argument_functions();
-        void passing_keyword_arguments_to_functions();
-        void default_functions();
-        void type_specific_functions();
-        void assignment_expressions();
-        void assignment_expressions_on_maps();
-        void scope_management();
-        void parsing_as_slave_parser();
-        void operation_id_function();
-        void adhoc_operations();
-        void adhoc_unary_operations();
-        void adhoc_reference_operations();
-        void adhoc_reservedWord_parsers();
-        void custom_parser_for_operator();
-        void resource_management();
-        void adhoc_operator_parser();
-        void exception_management();
+    void calculate_with_no_config();
+    void static_calculate_calculate();
+    void calculate_compile();
+    void numerical_expressions();
+    void boolean_expressions();
+    void string_expressions();
+    void operator_parsing();
+    void string_operations();
+    void map_expressions();
+    void prototypical_inheritance();
+    void map_usage_expressions();
+    void list_usage_expressions();
+    void tuple_usage_expressions();
+    void list_map_constructor_usage();
+    void map_operator_constructor_usage();
+    void test_list_iterable_behavior();
+    void test_map_iterable_behavior();
+    void function_usage_expression();
+    void built_in_extend_function();
+    void built_in_str_function();
+    void multiple_argument_functions();
+    void passing_keyword_arguments_to_functions();
+    void default_functions();
+    void type_specific_functions();
+    void assignment_expressions();
+    void assignment_expressions_on_maps();
+    void scope_management();
+    void parsing_as_slave_parser();
+    void operation_id_function();
+    void adhoc_operations();
+    void adhoc_unary_operations();
+    void adhoc_reference_operations();
+    void adhoc_reservedWord_parsers();
+    void custom_parser_for_operator();
+    void resource_management();
+    void adhoc_operator_parser();
+    void exception_management();
 };
 
 using namespace cparse;
 
 TokenMap vars, emap, tmap, key3;
 
-#define REQUIRE( statement ) \
-do {\
-        if (!QTest::qVerify(static_cast<bool>(statement), #statement, "", __FILE__, __LINE__))\
-        Q_ASSERT(false);\
-} while (false)
+#define REQUIRE(statement) \
+    do { \
+        if (!QTest::qVerify(static_cast<bool>(statement), #statement, "", __FILE__, __LINE__)) \
+            Q_ASSERT(false); \
+    } while (false)
 
 // Build a TokenMap which is a child of default_global()
 struct GlobalScope : public TokenMap
 {
-    GlobalScope() : TokenMap(&Config::defaultConfig().scope) {}
+    GlobalScope() : TokenMap(&Config::defaultConfig().scope) { }
 };
 
 class Approx
 {
-    public:
-        explicit Approx(double value)
-            :   m_epsilon(std::numeric_limits<float>::epsilon() * 100),
-                m_scale(1.0),
-                m_value(value)
-        {}
+public:
+    explicit Approx(double value)
+        : m_epsilon(std::numeric_limits<float>::epsilon() * 100), m_scale(1.0), m_value(value)
+    {
+    }
 
-        Approx(Approx const & other)
-            :   m_epsilon(other.m_epsilon),
-                m_scale(other.m_scale),
-                m_value(other.m_value)
-        {}
+    Approx(Approx const &other) : m_epsilon(other.m_epsilon), m_scale(other.m_scale), m_value(other.m_value)
+    {
+    }
 
-        static Approx custom()
-        {
-            return Approx(0);
-        }
+    static Approx custom() { return Approx(0); }
 
-        Approx operator()(double value)
-        {
-            Approx approx(value);
-            approx.epsilon(m_epsilon);
-            approx.scale(m_scale);
-            return approx;
-        }
+    Approx operator()(double value)
+    {
+        Approx approx(value);
+        approx.epsilon(m_epsilon);
+        approx.scale(m_scale);
+        return approx;
+    }
 
-        friend bool operator == (double lhs, Approx const & rhs)
-        {
-            // Thanks to Richard Harris for his help refining this formula
-            return fabs(lhs - rhs.m_value) < rhs.m_epsilon * (rhs.m_scale + (std::max)(fabs(lhs), fabs(rhs.m_value)));
-        }
+    friend bool operator==(double lhs, Approx const &rhs)
+    {
+        // Thanks to Richard Harris for his help refining this formula
+        return fabs(lhs - rhs.m_value) < rhs.m_epsilon * (rhs.m_scale + (std::max)(fabs(lhs), fabs(rhs.m_value)));
+    }
 
-        friend bool operator == (Approx const & lhs, double rhs)
-        {
-            return operator==(rhs, lhs);
-        }
+    friend bool operator==(Approx const &lhs, double rhs) { return operator==(rhs, lhs); }
 
-        friend bool operator != (double lhs, Approx const & rhs)
-        {
-            return !operator==(lhs, rhs);
-        }
+    friend bool operator!=(double lhs, Approx const &rhs) { return !operator==(lhs, rhs); }
 
-        friend bool operator != (Approx const & lhs, double rhs)
-        {
-            return !operator==(rhs, lhs);
-        }
+    friend bool operator!=(Approx const &lhs, double rhs) { return !operator==(rhs, lhs); }
 
-        Approx & epsilon(double newEpsilon)
-        {
-            m_epsilon = newEpsilon;
-            return *this;
-        }
+    Approx &epsilon(double newEpsilon)
+    {
+        m_epsilon = newEpsilon;
+        return *this;
+    }
 
-        Approx & scale(double newScale)
-        {
-            m_scale = newScale;
-            return *this;
-        }
+    Approx &scale(double newScale)
+    {
+        m_scale = newScale;
+        return *this;
+    }
 
-        std::string toString() const
-        {
-            std::ostringstream oss;
-            oss << "Approx( " << QString::number(m_value).toStdString() << " )";
-            return oss.str();
-        }
+    std::string toString() const
+    {
+        std::ostringstream oss;
+        oss << "Approx( " << QString::number(m_value).toStdString() << " )";
+        return oss.str();
+    }
 
-    private:
-        double m_epsilon;
-        double m_scale;
-        double m_value;
+private:
+    double m_epsilon;
+    double m_scale;
+    double m_value;
 };
 
-#define REQUIRE_FALSE( expr ) QVERIFY(!(expr))
-#define REQUIRE_NOTHROW( expr ) \
-do { \
-    try { \
+#define REQUIRE_FALSE(expr) QVERIFY(!(expr))
+#define REQUIRE_NOTHROW(expr) \
+    do { \
+        try { \
             expr; \
-    }  catch (...) { \
+        } catch (...) { \
             QVERIFY(false); \
-    } \
-} while (false)
+        } \
+    } while (false)
 
 Config basicConfig()
 {
     Config conf;
-    conf.registerBuiltInDefinitions(Config::BuiltInDefinition::NumberOperators |
-                                    Config::BuiltInDefinition::NumberConstants);
+    conf.registerBuiltInDefinitions(Config::BuiltInDefinition::NumberOperators | Config::BuiltInDefinition::NumberConstants);
     return conf;
 }
 
@@ -359,8 +342,7 @@ void CParseTest::string_operations()
 void CParseTest::map_expressions()
 {
     REQUIRE(Calculator::calculate("map[\"key\"]", vars).asString() == "mapped value");
-    REQUIRE(Calculator::calculate("map[\"key\"+1]", vars).asString() ==
-            "second mapped value");
+    REQUIRE(Calculator::calculate("map[\"key\"+1]", vars).asString() == "second mapped value");
     REQUIRE(Calculator::calculate("map[\"key\"+2] + 3 == 13", vars).asBool() == true);
     REQUIRE(Calculator::calculate("map.key1", vars).asString() == "second mapped value");
 
@@ -484,17 +466,17 @@ void CParseTest::tuple_usage_expressions()
     Calculator c;
 
     REQUIRE_NOTHROW(c.compile("'key':'value'"));
-    auto * t0 = static_cast<STuple *>(c.evaluate()->clone());
+    auto *t0 = static_cast<STuple *>(c.evaluate()->clone());
     REQUIRE(t0->m_type == STUPLE);
     REQUIRE(t0->list().size() == 2);
     delete t0;
 
     REQUIRE_NOTHROW(c.compile("1, 'key':'value', 3"));
-    auto * t1 = static_cast<Tuple *>(c.evaluate()->clone());
+    auto *t1 = static_cast<Tuple *>(c.evaluate()->clone());
     REQUIRE(t1->m_type == TUPLE);
     REQUIRE(t1->list().size() == 3);
 
-    auto * t2 = static_cast<STuple *>(t1->list()[1]->clone());
+    auto *t2 = static_cast<STuple *>(t1->list()[1]->clone());
     REQUIRE(t2->m_type == STUPLE);
     REQUIRE(t2->list().size() == 2);
     delete t1;
@@ -551,9 +533,9 @@ void CParseTest::test_list_iterable_behavior()
 {
     GlobalScope vars;
     REQUIRE_NOTHROW(Calculator::calculate("L = list(1,2,3)", vars));
-    TokenIterator * it;
+    TokenIterator *it;
     REQUIRE_NOTHROW(it = vars["L"].asList().getIterator());
-    PackToken * next;
+    PackToken *next;
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asReal() == 1);
@@ -581,9 +563,9 @@ void CParseTest::test_map_iterable_behavior()
     vars["M"]["b"] = 2;
     vars["M"]["c"] = 3;
 
-    TokenIterator * it;
+    TokenIterator *it;
     REQUIRE_NOTHROW(it = vars["M"].asMap().getIterator());
-    PackToken * next;
+    PackToken *next;
     REQUIRE_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asString() == "a");
@@ -901,7 +883,7 @@ void CParseTest::parsing_as_slave_parser()
     QString multiline = "a = (\n  1,\n  2,\n  3\n)\n print(a);";
 
     code = if_code;
-    REQUIRE_NOTHROW(Calculator::calculate(if_code/* + 4*/, vars, ")", &parsedTo));
+    REQUIRE_NOTHROW(Calculator::calculate(if_code /* + 4*/, vars, ")", &parsedTo));
     REQUIRE(code.at(parsedTo + 4) == if_code[18]);
 
     code = multiline;
@@ -927,71 +909,59 @@ void CParseTest::operation_id_function()
 
 struct myCalc : public Calculator
 {
-    static Config & my_config()
+    static Config &my_config()
     {
         static Config conf;
         return conf;
     }
 
-    myCalc()
-        : Calculator(my_config())
-    {
-    }
+    myCalc() : Calculator(my_config()) { }
 
     using Calculator::Calculator;
 };
 
-PackToken op1(const PackToken & left, const PackToken & right,
-              EvaluationData * data)
+PackToken op1(const PackToken &left, const PackToken &right, EvaluationData *data)
 {
     return Config::defaultConfig().opMap["%"][0].exec(left, right, data);
 }
 
-PackToken op2(const PackToken & left, const PackToken & right,
-              EvaluationData * data)
+PackToken op2(const PackToken &left, const PackToken &right, EvaluationData *data)
 {
     return Config::defaultConfig().opMap[","][0].exec(left, right, data);
 }
 
-PackToken op3(const PackToken & left, const PackToken & right,
-              EvaluationData *)
+PackToken op3(const PackToken &left, const PackToken &right, EvaluationData *)
 {
     return left.asReal() - right.asReal();
 }
 
-PackToken op4(const PackToken & left, const PackToken & right,
-              EvaluationData *)
+PackToken op4(const PackToken &left, const PackToken &right, EvaluationData *)
 {
     return left.asReal() * right.asReal();
 }
 
-PackToken slash_op(const PackToken & left, const PackToken & right,
-                   EvaluationData *)
+PackToken slash_op(const PackToken &left, const PackToken &right, EvaluationData *)
 {
     return left.asReal() / right.asReal();
 }
 
-PackToken not_unary_op(const PackToken &, const PackToken & right,
-                       EvaluationData *)
+PackToken not_unary_op(const PackToken &, const PackToken &right, EvaluationData *)
 {
     return ~right.asInt();
 }
 
-PackToken not_right_unary_op(const PackToken & left, const PackToken &,
-                             EvaluationData *)
+PackToken not_right_unary_op(const PackToken &left, const PackToken &, EvaluationData *)
 {
     return ~left.asInt();
 }
 
-PackToken lazy_increment(const PackToken &, const PackToken &,
-                         EvaluationData * data)
+PackToken lazy_increment(const PackToken &, const PackToken &, EvaluationData *data)
 {
     auto var_name = data->left->m_key.asString();
 
-    TokenMap * map_p = data->scope.findMap(var_name);
+    TokenMap *map_p = data->scope.findMap(var_name);
 
-    if (map_p == nullptr)
-    {
+    if (map_p == nullptr) {
         map_p = &data->scope;
     }
 
@@ -1000,55 +970,48 @@ PackToken lazy_increment(const PackToken &, const PackToken &,
     return value;
 }
 
-PackToken eager_increment(const PackToken &, const PackToken &,
-                          EvaluationData * data)
+PackToken eager_increment(const PackToken &, const PackToken &, EvaluationData *data)
 {
     auto var_name = data->right->m_key.asString();
 
-    TokenMap * map_p = data->scope.findMap(var_name);
+    TokenMap *map_p = data->scope.findMap(var_name);
 
-    if (map_p == nullptr)
-    {
+    if (map_p == nullptr) {
         map_p = &data->scope;
     }
 
     return (*map_p)[var_name] = (*map_p)[var_name].asInt() + 1;
 }
 
-PackToken assign_right(const PackToken & left, const PackToken &,
-                       EvaluationData * data)
+PackToken assign_right(const PackToken &left, const PackToken &, EvaluationData *data)
 {
     auto var_name = data->right->m_key.asString();
 
-    TokenMap * map_p = data->scope.findMap(var_name);
+    TokenMap *map_p = data->scope.findMap(var_name);
 
-    if (map_p == nullptr)
-    {
+    if (map_p == nullptr) {
         map_p = &data->scope;
     }
 
     return (*map_p)[var_name] = left;
 }
 
-PackToken assign_left(const PackToken &, const PackToken & right,
-                      EvaluationData * data)
+PackToken assign_left(const PackToken &, const PackToken &right, EvaluationData *data)
 {
     auto var_name = data->left->m_key.asString();
 
-    TokenMap * map_p = data->scope.findMap(var_name);
+    TokenMap *map_p = data->scope.findMap(var_name);
 
-    if (map_p == nullptr)
-    {
+    if (map_p == nullptr) {
         map_p = &data->scope;
     }
 
     return (*map_p)[var_name] = right;
 }
 
-bool slash(const char * expr, const char ** rest, RpnBuilder * data)
+bool slash(const char *expr, const char **rest, RpnBuilder *data)
 {
-    if (data->handleOp("*"))
-    {
+    if (data->handleOp("*")) {
         // Eat the next character:
         *rest = ++expr;
         return true;
@@ -1057,7 +1020,7 @@ bool slash(const char * expr, const char ** rest, RpnBuilder * data)
     return false;
 }
 
-bool slash_slash(const char *, const char **, RpnBuilder * data)
+bool slash_slash(const char *, const char **, RpnBuilder *data)
 {
     return data->handleOp("-");
 }
@@ -1066,7 +1029,7 @@ struct myCalcStartup
 {
     myCalcStartup()
     {
-        OpPrecedenceMap & opp = myCalc::my_config().opPrecedence;
+        OpPrecedenceMap &opp = myCalc::my_config().opPrecedence;
         opp.add(".", 1);
         opp.add("+", 2);
         opp.add("*", 2);
@@ -1084,7 +1047,7 @@ struct myCalcStartup
         opp.addRightUnary("$$", 2);
         opp.addRightUnary("~", 4);
 
-        OpMap & opMap = myCalc::my_config().opMap;
+        OpMap &opMap = myCalc::my_config().opMap;
         opMap.add({STR, "+", TUPLE}, &op1);
         opMap.add({ANY_TYPE, ".", ANY_TYPE}, &op2);
         opMap.add({NUM, "-", NUM}, &op3);
@@ -1098,7 +1061,7 @@ struct myCalcStartup
         opMap.add({ANY_TYPE, "=>", REF}, &assign_right);
         opMap.add({REF, "<=", ANY_TYPE}, &assign_left);
 
-        ParserMap & parser = myCalc::my_config().parserMap;
+        ParserMap &parser = myCalc::my_config().parserMap;
         parser.add('/', &slash);
         parser.add("//", &slash_slash);
     }
@@ -1110,7 +1073,7 @@ struct myCalcStartup
 void CParseTest::adhoc_operations()
 {
     myCalc c1, c2;
-    const char * exp = "'Lets create %s operators%s' + ('adhoc' . '!' )";
+    const char *exp = "'Lets create %s operators%s' + ('adhoc' . '!' )";
     REQUIRE_NOTHROW(c1.compile(exp));
     REQUIRE_NOTHROW(c2 = myCalc(exp, vars, nullptr, nullptr, myCalc::my_config()));
 
@@ -1122,7 +1085,7 @@ void CParseTest::adhoc_operations()
     REQUIRE_NOTHROW(c1.compile(exp));
     REQUIRE(c1.evaluate() == "Lets create adhoc operators!");
 
-    exp = "2 - 1 * 1";  // 2 - (1 * 1)
+    exp = "2 - 1 * 1"; // 2 - (1 * 1)
     REQUIRE_NOTHROW(c1.compile(exp));
     REQUIRE(c1.evaluate() == 1);
 
@@ -1170,14 +1133,14 @@ void CParseTest::adhoc_unary_operations()
         REQUIRE(c2.evaluate() == 2 * -(10 * 3));
 
         // Testing opPrecedence:
-        REQUIRE_NOTHROW(c2.compile("-10 - 2"));  // (-10) - 2
+        REQUIRE_NOTHROW(c2.compile("-10 - 2")); // (-10) - 2
         REQUIRE(c2.evaluate() == -12);
 
         TokenMap vars;
         vars["scope_map"] = TokenMap();
         vars["scope_map"]["my_var"] = 10;
 
-        REQUIRE_NOTHROW(c2.compile("- scope_map . my_var"));  // - (map . key2)
+        REQUIRE_NOTHROW(c2.compile("- scope_map . my_var")); // - (map . key2)
         REQUIRE(c2.evaluate(vars) == -10);
     }
 

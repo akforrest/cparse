@@ -25,7 +25,7 @@ namespace {
 
     [[maybe_unused]] void log_undefined_operation(const QString &op, const PackToken &left, const PackToken &right)
     {
-        qWarning(cparseLog) << "Unexpected operation with operator '" << op
+        qWarning(cparseLog) << "Unexpected rpn operation with operator '" << op
                             << "' and operands: " << left.str() << " and " << right.str();
     }
 
@@ -41,6 +41,9 @@ namespace {
         auto it = data->opMap.find(OP_MASK);
 
         if (it == data->opMap.end()) {
+            if (!OP_MASK.isEmpty()) {
+                return exec_operation(left, right, data, {});
+            }
             return nullptr;
         }
 
@@ -54,6 +57,10 @@ namespace {
 
                 return execToken;
             }
+        }
+
+        if (!OP_MASK.isEmpty()) {
+            return exec_operation(left, right, data, {});
         }
 
         return nullptr;
@@ -282,15 +289,22 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
             // If the token is a number, add it to the output queue.
             qint64 _int = strtoll(expr, &nextChar, base);
 
+            const auto atEnd = nextChar == &exprStd.back() + 1;
+
             // If the number was not a float:
-            if (base != 10 || !strchr(".eE", *nextChar)) {
+            if (base != 10 || atEnd || !strchr(".eE", *nextChar)) {
                 if (!data.handleToken(new TokenTyped<qint64>(_int, INT))) {
                     return {};
                 }
             } else {
+                const auto intEnd = nextChar;
                 qreal digit = strtod(expr, &nextChar);
 
-                if (!data.handleToken(new TokenTyped<qreal>(digit, REAL))) {
+                if (nextChar == intEnd) { // no new chars parsed
+                    if (!data.handleToken(new TokenTyped<qint64>(_int, INT))) {
+                        return {};
+                    }
+                } else if (!data.handleToken(new TokenTyped<qreal>(digit, REAL))) {
                     return {};
                 }
             }
@@ -530,8 +544,8 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                         return {};
                     }
                 } else {
-                    data.clear();
                     qWarning(cparseLog) << "Invalid operator: " + op;
+                    data.clear();
                     return {};
                 }
             }
@@ -566,10 +580,37 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
         return nullptr;
     }
 
-    EvaluationData data(rpn, scope, config.opMap);
+    EvaluationData data(rpn, scope, config.opMap, config.variableResolver);
 
     // Evaluate the expression in RPN form.
     std::stack<Token *> evaluation;
+
+    auto tryResolveVariable = [&](Token *base, const QString &key) -> bool {
+        if (config.scope.find(key)) {
+            evaluation.push(base);
+            return true;
+        }
+
+        if (!config.variableResolver) {
+            evaluation.push(base);
+            return true;
+        }
+
+        auto resolverValue = config.variableResolver(key);
+
+        if (resolverValue->m_type == TokenType::ERROR) {
+            cleanStack(evaluation);
+            return false;
+        }
+
+        if (resolverValue->m_type == TokenType::REJECT) {
+            evaluation.push(base);
+        } else {
+            evaluation.push(new RefToken(PackToken(key), resolverValue->clone()));
+            delete base;
+        }
+        return true;
+    };
 
     while (!data.rpn.empty()) {
         Token *base = data.rpn.front()->clone();
@@ -658,14 +699,20 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 // Resolve the operation:
                 Token *result = exec_operation(l_pack, r_pack, &data, data.op);
 
-                if (!result) {
-                    result = exec_operation(l_pack, r_pack, &data, "");
-                }
-
                 if (result) {
                     if (result->m_type == TokenType::ERROR) {
                         cleanStack(evaluation);
                         return nullptr;
+                    }
+
+                    if (result->m_type == TokenType::VAR) {
+                        // op returned variable which we can now try to resolve;
+                        const auto varName = static_cast<TokenTyped<QString> *>(result)->m_val;
+
+                        if (!tryResolveVariable(result, varName)) {
+                            return nullptr;
+                        }
+                        continue;
                     }
 
                     evaluation.push(result);
@@ -680,6 +727,21 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
             PackToken *value = nullptr;
             QString key = static_cast<TokenTyped<QString> *>(base)->m_val;
 
+            // if the next thing in evaluation is a '.' op do not resolve this yet
+            // . is either a map name, in which case we do not need to resolve the variable
+            // probably because it is already a map token type, or it a external variable name
+            // like env.ENV_VAR, in which case we do not want to resolve the right hand side of this in the
+            // wrong context
+
+            if (!data.rpn.empty() && data.rpn.front()->m_type == TokenType::OP) {
+                auto op = static_cast<TokenTyped<QString> *>(data.rpn.front())->m_val;
+
+                if (op == ".") {
+                    evaluation.push(base);
+                    continue;
+                }
+            }
+
             value = data.scope.find(key);
 
             if (value) {
@@ -687,14 +749,16 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 evaluation.push(new RefToken(PackToken(key), copy));
                 delete base;
             } else {
-                evaluation.push(base);
+                if (!tryResolveVariable(base, key)) {
+                    return nullptr;
+                }
             }
         } else {
             evaluation.push(base);
         }
     }
 
-    return evaluation.top();
+    return evaluation.empty() ? nullptr : evaluation.top();
 }
 
 void RpnBuilder::processOpStack()
@@ -940,8 +1004,11 @@ bool cparse::OpPrecedenceMap::exists(const QString &op) const
     return m_prMap.count(op);
 }
 
-EvaluationData::EvaluationData(TokenQueue rpn, const TokenMap &scope, const OpMap &opMap)
-    : rpn(std::move(rpn)), scope(scope), opMap(opMap)
+EvaluationData::EvaluationData(TokenQueue rpn,
+                               const TokenMap &scope,
+                               const OpMap &opMap,
+                               const std::function<PackToken(const QString &)> &func)
+    : rpn(std::move(rpn)), scope(scope), opMap(opMap), variableResolver(func)
 {
 }
 

@@ -43,6 +43,8 @@ namespace cparse {
         const Config &config() const;
         void setConfig(const Config &config);
 
+        void setVariableResolver(std::function<PackToken(const QString &)> &&);
+
         ////
 
         QString str() const;
