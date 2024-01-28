@@ -907,16 +907,16 @@ bool RpnBuilder::closeBracket(const QString &bracket)
 
 bool RpnBuilder::isVariableNameChar(const char c)
 {
-    return isalpha(c) || c == '_';
+    return isalpha(c) || c == '_' || c == '$' || c == '#' || c == '@';
 }
 
-QString RpnBuilder::parseVariableName(const char *expr, const char **rest, bool allowDigits)
+QString RpnBuilder::parseVariableName(const char *expr, const char **rest, bool allowDigitsAndDots)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigits && isdigit(*expr))) {
+    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigitsAndDots && (isdigit(*expr) || *expr == '.'))) {
         ss += *expr;
         ++expr;
     }
