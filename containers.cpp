@@ -51,8 +51,9 @@ void TokenMap::MapIterator::reset()
 PackToken &TokenList::operator[](const quint64 idx) const
 {
     if (list().size() <= idx) {
-        qWarning(cparseLog) << "List index out of range";
-        return PackToken::Error();
+        qWarning(cparseLog) << "list index out of range";
+        static auto listErrorToken = PackToken::Error("list index out of range");
+        return listErrorToken;
     }
 
     return list()[idx];

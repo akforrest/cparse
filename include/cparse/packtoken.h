@@ -89,9 +89,10 @@ namespace cparse {
         template <typename T>
         T &as() const;
 
-        static PackToken &None();
-        static PackToken &Error();
-        static PackToken &Reject();
+        static const PackToken &None();
+        static const PackToken &Error();
+        static PackToken Error(const QString &cause);
+        static const PackToken &Reject();
 
         using ToStringFunc = QString (*)(const Token *, quint32);
         static ToStringFunc &str_custom();

@@ -36,17 +36,22 @@ namespace {
     }
 }
 
-PackToken &PackToken::None()
+const PackToken &PackToken::None()
 {
     return noneToken();
 }
 
-PackToken &PackToken::Error()
+const PackToken &PackToken::Error()
 {
     return errorToken();
 }
 
-PackToken &PackToken::Reject()
+PackToken PackToken::Error(const QString &cause)
+{
+    return TokenError(cause);
+}
+
+const PackToken &PackToken::Reject()
 {
     return rejectToken();
 }
@@ -469,13 +474,15 @@ QString PackToken::str(const Token *base, uint32_t nest)
 
     switch (base->m_type) {
     case NONE:
-        return "None";
+        return "none";
 
-    case ERROR:
-        return "Error";
+    case ERROR: {
+        const auto cause = static_cast<const TokenError *>(base)->cause();
+        return "error: " + (cause.isEmpty() ? "unknown" : cause);
+    }
 
     case UNARY:
-        return "UnaryToken";
+        return "unarytoken";
 
     case OP:
         return static_cast<const TokenTyped<QString> *>(base)->m_val;
@@ -502,19 +509,19 @@ QString PackToken::str(const Token *base, uint32_t nest)
         func = static_cast<const Function *>(base);
 
         if (!func->name().isEmpty()) {
-            return "[Function: " + func->name() + "]";
+            return "[function: " + func->name() + "]";
         }
 
         if (!name.isEmpty()) {
-            return "[Function: " + name + "]";
+            return "[function: " + name + "]";
         }
 
-        return "[Function]";
+        return "[function]";
 
     case TUPLE:
     case STUPLE:
         if (nest == 0) {
-            return "[Tuple]";
+            return "[tuple]";
         }
 
         ss += "(";
@@ -542,7 +549,7 @@ QString PackToken::str(const Token *base, uint32_t nest)
 
     case MAP:
         if (nest == 0) {
-            return "[Map]";
+            return "[map]";
         }
 
         tmap = &(static_cast<const TokenMap *>(base)->map());
@@ -563,7 +570,7 @@ QString PackToken::str(const Token *base, uint32_t nest)
 
     case LIST:
         if (nest == 0) {
-            return "[List]";
+            return "[list]";
         }
 
         tlist = &(static_cast<const TokenList *>(base)->list());
@@ -584,10 +591,10 @@ QString PackToken::str(const Token *base, uint32_t nest)
 
     default:
         if (base->m_type & IT) {
-            return "[Iterator]";
+            return "[iterator]";
         }
 
-        return "unknown_type";
+        return "unknown";
     }
 }
 

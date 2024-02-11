@@ -750,7 +750,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 delete base;
             } else {
                 if (!tryResolveVariable(base, key)) {
-                    return nullptr;
+                    return new TokenError("failed to resolve variable: " + key);
                 }
             }
         } else {

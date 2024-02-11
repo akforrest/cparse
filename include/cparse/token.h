@@ -3,6 +3,8 @@
 
 #include "tokentype.h"
 
+#include <QString>
+
 #include <queue>
 
 namespace cparse {
@@ -45,8 +47,12 @@ namespace cparse {
     class TokenError : public Token
     {
     public:
-        TokenError() : Token(ERROR) { }
+        TokenError(const QString &cause = {}) : Token(ERROR), m_cause(cause) { }
         Token *clone() const override { return new TokenError(*this); }
+        QString cause() const { return m_cause; }
+
+    private:
+        QString m_cause;
     };
 
     class TokenUnary : public Token
