@@ -684,7 +684,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 if (ret->m_type == TokenType::ERROR) {
                     cleanStack(evaluation);
                     delete l_func;
-                    return nullptr;
+                    return new RefToken(ret);
                 }
 
                 delete l_func;
@@ -702,7 +702,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 if (result) {
                     if (result->m_type == TokenType::ERROR) {
                         cleanStack(evaluation);
-                        return nullptr;
+                        return result;
                     }
 
                     if (result->m_type == TokenType::VAR) {
@@ -710,7 +710,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                         const auto varName = static_cast<TokenTyped<QString> *>(result)->m_val;
 
                         if (!tryResolveVariable(result, varName)) {
-                            return nullptr;
+                            return new TokenError("failed to resolve variable: " + varName);
                         }
                         continue;
                     }
@@ -719,7 +719,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 } else {
                     cleanStack(evaluation);
                     log_undefined_operation(data.op, l_pack, r_pack);
-                    return nullptr;
+                    return new TokenError("failed to execute op: " + data.op);
                 }
             }
         } else if (base->m_type == VAR) // Variable

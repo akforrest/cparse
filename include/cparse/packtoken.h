@@ -74,6 +74,8 @@ namespace cparse {
         bool canConvertToSTuple() const;
         bool canConvertToFunc() const;
 
+        bool canConvertTo(TokenType type) const;
+
         bool asBool() const;
         qreal asReal() const;
         qint64 asInt() const;

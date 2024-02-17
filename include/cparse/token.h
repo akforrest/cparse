@@ -17,6 +17,13 @@ namespace cparse {
 
         virtual Token *clone() const = 0;
 
+        virtual bool canConvertTo(TokenType) const;
+
+        virtual bool asBool() const;
+        virtual qreal asReal() const;
+        virtual qint64 asInt() const;
+        virtual QString asString() const;
+
         TokenType m_type = TokenType::ANY_TYPE;
     };
 

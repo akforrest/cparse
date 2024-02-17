@@ -63,9 +63,7 @@ PackToken::ToStringFunc &PackToken::str_custom()
 }
 
 PackToken::PackToken(const Token &t) : m_base(t.clone()) { }
-
 PackToken::PackToken() : m_base(new TokenNone()) { }
-
 PackToken::PackToken(const TokenMap &map) : m_base(new TokenMap(map)) { }
 PackToken::PackToken(const TokenList &list) : m_base(new TokenList(list)) { }
 
@@ -83,6 +81,10 @@ PackToken::PackToken(const PackToken &t) : m_base(t.m_base->clone()) { }
 
 PackToken &PackToken::operator=(const PackToken &t)
 {
+    if (this == &t) {
+        return *this;
+    }
+
     delete m_base;
     m_base = t.m_base->clone();
     return *this;
@@ -205,17 +207,125 @@ const PackToken &PackToken::operator[](const char *key) const
 
 bool PackToken::canConvertToBool() const
 {
-    switch (m_base->m_type) {
-    case REAL:
-    case INT:
-    case BOOL:
-    case STR:
-    case MAP:
-    case FUNC:
-    case NONE:
-    case TUPLE:
-    case STUPLE:
+    return m_base->canConvertTo(BOOL);
+}
+
+bool PackToken::asBool() const
+{
+    return m_base->asBool();
+}
+
+bool PackToken::canConvertToReal() const
+{
+    return canConvertTo(REAL);
+}
+
+qreal PackToken::asReal() const
+{
+    return m_base->asReal();
+}
+
+bool PackToken::canConvertToInt() const
+{
+    return canConvertTo(INT);
+}
+
+qint64 PackToken::asInt() const
+{
+    return m_base->asInt();
+}
+
+bool PackToken::canConvertToString() const
+{
+    return canConvertTo(STR);
+}
+
+QString PackToken::asString() const
+{
+    return m_base->asString();
+}
+
+bool PackToken::canConvertToMap() const
+{
+    return canConvertTo(STR);
+}
+bool PackToken::canConvertToList() const
+{
+    return canConvertTo(LIST);
+}
+bool PackToken::canConvertToTuple() const
+{
+    return canConvertTo(TUPLE);
+}
+bool PackToken::canConvertToSTuple() const
+{
+    return canConvertTo(STUPLE);
+}
+bool PackToken::canConvertToFunc() const
+{
+    return canConvertTo(FUNC);
+}
+
+bool PackToken::canConvertTo(TokenType type) const
+{
+    return m_base->canConvertTo(type);
+}
+
+bool cparse::Token::canConvertTo(TokenType type) const
+{
+    if (m_type == type) {
         return true;
+    }
+
+    switch (type) {
+    case BOOL: {
+        switch (m_type) {
+        case REAL:
+        case INT:
+        case BOOL:
+        case STR:
+        case MAP:
+        case FUNC:
+        case NONE:
+        case TUPLE:
+        case STUPLE:
+            return true;
+
+        default:
+            break;
+        }
+
+        return false;
+    }
+
+    case REAL:
+    case INT: {
+        switch (m_type) {
+        case REAL:
+        case INT:
+        case BOOL:
+            return true;
+
+        default:
+            break;
+        }
+
+        return false;
+    }
+
+    case STR: {
+        switch (m_type) {
+        case STR:
+        case VAR:
+        case OP:
+            return true;
+
+        default:
+            break;
+        }
+
+        return false;
+    }
 
     default:
         break;
@@ -224,20 +334,20 @@ bool PackToken::canConvertToBool() const
     return false;
 }
 
-bool PackToken::asBool() const
+bool cparse::Token::asBool() const
 {
-    switch (m_base->m_type) {
+    switch (m_type) {
     case REAL:
-        return static_cast<TokenTyped<qreal> *>(m_base)->m_val != 0;
+        return static_cast<const TokenTyped<qreal> *>(this)->m_val != 0;
 
     case INT:
-        return static_cast<TokenTyped<qint64> *>(m_base)->m_val != 0;
+        return static_cast<const TokenTyped<qint64> *>(this)->m_val != 0;
 
     case BOOL:
-        return static_cast<TokenTyped<uint8_t> *>(m_base)->m_val != 0;
+        return static_cast<const TokenTyped<uint8_t> *>(this)->m_val != 0;
 
     case STR:
-        return !static_cast<TokenTyped<QString> *>(m_base)->m_val.isEmpty();
+        return !static_cast<const TokenTyped<QString> *>(this)->m_val.isEmpty();
 
     case MAP:
     case FUNC:
@@ -251,7 +361,7 @@ bool PackToken::asBool() const
 
     case TUPLE:
     case STUPLE:
-        return !static_cast<Tuple *>(m_base)->list().empty();
+        return !static_cast<const Tuple *>(this)->list().empty();
 
     default:
         Q_ASSERT_X(false, "PackToken::asBool", "internal type can not be cast to boolean!");
@@ -260,38 +370,23 @@ bool PackToken::asBool() const
     return false;
 }
 
-bool PackToken::canConvertToReal() const
+qreal cparse::Token::asReal() const
 {
-    switch (m_base->m_type) {
+    switch (m_type) {
     case REAL:
-    case INT:
-    case BOOL:
-        return true;
-
-    default:
-        break;
-    }
-
-    return false;
-}
-
-qreal PackToken::asReal() const
-{
-    switch (m_base->m_type) {
-    case REAL:
-        return static_cast<TokenTyped<qreal> *>(m_base)->m_val;
+        return static_cast<const TokenTyped<qreal> *>(this)->m_val;
 
     case INT:
-        return static_cast<qreal>(static_cast<TokenTyped<qint64> *>(m_base)->m_val);
+        return static_cast<qreal>(static_cast<const TokenTyped<qint64> *>(this)->m_val);
 
     case BOOL:
-        return static_cast<TokenTyped<uint8_t> *>(m_base)->m_val;
+        return static_cast<const TokenTyped<uint8_t> *>(this)->m_val;
 
     case ERROR:
         Q_ASSERT_X(false, "PackToken::asReal", "cannot convert an error to type!");
 
     default: {
-        if (!(m_base->m_type & NUM)) {
+        if (!(m_type & NUM)) {
             Q_ASSERT_X(false, "PackToken::asReal", "internal type is not a number!");
         } else {
             Q_ASSERT_X(false, "PackToken::asReal", "internal type is an unsupported number type!");
@@ -302,38 +397,23 @@ qreal PackToken::asReal() const
     return 0.0;
 }
 
-bool PackToken::canConvertToInt() const
+qint64 cparse::Token::asInt() const
 {
-    switch (m_base->m_type) {
+    switch (m_type) {
     case REAL:
-    case INT:
-    case BOOL:
-        return true;
-
-    default:
-        break;
-    }
-
-    return false;
-}
-
-qint64 PackToken::asInt() const
-{
-    switch (m_base->m_type) {
-    case REAL:
-        return static_cast<qint64>(static_cast<TokenTyped<qreal> *>(m_base)->m_val);
+        return static_cast<qint64>(static_cast<const TokenTyped<qreal> *>(this)->m_val);
 
     case INT:
-        return static_cast<TokenTyped<qint64> *>(m_base)->m_val;
+        return static_cast<const TokenTyped<qint64> *>(this)->m_val;
 
     case BOOL:
-        return static_cast<TokenTyped<uint8_t> *>(m_base)->m_val;
+        return static_cast<const TokenTyped<uint8_t> *>(this)->m_val;
 
     case ERROR:
         Q_ASSERT_X(false, "PackToken::asReal", "cannot convert an error to type!");
 
     default:
-        if (!(m_base->m_type & NUM)) {
+        if (!(m_type & NUM)) {
             Q_ASSERT_X(false, "PackToken::asInt", "internal type is not a number!");
         } else {
             Q_ASSERT_X(false, "PackToken::asInt", "internal type is an unsupported number type!");
@@ -343,40 +423,14 @@ qint64 PackToken::asInt() const
     return 0;
 }
 
-bool PackToken::canConvertToString() const
+QString cparse::Token::asString() const
 {
-    return m_base->m_type == STR || m_base->m_type == VAR || m_base->m_type == OP;
-}
-
-QString PackToken::asString() const
-{
-    if (!this->canConvertToString()) {
-        Q_ASSERT_X(false, "PackToken::asString", "internal type is not a string!");
-        return QString();
+    if (m_type == STR) {
+        return static_cast<const TokenTyped<QString> *>(this)->m_val;
     }
 
-    return static_cast<TokenTyped<QString> *>(m_base)->m_val;
-}
-
-bool PackToken::canConvertToMap() const
-{
-    return m_base->m_type == MAP;
-}
-bool PackToken::canConvertToList() const
-{
-    return m_base->m_type == LIST;
-}
-bool PackToken::canConvertToTuple() const
-{
-    return m_base->m_type == TUPLE;
-}
-bool PackToken::canConvertToSTuple() const
-{
-    return m_base->m_type == STUPLE;
-}
-bool PackToken::canConvertToFunc() const
-{
-    return m_base->m_type == FUNC;
+    Q_ASSERT_X(false, "Token::asString", "internal type is not a string!");
+    return {};
 }
 
 TokenMap &PackToken::asMap() const

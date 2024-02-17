@@ -142,7 +142,7 @@ PackToken Calculator::evaluate(const TokenMap &vars) const
     Token *value = RpnBuilder::calculate(this->m_rpn, vars, m_config);
 
     if (value == nullptr) {
-        return PackToken::Error();
+        return PackToken::Error("no value in result");
     }
 
     return PackToken(resolveReferenceToken(value));
