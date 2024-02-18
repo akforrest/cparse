@@ -140,6 +140,14 @@ private:
 #define REQUIRE_NOTHROW(expr) \
     do { \
         try { \
+            QVERIFY(expr); \
+        } catch (...) { \
+            QVERIFY(false); \
+        } \
+    } while (false)
+#define REQUIRE_ONLY_NOTHROW(expr) \
+    do { \
+        try { \
             expr; \
         } catch (...) { \
             QVERIFY(false); \
@@ -177,10 +185,10 @@ void CParseTest::calculate_with_no_config()
 
     // but stuff with boolean logic or sets should still fail
 
-    REQUIRE(c1.evaluate("(3 && True) == True").isError());
-    REQUIRE(c1.evaluate("(3 && 0) == True").isError());
-    REQUIRE(c1.evaluate("(3 || 0) == True").isError());
-    REQUIRE(c1.evaluate("(False || 0) == True").isError());
+    REQUIRE(c1.evaluate("(3 && true) == true").isError());
+    REQUIRE(c1.evaluate("(3 && 0) == true").isError());
+    REQUIRE(c1.evaluate("(3 || 0) == true").isError());
+    REQUIRE(c1.evaluate("(false || 0) == true").isError());
 }
 
 //TEST_CASE("Static calculate::calculate()", "[calculate]")
@@ -243,18 +251,18 @@ void CParseTest::boolean_expressions()
     REQUIRE(Calculator::calculate("3 == 3").asBool());
     REQUIRE_FALSE(Calculator::calculate("3 != 3").asBool());
 
-    REQUIRE(Calculator::calculate("(3 && True) == True").asBool());
-    REQUIRE_FALSE(Calculator::calculate("(3 && 0) == True").asBool());
-    REQUIRE(Calculator::calculate("(3 || 0) == True").asBool());
-    REQUIRE_FALSE(Calculator::calculate("(False || 0) == True").asBool());
+    REQUIRE(Calculator::calculate("(3 && true) == true").asBool());
+    REQUIRE_FALSE(Calculator::calculate("(3 && 0) == true").asBool());
+    REQUIRE(Calculator::calculate("(3 || 0) == true").asBool());
+    REQUIRE_FALSE(Calculator::calculate("(false || 0) == true").asBool());
 
-    REQUIRE_FALSE(Calculator::calculate("10 == None").asBool());
-    REQUIRE(Calculator::calculate("10 != None").asBool());
+    REQUIRE_FALSE(Calculator::calculate("10 == none").asBool());
+    REQUIRE(Calculator::calculate("10 != none").asBool());
     REQUIRE_FALSE(Calculator::calculate("10 == 'str'").asBool());
     REQUIRE(Calculator::calculate("10 != 'str'").asBool());
 
-    REQUIRE(Calculator::calculate("True")->m_type == BOOL);
-    REQUIRE(Calculator::calculate("False")->m_type == BOOL);
+    REQUIRE(Calculator::calculate("true")->m_type == BOOL);
+    REQUIRE(Calculator::calculate("false")->m_type == BOOL);
     REQUIRE(Calculator::calculate("10 == 'str'")->m_type == BOOL);
     REQUIRE(Calculator::calculate("10 == 10")->m_type == BOOL);
 }
@@ -278,7 +286,7 @@ void CParseTest::string_expressions()
     REQUIRE(Calculator::calculate("'foo\\bar'").asString() == "foo\\bar");
     REQUIRE(Calculator::calculate("'foo\\nar'").asString() == "foo\nar");
     REQUIRE(Calculator::calculate("'foo\\tar'").asString() == "foo\tar");
-    REQUIRE_NOTHROW(Calculator::calculate("'foo\\t'"));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("'foo\\t'"));
     REQUIRE(Calculator::calculate("'foo\\t'").asString() == "foo\t");
 
     // Scaping linefeed:
@@ -341,14 +349,15 @@ void CParseTest::string_operations()
 //TEST_CASE("Map access expressions", "[map][map-access]")
 void CParseTest::map_expressions()
 {
-    REQUIRE(Calculator::calculate("map[\"key\"]", vars).asString() == "mapped value");
-    REQUIRE(Calculator::calculate("map[\"key\"+1]", vars).asString() == "second mapped value");
-    REQUIRE(Calculator::calculate("map[\"key\"+2] + 3 == 13", vars).asBool() == true);
-    REQUIRE(Calculator::calculate("map.key1", vars).asString() == "second mapped value");
+    const auto &inputVars = vars;
+    REQUIRE(Calculator::calculate("map[\"key\"]", inputVars).asString() == "mapped value");
+    REQUIRE(Calculator::calculate("map[\"key\"+1]", inputVars).asString() == "second mapped value");
+    REQUIRE(Calculator::calculate("map[\"key\"+2] + 3 == 13", inputVars).asBool() == true);
+    REQUIRE(Calculator::calculate("map.key1", inputVars).asString() == "second mapped value");
 
-    REQUIRE(Calculator::calculate("map.key3.map1", vars).asString() == "inception1");
-    REQUIRE(Calculator::calculate("map.key3['map2']", vars).asString() == "inception2");
-    REQUIRE(Calculator::calculate("map[\"no_key\"]", vars) == PackToken::None());
+    REQUIRE(Calculator::calculate("map.key3.map1", inputVars).asString() == "inception1");
+    REQUIRE(Calculator::calculate("map.key3['map2']", inputVars).asString() == "inception2");
+    REQUIRE(Calculator::calculate("map[\"no_key\"]", inputVars) == PackToken::None());
 }
 
 //TEST_CASE("Prototypical inheritance tests")
@@ -375,7 +384,7 @@ void CParseTest::prototypical_inheritance()
     REQUIRE(Calculator::calculate("grand_child.b - 20", vars).asReal() == 1);
     REQUIRE(Calculator::calculate("grand_child.c - 30", vars).asReal() == 2);
 
-    REQUIRE_NOTHROW(Calculator::calculate("grand_child.a = 12", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("grand_child.a = 12", vars));
     REQUIRE(Calculator::calculate("parent.a", vars).asReal() == 10);
     REQUIRE(Calculator::calculate("child.a", vars).asReal() == 10);
     REQUIRE(Calculator::calculate("grand_child.a", vars).asReal() == 12);
@@ -386,19 +395,19 @@ void CParseTest::map_usage_expressions()
 {
     TokenMap vars(&Config::defaultConfig().scope);
     vars["my_map"] = TokenMap(&Config::defaultConfig().scope);
-    REQUIRE_NOTHROW(Calculator::calculate("my_map['a'] = 1", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_map['b'] = 2", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_map['c'] = 3", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map['a'] = 1", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map['b'] = 2", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map['c'] = 3", vars));
 
     REQUIRE(vars["my_map"].str() == "{ \"a\": 1, \"b\": 2, \"c\": 3 }");
     REQUIRE(Calculator::calculate("my_map.len()", vars).asInt() == 3);
 
-    REQUIRE_NOTHROW(Calculator::calculate("my_map.pop('b')", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map.pop('b')", vars));
 
     REQUIRE(vars["my_map"].str() == "{ \"a\": 1, \"c\": 3 }");
     REQUIRE(Calculator::calculate("my_map.len()", vars).asReal() == 2);
 
-    REQUIRE_NOTHROW(Calculator::calculate("default = my_map.pop('b', 3)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("default = my_map.pop('b', 3)", vars));
     REQUIRE(vars["default"].asInt() == 3);
 }
 
@@ -408,38 +417,38 @@ void CParseTest::list_usage_expressions()
     TokenMap vars;
     vars["my_list"] = TokenList();
 
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.push(1)", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.push(2)", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.push(3)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.push(1)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.push(2)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.push(3)", vars));
 
     REQUIRE(vars["my_list"].str() == "[ 1, 2, 3 ]");
     REQUIRE(Calculator::calculate("my_list.len()", vars).asInt() == 3);
 
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.pop(1)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.pop(1)", vars));
 
     REQUIRE(vars["my_list"].str() == "[ 1, 3 ]");
     REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 2);
 
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.pop()", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.pop()", vars));
     REQUIRE(vars["my_list"].str() == "[ 1 ]");
     REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 1);
 
     vars["list"] = TokenList();
-    REQUIRE_NOTHROW(Calculator::calculate("list.push(4).push(5).push(6)", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_list.push(2).push(3)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("list.push(4).push(5).push(6)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list.push(2).push(3)", vars));
     REQUIRE(vars["my_list"].str() == "[ 1, 2, 3 ]");
     REQUIRE(vars["list"].str() == "[ 4, 5, 6 ]");
 
-    REQUIRE_NOTHROW(Calculator::calculate("concat = my_list + list", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("concat = my_list + list", vars));
     REQUIRE(vars["concat"].str() == "[ 1, 2, 3, 4, 5, 6 ]");
     REQUIRE(Calculator::calculate("concat.len()", vars).asReal() == 6);
 
     // Reverse index like python:
-    REQUIRE_NOTHROW(Calculator::calculate("concat[-2] = 10", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("concat[2] = '3'", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("concat[3] = None", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("concat[-2] = 10", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("concat[2] = '3'", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("concat[3] = none", vars));
     auto concatStr = vars["concat"].str();
-    REQUIRE(vars["concat"].str() == "[ 1, 2, \"3\", None, 10, 6 ]");
+    REQUIRE(vars["concat"].str() == "[ 1, 2, \"3\", none, 10, 6 ]");
 
     // List index out of range:
     REQUIRE(Calculator::calculate("concat[10]", vars)->m_type == TokenType::ERROR);
@@ -449,10 +458,10 @@ void CParseTest::list_usage_expressions()
 
     // Testing push and pop functions:
     TokenList L;
-    REQUIRE_NOTHROW(L.push("my value"));
-    REQUIRE_NOTHROW(L.push(10));
-    REQUIRE_NOTHROW(L.push(TokenMap()));
-    REQUIRE_NOTHROW(L.push(TokenList()));
+    REQUIRE_ONLY_NOTHROW(L.push("my value"));
+    REQUIRE_ONLY_NOTHROW(L.push(10));
+    REQUIRE_ONLY_NOTHROW(L.push(TokenMap()));
+    REQUIRE_ONLY_NOTHROW(L.push(TokenList()));
 
     REQUIRE(PackToken(L).str() == "[ \"my value\", 10, {}, [] ]");
     REQUIRE(L.pop().str() == "[]");
@@ -483,29 +492,29 @@ void CParseTest::tuple_usage_expressions()
     delete t2;
 
     GlobalScope global;
-    REQUIRE_NOTHROW(c.compile("pow, None"));
-    REQUIRE(c.evaluate(global).str() == "([Function: pow], None)");
+    REQUIRE_NOTHROW(c.compile("pow, none"));
+    REQUIRE(c.evaluate(global).str() == "([function: pow], none)");
 }
 
 //TEST_CASE("List and map constructors usage")
 void CParseTest::list_map_constructor_usage()
 {
     GlobalScope vars;
-    REQUIRE_NOTHROW(Calculator::calculate("my_map = map()", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_list = list()", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map = map()", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list = list()", vars));
 
     REQUIRE(vars["my_map"]->m_type == MAP);
     REQUIRE(vars["my_list"]->m_type == LIST);
     REQUIRE(Calculator::calculate("my_list.len()", vars).asReal() == 0);
 
-    REQUIRE_NOTHROW(Calculator::calculate("my_list = list(1,'2',None,map(),list('sub_list'))", vars));
-    REQUIRE(vars["my_list"].str() == "[ 1, \"2\", None, {}, [ \"sub_list\" ] ]");
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list = list(1,'2',none,map(),list('sub_list'))", vars));
+    REQUIRE(vars["my_list"].str() == "[ 1, \"2\", none, {}, [ \"sub_list\" ] ]");
 
     // Test initialization by Iterator:
-    REQUIRE_NOTHROW(Calculator::calculate("my_map  = map()", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_map.a = 1", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_map.b = 2", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("my_list  = list(my_map)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map  = map()", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map.a = 1", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_map.b = 2", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("my_list  = list(my_map)", vars));
     REQUIRE(vars["my_list"].str() == "[ \"a\", \"b\" ]");
 }
 
@@ -532,23 +541,23 @@ void CParseTest::map_operator_constructor_usage()
 void CParseTest::test_list_iterable_behavior()
 {
     GlobalScope vars;
-    REQUIRE_NOTHROW(Calculator::calculate("L = list(1,2,3)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("L = list(1,2,3)", vars));
     TokenIterator *it;
-    REQUIRE_NOTHROW(it = vars["L"].asList().getIterator());
+    REQUIRE_ONLY_NOTHROW(it = vars["L"].asList().getIterator());
     PackToken *next;
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asReal() == 1);
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asReal() == 2);
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asReal() == 3);
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next == nullptr);
 
     delete it;
@@ -564,21 +573,21 @@ void CParseTest::test_map_iterable_behavior()
     vars["M"]["c"] = 3;
 
     TokenIterator *it;
-    REQUIRE_NOTHROW(it = vars["M"].asMap().getIterator());
+    REQUIRE_ONLY_NOTHROW(it = vars["M"].asMap().getIterator());
     PackToken *next;
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asString() == "a");
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asString() == "b");
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next != nullptr);
     REQUIRE(next->asString() == "c");
 
-    REQUIRE_NOTHROW(next = it->next());
+    REQUIRE_ONLY_NOTHROW(next = it->next());
     REQUIRE(next == nullptr);
 
     delete it;
@@ -609,9 +618,9 @@ void CParseTest::function_usage_expression()
 
     REQUIRE(Calculator::calculate("foo(10)")->m_type == TokenType::ERROR);
     REQUIRE(Calculator::calculate("foo(10),")->m_type == TokenType::ERROR);
-    REQUIRE_NOTHROW(Calculator::calculate("foo,(10)"));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("foo,(10)"));
 
-    REQUIRE(Config::defaultConfig().scope["abs"].str() == "[Function: abs]");
+    REQUIRE(Config::defaultConfig().scope["abs"].str() == "[function: abs]");
     REQUIRE(Calculator::calculate("1,2,3,4,5").str() == "(1, 2, 3, 4, 5)");
 
     REQUIRE(Calculator::calculate(" float('0.1') ").asReal() == 0.1);
@@ -625,8 +634,8 @@ void CParseTest::function_usage_expression()
     REQUIRE(Calculator::calculate("1 + float(m) * 3", vars)->m_type == TokenType::ERROR);
     REQUIRE(Calculator::calculate("float('not a number')")->m_type == TokenType::ERROR);
 
-    REQUIRE_NOTHROW(Calculator::calculate("pow(1,-10)"));
-    REQUIRE_NOTHROW(Calculator::calculate("pow(1,+10)"));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("pow(1,-10)"));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("pow(1,+10)"));
 
     vars["base"] = 2;
     c.compile("pow(base,2)", vars);
@@ -640,15 +649,15 @@ void CParseTest::built_in_extend_function()
 {
     GlobalScope vars;
 
-    REQUIRE_NOTHROW(Calculator::calculate("a = map()", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("b = extend(a)", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("a.a = 10", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("a = map()", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("b = extend(a)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("a.a = 10", vars));
     REQUIRE(Calculator::calculate("b.a", vars).asReal() == 10);
-    REQUIRE_NOTHROW(Calculator::calculate("b.a = 20", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("b.a = 20", vars));
     REQUIRE(Calculator::calculate("a.a", vars).asReal() == 10);
     REQUIRE(Calculator::calculate("b.a", vars).asReal() == 20);
 
-    REQUIRE_NOTHROW(Calculator::calculate("c = extend(b)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("c = extend(b)", vars));
     REQUIRE(Calculator::calculate("a.instanceof(b)", vars).asBool() == false);
     REQUIRE(Calculator::calculate("a.instanceof(c)", vars).asBool() == false);
     REQUIRE(Calculator::calculate("b.instanceof(a)", vars).asBool() == true);
@@ -665,17 +674,17 @@ PackToken map_str(const TokenMap &)
 //TEST_CASE("Built-in str() function")
 void CParseTest::built_in_str_function()
 {
-    REQUIRE(Calculator::calculate(" str(None) ").asString() == "None");
+    REQUIRE(Calculator::calculate(" str(none) ").asString() == "none");
     REQUIRE(Calculator::calculate(" str(10) ").asString() == "10");
     REQUIRE(Calculator::calculate(" str(10.1) ").asString() == "10.1");
     REQUIRE(Calculator::calculate(" str('texto') ").asString() == "texto");
     REQUIRE(Calculator::calculate(" str(list(1,2,3)) ").asString() == "[ 1, 2, 3 ]");
     REQUIRE(Calculator::calculate(" str(map()) ").asString() == "{}");
-    REQUIRE(Calculator::calculate(" str(map) ").asString() == "[Function: map]");
+    REQUIRE(Calculator::calculate(" str(map) ").asString() == "[function: map]");
 
     vars["iterator"] = PackToken(new TokenList());
     vars["iterator"]->m_type = IT;
-    REQUIRE(Calculator::calculate("str(iterator)", vars).asString() == "[Iterator]");
+    REQUIRE(Calculator::calculate("str(iterator)", vars).asString() == "[iterator]");
 
     TokenMap vars;
     vars["my_map"] = TokenMap();
@@ -688,7 +697,7 @@ void CParseTest::built_in_str_function()
 void CParseTest::multiple_argument_functions()
 {
     GlobalScope vars;
-    REQUIRE_NOTHROW(Calculator::calculate("total = sum(1,2,3,4)", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("total = sum(1,2,3,4)", vars));
     REQUIRE(vars["total"].asReal() == 10);
 }
 
@@ -698,33 +707,33 @@ void CParseTest::passing_keyword_arguments_to_functions()
     GlobalScope vars;
     Calculator c1;
     REQUIRE_NOTHROW(c1.compile("my_map = map('a':1,'b':2)", vars));
-    REQUIRE_NOTHROW(c1.evaluate(vars));
+    REQUIRE_ONLY_NOTHROW(c1.evaluate(vars));
 
     TokenMap map;
-    REQUIRE_NOTHROW(map = vars["my_map"].asMap());
+    REQUIRE_ONLY_NOTHROW(map = vars["my_map"].asMap());
 
     REQUIRE(map["a"].asInt() == 1);
     REQUIRE(map["b"].asInt() == 2);
 
     qreal result;
     REQUIRE_NOTHROW(c1.compile("result = pow(2, 'exp': 3)"));
-    REQUIRE_NOTHROW(c1.evaluate(vars));
-    REQUIRE_NOTHROW(result = vars["result"].asReal());
+    REQUIRE_ONLY_NOTHROW(c1.evaluate(vars));
+    REQUIRE_ONLY_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 
     REQUIRE_NOTHROW(c1.compile("result = pow('exp': 3, 'number': 2)"));
-    REQUIRE_NOTHROW(c1.evaluate(vars));
-    REQUIRE_NOTHROW(result = vars["result"].asReal());
+    REQUIRE_ONLY_NOTHROW(c1.evaluate(vars));
+    REQUIRE_ONLY_NOTHROW(result = vars["result"].asReal());
     REQUIRE(result == 8.0);
 }
 
 //TEST_CASE("Default functions")
 void CParseTest::default_functions()
 {
-    REQUIRE(Calculator::calculate("type(None)").asString() == "none");
+    REQUIRE(Calculator::calculate("type(none)").asString() == "none");
     REQUIRE(Calculator::calculate("type(10.0)").asString() == "real");
     REQUIRE(Calculator::calculate("type(10)").asString() == "integer");
-    REQUIRE(Calculator::calculate("type(True)").asString() == "boolean");
+    REQUIRE(Calculator::calculate("type(true)").asString() == "boolean");
     REQUIRE(Calculator::calculate("type('str')").asString() == "string");
     REQUIRE(Calculator::calculate("type(str)").asString() == "function");
     REQUIRE(Calculator::calculate("type(list())").asString() == "list");
@@ -765,27 +774,27 @@ void CParseTest::assignment_expressions()
     REQUIRE(Calculator::calculate("assignment", vars).asReal() == 10);
 
     // Assigning to existent variables should work as well.
-    REQUIRE_NOTHROW(Calculator::calculate("assignment = 20", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("assignment = 20", vars));
     REQUIRE(Calculator::calculate("assignment", vars).asReal() == 20);
 
     // Chain assigning should work with a right-to-left order:
-    REQUIRE_NOTHROW(Calculator::calculate("a = b = 20", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("a = b = c = d = 30", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("a = b = 20", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("a = b = c = d = 30", vars));
     REQUIRE(Calculator::calculate("a == b && b == c && b == d && d == 30", vars) == true);
 
-    REQUIRE_NOTHROW(Calculator::calculate("teste='b'"));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("teste='b'"));
 
     // The user should not be able to explicit overwrite variables
     // he did not declare. So by default he can't overwrite variables
     // on the global scope:
-    REQUIRE_NOTHROW(Calculator::calculate("print = 'something'", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("print = 'something'", vars));
     REQUIRE(vars["print"].asString() == "something");
-    REQUIRE(Config::defaultConfig().scope["print"].str() == "[Function: print]");
+    REQUIRE(Config::defaultConfig().scope["print"].str() == "[function: print]");
 
     // But it should overwrite variables
     // on non-local scopes as expected:
     TokenMap child = vars.getChild();
-    REQUIRE_NOTHROW(Calculator::calculate("print = 'something else'", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("print = 'something else'", vars));
     REQUIRE(vars["print"].asString() == "something else");
     REQUIRE(child["print"]->m_type == NONE);
 }
@@ -800,18 +809,18 @@ void CParseTest::assignment_expressions_on_maps()
     REQUIRE(Calculator::calculate("m['asn']", vars).asReal() == 10);
 
     // Assigning to existent variables should work as well.
-    REQUIRE_NOTHROW(Calculator::calculate("m['asn'] = 20", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("m['asn'] = 20", vars));
     REQUIRE(Calculator::calculate("m['asn']", vars).asReal() == 20);
 
     // Chain assigning should work with a right-to-left order:
-    REQUIRE_NOTHROW(Calculator::calculate("m.a = m.b = 20", vars));
-    REQUIRE_NOTHROW(Calculator::calculate("m.a = m.b = m.c = m.d = 30", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("m.a = m.b = 20", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("m.a = m.b = m.c = m.d = 30", vars));
     REQUIRE(Calculator::calculate("m.a == m.b && m.b == m.c && m.b == m.d && m.d == 30", vars) == true);
 
-    REQUIRE_NOTHROW(Calculator::calculate("m.m = m", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("m.m = m", vars));
     REQUIRE(Calculator::calculate("10 + (a = m.a = m.m.b)", vars) == 40);
 
-    REQUIRE_NOTHROW(Calculator::calculate("m.m = None", vars));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate("m.m = none", vars));
     REQUIRE(Calculator::calculate("m.m", vars)->m_type == NONE);
 }
 
@@ -856,14 +865,14 @@ void CParseTest::parsing_as_slave_parser()
     Calculator c1, c2, c3;
 
     // With static function:
-    REQUIRE_NOTHROW(Calculator::calculate(code, vars, ";}\n", &parsedTo));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate(code, vars, ";}\n", &parsedTo));
     REQUIRE(parsedTo == 3);
     REQUIRE(vars["a"].asReal() == 1);
 
     code = code.mid(parsedTo + 1);
 
     // With constructor:
-    REQUIRE_NOTHROW((c2 = Calculator(code, vars, ";}\n", &parsedTo)));
+    REQUIRE_ONLY_NOTHROW((c2 = Calculator(code, vars, ";}\n", &parsedTo)));
     REQUIRE(parsedTo == 4);
 
     code = code.mid(parsedTo + 1);
@@ -872,10 +881,10 @@ void CParseTest::parsing_as_slave_parser()
     REQUIRE_NOTHROW(c3.compile(code, vars, ";}\n", &parsedTo));
     REQUIRE(parsedTo == code.length() - 1);
 
-    REQUIRE_NOTHROW(c2.evaluate(vars));
+    REQUIRE_ONLY_NOTHROW(c2.evaluate(vars));
     REQUIRE(vars["b"] == 2);
 
-    REQUIRE_NOTHROW(c3.evaluate(vars));
+    REQUIRE_ONLY_NOTHROW(c3.evaluate(vars));
     REQUIRE(vars["c"] == 3);
 
     // Testing with delimiter between brackets of the expression:
@@ -883,11 +892,11 @@ void CParseTest::parsing_as_slave_parser()
     QString multiline = "a = (\n  1,\n  2,\n  3\n)\n print(a);";
 
     code = if_code;
-    REQUIRE_NOTHROW(Calculator::calculate(if_code /* + 4*/, vars, ")", &parsedTo));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate(if_code /* + 4*/, vars, ")", &parsedTo));
     REQUIRE(code.at(parsedTo + 4) == if_code[18]);
 
     code = multiline;
-    REQUIRE_NOTHROW(Calculator::calculate(multiline, vars, "\n;", &parsedTo));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate(multiline, vars, "\n;", &parsedTo));
     REQUIRE(code.at(parsedTo) == multiline[21]);
 
     QString error_test = "a = (;  1,;  2,; 3;)\n print(a);";
@@ -1009,7 +1018,7 @@ PackToken assign_left(const PackToken &, const PackToken &right, EvaluationData 
     return (*map_p)[var_name] = right;
 }
 
-bool slash(const char *expr, const char **rest, RpnBuilder *data)
+bool slash(const QChar *expr, const QChar *exprEnd, const QChar **rest, RpnBuilder *data)
 {
     if (data->handleOp("*")) {
         // Eat the next character:
@@ -1020,7 +1029,7 @@ bool slash(const char *expr, const char **rest, RpnBuilder *data)
     return false;
 }
 
-bool slash_slash(const char *, const char **, RpnBuilder *data)
+bool slash_slash(const QChar *, const QChar *, const QChar **, RpnBuilder *data)
 {
     return data->handleOp("-");
 }
@@ -1041,10 +1050,10 @@ struct myCalcStartup
         opp.add("-", -3);
 
         // Unary operators:
-        opp.addUnary("$$", 2);
+        opp.addUnary("££", 2);
         opp.addUnary("~", 4);
         opp.addRightUnary("!", 1);
-        opp.addRightUnary("$$", 2);
+        opp.addRightUnary("££", 2);
         opp.addRightUnary("~", 4);
 
         OpMap &opMap = myCalc::my_config().opMap;
@@ -1056,8 +1065,8 @@ struct myCalcStartup
         opMap.add({UNARY, "~", NUM}, &not_unary_op);
         opMap.add({NUM, "~", UNARY}, &not_right_unary_op);
         opMap.add({NUM, "!", UNARY}, &not_right_unary_op);
-        opMap.add({NUM, "$$", UNARY}, &lazy_increment);
-        opMap.add({UNARY, "$$", NUM}, &eager_increment);
+        opMap.add({NUM, "££", UNARY}, &lazy_increment);
+        opMap.add({UNARY, "££", NUM}, &eager_increment);
         opMap.add({ANY_TYPE, "=>", REF}, &assign_right);
         opMap.add({REF, "<=", ANY_TYPE}, &assign_left);
 
@@ -1075,7 +1084,7 @@ void CParseTest::adhoc_operations()
     myCalc c1, c2;
     const char *exp = "'Lets create %s operators%s' + ('adhoc' . '!' )";
     REQUIRE_NOTHROW(c1.compile(exp));
-    REQUIRE_NOTHROW(c2 = myCalc(exp, vars, nullptr, nullptr, myCalc::my_config()));
+    REQUIRE_ONLY_NOTHROW(c2 = myCalc(exp, vars, nullptr, nullptr, myCalc::my_config()));
 
     REQUIRE(c1.evaluate() == "Lets create adhoc operators!");
     REQUIRE(c2.evaluate() == "Lets create adhoc operators!");
@@ -1187,12 +1196,12 @@ void CParseTest::adhoc_reference_operations()
     TokenMap scope;
 
     scope["a"] = 10;
-    REQUIRE_NOTHROW(c1.compile("$$ a"));
+    REQUIRE_NOTHROW(c1.compile("££ a"));
     REQUIRE(c1.evaluate(scope) == 11);
     REQUIRE(scope["a"] == 11);
 
     scope["a"] = 10;
-    REQUIRE_NOTHROW(c1.compile("a $$"));
+    REQUIRE_NOTHROW(c1.compile("a ££"));
     REQUIRE(c1.evaluate(scope) == 10);
     REQUIRE(scope["a"] == 11);
 
@@ -1218,11 +1227,11 @@ void CParseTest::adhoc_reservedWord_parsers()
     REQUIRE_NOTHROW(c1.compile("2 // 2"));
     REQUIRE(c1.evaluate().asInt() == 0);
 
-    REQUIRE_NOTHROW(c1.compile("2 /? 2"));
+    REQUIRE_ONLY_NOTHROW(c1.compile("2 /? 2"));
     //REQUIRE(c1.eval().asInt() == 4);
     REQUIRE(c1.evaluate().isError());
 
-    REQUIRE_NOTHROW(c1.compile("2 /! 2"));
+    REQUIRE_ONLY_NOTHROW(c1.compile("2 /! 2"));
     //REQUIRE(c1.eval().asInt() == 4);
     REQUIRE(c1.evaluate().isError());
 }
@@ -1234,11 +1243,11 @@ void CParseTest::custom_parser_for_operator()
     Calculator c2;
 
     REQUIRE_NOTHROW(c2.compile("{ a : 1 }"));
-    REQUIRE_NOTHROW(p1 = c2.evaluate());
+    REQUIRE_ONLY_NOTHROW(p1 = c2.evaluate());
     REQUIRE(p1["a"] == 1);
 
     REQUIRE_NOTHROW(c2.compile("map(a : 1, b:2, c: \"c\")"));
-    REQUIRE_NOTHROW(p1 = c2.evaluate());
+    REQUIRE_ONLY_NOTHROW(p1 = c2.evaluate());
     REQUIRE(p1["a"] == 1);
     REQUIRE(p1["b"] == 2);
     REQUIRE(p1["c"] == "c");
@@ -1253,9 +1262,9 @@ void CParseTest::resource_management()
     // RPN copy is not handled:
 
     // Copy:
-    REQUIRE_NOTHROW(Calculator C3(C2));
+    REQUIRE_ONLY_NOTHROW(Calculator C3(C2));
     // Assignment:
-    REQUIRE_NOTHROW(C1 = C2);
+    REQUIRE_ONLY_NOTHROW(C1 = C2);
 }
 
 /* * * * * Testing adhoc operator parser * * * * */
@@ -1274,7 +1283,7 @@ void CParseTest::adhoc_operator_parser()
     TokenMap vars;
     QString expr = "#12345\n - 10";
     int parsedTo = 0;
-    REQUIRE_NOTHROW(Calculator::calculate(expr, vars, "\n", &parsedTo));
+    REQUIRE_ONLY_NOTHROW(Calculator::calculate(expr, vars, "\n", &parsedTo));
     REQUIRE(parsedTo == 6);
 
     REQUIRE(Calculator::calculate(expr.mid(6)).asInt() == -10);
@@ -1290,22 +1299,22 @@ void CParseTest::exception_management()
     REQUIRE(!ecalc2.compile(""));
     REQUIRE(!ecalc2.compile("      "));
 
-    // Uninitialized calculators should eval to Error:
-    REQUIRE(Calculator().evaluate().str() == "Error");
+    // Uninitialized calculators should eval to error: unknown:
+    REQUIRE(Calculator().evaluate().str() == "error: unknown");
 
     REQUIRE(ecalc1.evaluate()->m_type == TokenType::ERROR);
-    REQUIRE_NOTHROW(ecalc1.evaluate(emap));
+    REQUIRE_ONLY_NOTHROW(ecalc1.evaluate(emap));
 
     emap.erase("del");
     REQUIRE(ecalc1.evaluate(emap)->m_type == TokenType::ERROR);
 
     emap["del"] = 0;
     emap.erase("a");
-    REQUIRE_NOTHROW(ecalc1.evaluate(emap));
+    REQUIRE_ONLY_NOTHROW(ecalc1.evaluate(emap));
 
-    REQUIRE_NOTHROW(Calculator c5("10 + - - 10"));
+    REQUIRE_ONLY_NOTHROW(Calculator c5("10 + - - 10"));
     REQUIRE(Calculator("10 + +").compiled() == false);
-    REQUIRE_NOTHROW(Calculator c5("10 + -10"));
+    REQUIRE_ONLY_NOTHROW(Calculator c5("10 + -10"));
     REQUIRE(Calculator("c.[10]").compiled() == false);
 
     TokenMap v1;

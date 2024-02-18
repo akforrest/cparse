@@ -36,8 +36,8 @@ namespace cparse {
         static void clearRPN(TokenQueue *rpn);
 
         // Check if a character is the first character of a variable:
-        static bool isVariableNameChar(char c);
-        static QString parseVariableName(const char *expr, const char **rest, bool allowDigits);
+        static bool isVariableNameChar(QChar c);
+        static QString parseVariableName(const QChar *expr, const QChar *exprEnd, const QChar **rest, bool allowDigits, bool allowDots);
 
         bool handleOp(const QString &op);
         bool handleToken(Token *token);

@@ -32,7 +32,7 @@ void ParserMap::add(const QString &word, WordParserFunc *parser)
     wmap[word] = parser;
 }
 
-void ParserMap::add(char c, WordParserFunc *parser)
+void ParserMap::add(QChar c, WordParserFunc *parser)
 {
     cmap[c] = parser;
 }
@@ -46,7 +46,7 @@ WordParserFunc *ParserMap::find(const QString &text) const
     return nullptr;
 }
 
-WordParserFunc *ParserMap::find(char c) const
+WordParserFunc *ParserMap::find(QChar c) const
 {
     if (auto it = cmap.find(c); it != cmap.end()) {
         return it->second;

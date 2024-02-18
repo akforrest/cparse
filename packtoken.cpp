@@ -247,7 +247,7 @@ QString PackToken::asString() const
 
 bool PackToken::canConvertToMap() const
 {
-    return canConvertTo(STR);
+    return canConvertTo(MAP);
 }
 bool PackToken::canConvertToList() const
 {
@@ -425,7 +425,7 @@ qint64 cparse::Token::asInt() const
 
 QString cparse::Token::asString() const
 {
-    if (m_type == STR) {
+    if (m_type == STR || m_type == VAR) {
         return static_cast<const TokenTyped<QString> *>(this)->m_val;
     }
 

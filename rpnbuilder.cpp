@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <exception>
+#include <locale>
 #include <string>
 #include <stack>
 #include <utility> // For std::pair
@@ -238,39 +239,162 @@ namespace {
     }
 }
 
+namespace {
+    bool isDeliminator(QChar character, const QString &delimiters)
+    {
+        const QChar *delimiterData = delimiters.constData();
+        const QChar *delimiterEnd = delimiterData + delimiters.size();
+
+        while (delimiterData != delimiterEnd) {
+            if (character == *delimiterData) {
+                return true;
+            }
+            ++delimiterData;
+        }
+        return false;
+    }
+
+    qint64 extractInteger(const QChar *str, const QChar *strEnd, const QChar **iterOut, int base)
+    {
+        qint64 result = 0;
+        const QChar *ptr = str;
+
+        // Skip leading whitespace
+        while (ptr != strEnd && ptr->isSpace())
+            ++ptr;
+
+        // Handle optional sign
+        bool negative = false;
+        if (*ptr == QChar('-')) {
+            negative = true;
+            ++ptr;
+        } else if (*ptr == QChar('+')) {
+            ++ptr;
+        }
+
+        // Handle optional base prefixes
+        if (base == 0) {
+            if (*ptr == QChar('0')) {
+                if (*(ptr + 1) == QChar('x') || *(ptr + 1) == QChar('X')) {
+                    base = 16;
+                    ptr += 2;
+                } else {
+                    base = 8;
+                    ++ptr;
+                }
+            } else {
+                base = 10;
+            }
+        } else if (base == 16 && *ptr == QChar('0') && (*(ptr + 1) == QChar('x') || *(ptr + 1) == QChar('X'))) {
+            ptr += 2;
+        }
+
+        // Parse digits
+        while (ptr != strEnd) {
+            qint64 digitValue;
+            if (ptr->isDigit())
+                digitValue = ptr->digitValue();
+            else if (ptr->isLetter() && ptr->toLower().unicode() >= QChar('a').unicode()
+                     && ptr->toLower().unicode() <= QChar('f').unicode())
+                digitValue = 10 + ptr->toLower().unicode() - QChar('a').unicode();
+            else
+                break; // End of number
+
+            if (digitValue >= base)
+                break; // Invalid digit for base
+
+            result = result * base + digitValue;
+            ++ptr;
+        }
+
+        *iterOut = ptr;
+
+        return (negative ? -result : result);
+    }
+
+    qreal extractReal(const QChar *str, const QChar *str_end, const QChar **str_end_out)
+    {
+        QString qstr;
+        const QChar *ptr = str;
+
+        // Skip leading whitespace
+        while (ptr < str_end && ptr->isSpace())
+            ++ptr;
+
+        // Handle optional sign
+        if (ptr < str_end && (*ptr == QChar('-') || *ptr == QChar('+'))) {
+            qstr.append(*ptr);
+            ++ptr;
+        }
+
+        // Parse digits and decimal point
+        while (ptr < str_end && (ptr->isDigit() || *ptr == QChar('.'))) {
+            qstr.append(*ptr);
+            ++ptr;
+        }
+
+        // Parse exponent if present
+        if (ptr < str_end && (*ptr == QChar('e') || *ptr == QChar('E'))) {
+            qstr.append(*ptr);
+            ++ptr;
+
+            // Handle optional exponent sign
+            if (ptr < str_end && (*ptr == QChar('-') || *ptr == QChar('+'))) {
+                qstr.append(*ptr);
+                ++ptr;
+            }
+
+            // Parse digits for exponent
+            while (ptr < str_end && ptr->isDigit()) {
+                qstr.append(*ptr);
+                ++ptr;
+            }
+        }
+
+        // Call QString::toDouble for conversion
+        bool ok = false;
+        qreal result = qstr.toDouble(&ok);
+        if (!ok) {
+            // Conversion failed, set result to NaN
+            result = std::numeric_limits<qreal>::quiet_NaN();
+        }
+
+        *str_end_out = ptr;
+
+        return result;
+    }
+
+    bool isPunctuation(const QChar &ch)
+    {
+        static const QString specialCharacters = "!\"#£$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+        return specialCharacters.contains(ch);
+    }
+}
+
 // Work as a sub-parser:
 // - Stops at delim or '\0'
 // - Returns the rest of the string as char* rest
-TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const QString &delimStr, int *rest, const Config &config)
+TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const QString &deliminators, int *rest, const Config &config)
 {
     RpnBuilder data(config.opPrecedence);
-    char *nextChar = nullptr;
+    const QChar *nextChar = nullptr;
 
-    std::string exprStd = exprStr.toStdString();
-    std::string delimStd = delimStr.toStdString();
+    const auto *expr = exprStr.constData();
+    const auto *exprEnd = expr + exprStr.size();
 
-    const char *expr = exprStd.c_str();
-    const char *delim = delimStd.c_str();
-
-    static char c = '\0';
-
-    if (!delim) {
-        delim = &c;
-    }
-
-    while (*expr && isspace(*expr) && !strchr(delim, *expr)) {
+    while (expr != exprEnd && expr->isSpace() && !isDeliminator(*expr, deliminators)) {
         ++expr;
     }
 
-    if (*expr == '\0' || strchr(delim, *expr)) {
+    if (expr == exprEnd || isDeliminator(*expr, deliminators)) {
         qWarning(cparseLog) << "Cannot build a Calculator from an empty expression!";
         return {};
     }
 
     // In one pass, ignore whitespace and parse the expression into RPN
     // using Dijkstra's Shunting-yard algorithm.
-    while (*expr && (data.bracketLevel() || !strchr(delim, *expr))) {
-        if (isdigit(*expr)) {
+    while (expr != exprEnd && (data.bracketLevel() || !isDeliminator(*expr, deliminators))) {
+        if (expr->isDigit()) {
             int base = 10;
 
             // Parse the prefix notation for octal and hex numbers:
@@ -279,7 +403,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                     // 0x1 == 1 in hex notation
                     base = 16;
                     expr += 2;
-                } else if (isdigit(expr[1])) {
+                } else if (expr[1].isDigit()) {
                     // 01 == 1 in octal notation
                     base = 8;
                     expr++;
@@ -287,18 +411,18 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
             }
 
             // If the token is a number, add it to the output queue.
-            qint64 _int = strtoll(expr, &nextChar, base);
+            qint64 _int = extractInteger(expr, exprEnd, &nextChar, base);
 
-            const auto atEnd = nextChar == &exprStd.back() + 1;
+            const auto atEnd = nextChar == exprEnd;
 
             // If the number was not a float:
-            if (base != 10 || atEnd || !strchr(".eE", *nextChar)) {
+            if (base != 10 || atEnd || !isDeliminator(*nextChar, ".eE")) {
                 if (!data.handleToken(new TokenTyped<qint64>(_int, INT))) {
                     return {};
                 }
             } else {
                 const auto intEnd = nextChar;
-                qreal digit = strtod(expr, &nextChar);
+                qreal digit = extractReal(expr, exprEnd, &nextChar);
 
                 if (nextChar == intEnd) { // no new chars parsed
                     if (!data.handleToken(new TokenTyped<qint64>(_int, INT))) {
@@ -315,12 +439,12 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
 
             // If the token is a variable, resolve it and
             // add the parsed number to the output queue.
-            const char *expr2 = expr;
-            QString key = RpnBuilder::parseVariableName(expr, &expr, true);
+            const QChar *expr2 = expr;
+            QString key = RpnBuilder::parseVariableName(expr, exprEnd, &expr, true, false);
 
             if ((parser = config.parserMap.find(key))) {
                 // Parse reserved words:
-                if (!parser(expr, &expr, &data)) {
+                if (!parser(expr, exprEnd, &expr, &data)) {
                     data.clear();
                     return {};
                 }
@@ -342,7 +466,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                     // Save the variable name:
                     if (!data.m_lastTokenWasOp || !data.handleToken(new TokenTyped<QString>(key, VAR))) {
                         expr = expr2;
-                        key = RpnBuilder::parseVariableName(expr, &expr, false);
+                        key = RpnBuilder::parseVariableName(expr, exprEnd, &expr, false, false);
                         // Check if the word parser applies:
                         auto *parser = config.parserMap.find(key);
 
@@ -353,7 +477,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                         if (parser) {
                             // Parse reserved operators:
 
-                            if (!parser(expr, &expr, &data)) {
+                            if (!parser(expr, exprEnd, &expr, &data)) {
                                 data.clear();
                                 return {};
                             }
@@ -372,14 +496,14 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
         } else if (*expr == '\'' || *expr == '"') {
             // If it is a string literal, parse it and
             // add to the output queue.
-            char quote = *expr;
+            QChar quote = *expr;
 
             ++expr;
             QString ss;
 
-            while (*expr && *expr != quote && *expr != '\n') {
+            while (expr != exprEnd && *expr != quote && *expr != '\n') {
                 if (*expr == '\\') {
-                    switch (expr[1]) {
+                    switch (expr[1].unicode()) {
                     case 'n':
                         expr += 2;
                         ss += '\n';
@@ -391,7 +515,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                         break;
 
                     default:
-                        if (strchr("\"'\n", expr[1])) {
+                        if (isDeliminator(expr[1], "\"'\n")) {
                             ++expr;
                         }
 
@@ -419,7 +543,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
             }
         } else {
             // Otherwise, the variable is an operator or paranthesis.
-            switch (*expr) {
+            switch (expr->unicode()) {
             case '(':
 
                 // If it is a function call:
@@ -506,12 +630,12 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
             default: {
                 // Then the token is an operator
 
-                const char *start = expr;
+                const QChar *start = expr;
                 QString ss;
                 ss += *expr;
                 ++expr;
 
-                while (*expr && ispunct(*expr) && !strchr("+-'\"()[]{}_", *expr)) {
+                while (expr != exprEnd && isPunctuation(*expr) && !isDeliminator(*expr, "+-'\"()[]{}_")) {
                     ss += *expr;
                     ++expr;
                 }
@@ -528,7 +652,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                 if (parser) {
                     // Parse reserved operators:
 
-                    if (!parser(expr, &expr, &data)) {
+                    if (!parser(expr, exprEnd, &expr, &data)) {
                         data.clear();
                         return {};
                     }
@@ -539,7 +663,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
                 } else if ((parser = config.parserMap.find(QString(op[0])))) {
                     expr = start + 1;
 
-                    if (!parser(expr, &expr, &data)) {
+                    if (!parser(expr, exprEnd, &expr, &data)) {
                         data.clear();
                         return {};
                     }
@@ -553,7 +677,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
         }
 
         // Ignore spaces but stop on delimiter if not inside brackets.
-        while (*expr && isspace(*expr) && (data.bracketLevel() || !strchr(delim, *expr))) {
+        while (expr != exprEnd && expr->isSpace() && (data.bracketLevel() || !isDeliminator(*expr, deliminators))) {
             ++expr;
         }
     }
@@ -568,7 +692,7 @@ TokenQueue RpnBuilder::toRPN(const QString &exprStr, const TokenMap &vars, const
     data.processOpStack();
 
     if (rest) {
-        *rest = expr - exprStd.c_str();
+        *rest = expr - exprStr.constData();
     }
 
     return data.rpn();
@@ -586,6 +710,11 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
     std::stack<Token *> evaluation;
 
     auto tryResolveVariable = [&](Token *base, const QString &key) -> bool {
+        if (scope.find(key)) {
+            evaluation.push(base);
+            return true;
+        }
+
         if (config.scope.find(key)) {
             evaluation.push(base);
             return true;
@@ -684,7 +813,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                 if (ret->m_type == TokenType::ERROR) {
                     cleanStack(evaluation);
                     delete l_func;
-                    return new RefToken(ret);
+                    return ret->clone();
                 }
 
                 delete l_func;
@@ -722,8 +851,7 @@ Token *RpnBuilder::calculate(const TokenQueue &rpn, const TokenMap &scope, const
                     return new TokenError("failed to execute op: " + data.op);
                 }
             }
-        } else if (base->m_type == VAR) // Variable
-        {
+        } else if (base->m_type == VAR) {
             PackToken *value = nullptr;
             QString key = static_cast<TokenTyped<QString> *>(base)->m_val;
 
@@ -905,18 +1033,19 @@ bool RpnBuilder::closeBracket(const QString &bracket)
     return true;
 }
 
-bool RpnBuilder::isVariableNameChar(const char c)
+bool RpnBuilder::isVariableNameChar(const QChar c)
 {
-    return isalpha(c) || c == '_' || c == '$' || c == '#' || c == '@';
+    return c.isLetter() || c == '_' || c == '$' || c == '#' || c == '@';
 }
 
-QString RpnBuilder::parseVariableName(const char *expr, const char **rest, bool allowDigitsAndDots)
+QString RpnBuilder::parseVariableName(const QChar *expr, const QChar *exprEnd, const QChar **rest, bool allowDigits, bool allowDots)
 {
     QString ss;
     ss += *expr;
     ++expr;
 
-    while (RpnBuilder::isVariableNameChar(*expr) || (allowDigitsAndDots && (isdigit(*expr) || *expr == '.'))) {
+    while (expr != exprEnd && RpnBuilder::isVariableNameChar(*expr) || (allowDigits && expr->isDigit())
+           || (allowDots && *expr == '.')) {
         ss += *expr;
         ++expr;
     }

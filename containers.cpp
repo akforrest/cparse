@@ -133,6 +133,32 @@ const PackToken *TokenMap::find(const QString &key) const
         return &it->second;
     }
 
+    if (key.contains('.')) {
+        const auto path = key.split('.', Qt::SkipEmptyParts);
+        if (!path.isEmpty()) {
+            it = map().find(path.constFirst());
+
+            if (it != map().end()) {
+                if (path.size() == 1) {
+                    return &it->second;
+                }
+                int index = 1;
+                const PackToken *token = &it->second;
+                while (index < path.size() && token != nullptr && token->type() == MAP) {
+                    auto nextToken = token->asMap().find(path.at(index));
+                    if (nextToken == nullptr) {
+                        break;
+                    }
+                    token = nextToken;
+                    index++;
+                }
+                if (index == path.size() && token != nullptr) {
+                    return token;
+                }
+            }
+        }
+    }
+
     if (parent()) {
         return parent()->find(key);
     }
